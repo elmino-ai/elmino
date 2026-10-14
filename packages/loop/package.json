@@ -1,0 +1,37 @@
+{
+  "name": "@elmino/loop",
+  "type": "module",
+  "version": "0.0.0",
+  "description": "Agent 单轮模型采样、工具执行、上下文与恢复流程",
+  "sideEffects": false,
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "src"],
+  "engines": { "node": ">=24.18.1" },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node --input-type=module -e \"import { cp } from 'node:fs/promises'; await cp('src/prompts/template', 'dist/prompts/template', { recursive: true })\"",
+    "typecheck": "tsc -p tsconfig.json",
+    "prepack": "pnpm build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@elmino/llm": "workspace:*",
+    "@elmino/runtime": "workspace:*",
+    "@elmino/sandbox": "workspace:*",
+    "@elmino/shared": "workspace:*",
+    "@elmino/store": "workspace:*",
+    "@elmino/thread": "workspace:*",
+    "@elmino/tool": "workspace:*",
+    "dayjs": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@elmino/store-sqlite": "workspace:*",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "publishConfig": { "access": "public" }
+}

@@ -1,0 +1,5 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "lib": ["ES2023", "ES2024.Promise"] },
+  "include": ["src/**/*.ts", "tests/**/*.ts"]
+}
