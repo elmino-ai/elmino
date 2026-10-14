@@ -1,18 +1,26 @@
 {
   "name": "elmino",
-  "version": "0.0.0",
-  "description": "可复用的 Agent 开发框架",
   "type": "module",
+  "version": "0.0.0",
   "private": true,
   "packageManager": "pnpm@11.18.0",
+  "description": "可复用的 Agent 开发框架",
   "engines": {
     "node": ">=24.18.1 <25",
     "pnpm": "11.18.0"
   },
   "scripts": {
-    "lint": "eslint --cache ."
+    "lint": "eslint --cache .",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm build && pnpm -r typecheck",
+    "test": "pnpm build && pnpm -r test",
+    "changeset": "changeset",
+    "version:packages": "changeset version",
+    "pack:packages": "pnpm --filter '@elmino/*' -r pack --pack-destination ./dist/packs",
+    "verify:packages": "pnpm pack:packages && node scripts/verify-packages.mjs"
   },
   "devDependencies": {
+    "@changesets/cli": "catalog:",
     "@types/node": "catalog:",
     "@violetflux/eslint-config-harness": "catalog:",
     "eslint": "catalog:",
