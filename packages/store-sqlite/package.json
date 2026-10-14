@@ -1,0 +1,38 @@
+{
+  "name": "@elmino/store-sqlite",
+  "type": "module",
+  "version": "0.0.0",
+  "description": "基于 Node.js SQLite 的 Agent 运行记录持久化",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "src", "drizzle/runtime/migrations"],
+  "engines": {
+    "node": ">=24.18.1"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "prepack": "pnpm build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@elmino/shared": "workspace:*",
+    "@elmino/store": "workspace:*",
+    "dayjs": "catalog:",
+    "drizzle-orm": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

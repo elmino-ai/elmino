@@ -23,6 +23,8 @@
 - `llm-openai` 与 `llm-anthropic` 分别持有对应消息协议的适配器和厂商差异
 - Provider 原生字段只留在适配器边界，内部工具调用统一使用 `args`
 - `shared` 持有实际跨包复用的纯工具和通用类型，领域类型留在实际拥有该能力的包，不整包复制产品共用代码
+- `store` 持有 RuntimeStore、BlobStore、运行记录和持久化线程数据契约；本地 BlobStore 从 `/local` 引入，基础入口不加载 Node 实现
+- `store-sqlite` 持有 SqliteStore、Drizzle 仓储与运行数据库迁移，不持有产品 control.db、工作区目录装配或 UI 默认文案
 - 下一批 `engine` 持有 Agent 调度与执行生命周期，执行实体按 `Thread -> Turn -> Step -> ToolInvocation` 组织；单轮执行、工具与插件通过执行器接入
 - 模型解析、持久化、运行环境与事件处理通过实际能力契约注入，避免内核依赖具体应用
 - 产品预设、品牌、账号、市场、遥测上报和 UI 不进入内核
@@ -42,6 +44,8 @@
 - 开发时使用 workspace 协议，打包后验证内部依赖已转换为正常版本范围，且不存在 workspace 协议或本地路径依赖
 - 第一批真实包落地时接入 Changesets 管理版本、变更记录与受影响依赖；发布动作单独授权
 - 包级验收必须覆盖构建、打包内容，以及在仓库外安装 tarball 后通过公开入口运行和检查类型；不能只验证 workspace 源码导入
+- SQLite 版本化迁移随 `store-sqlite` 发布；迁入既有迁移文件保持内容一致，不手改 SQL 或启动时清库，后续 Schema 变化先接入所属包的迁移生成和一致性检查
+- 同一数据目录共享 SqliteStore 的调用方必须共享同一个 BlobStore 实例，关闭后才允许更换装配；创建方拥有关闭权，事务回滚不回滚外部 blob 写入
 
 ## 源码与检查
 

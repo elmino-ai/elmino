@@ -2,7 +2,7 @@
 
 elmino 是面向应用开发的可复用 Agent 框架，首阶段聚焦模型适配与 Agent 内核
 
-当前已落地通用工具、模型公共协议与两个独立适配器包，Agent 内核尚待迁入，qygent 暂时继续使用原实现
+当前已落地通用工具、模型协议与适配器、可插拔存储契约和 SQLite 实现；Agent 引擎尚待迁入，qygent 暂时继续使用原实现
 
 ## 首阶段边界
 
@@ -12,6 +12,8 @@ elmino 是面向应用开发的可复用 Agent 框架，首阶段聚焦模型适
 | `@elmino/llm` | [packages/llm](packages/llm) | 统一请求、消息、流事件、工具调用、用量、结构化解析和 Provider 契约 |
 | `@elmino/llm-openai` | [packages/llm-openai](packages/llm-openai) | OpenAI SDK 及 Chat Completions、Responses 和兼容服务差异 |
 | `@elmino/llm-anthropic` | [packages/llm-anthropic](packages/llm-anthropic) | Anthropic SDK 及 Messages 和兼容服务差异 |
+| `@elmino/store` | [packages/store](packages/store) | RuntimeStore、BlobStore、运行记录与持久化线程数据契约；`/local` 提供 LocalBlobStore |
+| `@elmino/store-sqlite` | [packages/store-sqlite](packages/store-sqlite) | SqliteStore、数据库仓储、版本化迁移与事务生命周期 |
 | `@elmino/engine` | 待迁入 | Agent 调度、Thread 执行互斥、Turn 接纳与结算、中断恢复及资源释放；单轮执行器由宿主注入 |
 
 模型适配层独立于执行内核。模型适配器包依赖 `llm` 契约和各自 SDK，`llm` 与 `engine` 不依赖具体适配器包。执行内核通过宿主注入模型、存储、运行环境和事件处理能力
@@ -20,7 +22,7 @@ elmino 是面向应用开发的可复用 Agent 框架，首阶段聚焦模型适
 
 只为实际能力创建包目录；`engine` 尚未创建，不用空实现占位
 
-`shared` 当前提供 `isPlainRecord`、`deepEqual`、`UnknownRecord` 和 `Promisable`，模型包已通过公开入口复用。ID、JSON、异步调度和 Node 工具随后续迁入模块的实际依赖继续提取；模型消息处理和 Provider 差异继续归模型包，产品配置和 UI 类型归应用
+`shared` 提供对象判断、比较、字段提取、ID、JSON 与实际使用的通用类型，模型包和存储包通过公开入口复用。异步调度和 Node 工具随后续迁入模块的实际依赖继续提取；模型消息处理和 Provider 差异继续归模型包，产品配置和 UI 实现归应用
 
 ## npm 包组织与交付
 
@@ -33,9 +35,10 @@ elmino 是面向应用开发的可复用 Agent 框架，首阶段聚焦模型适
 - 各包使用 `files` 白名单交付 `dist` 与映射所需的 `src`，不包含测试、开发配置或本地环境文件；公开入口始终指向编译产物
 - workspace 依赖在打包时转换为发布版本范围，产物不依赖仓库别名、源码目录或本地路径
 - 模型适配器按 SDK 依赖独立交付，安装 OpenAI 适配器时无需安装 Anthropic SDK
+- 数据库存储独立交付，安装 `store` 不安装 Drizzle、dayjs 或模型 SDK；基础入口不引入本地文件实现
 - 已接入 Changesets，模型包与共享基础的 minor 变更记录在 `.changeset`；当前开发版本为 `0.0.0`，尚未发布到 npm
 
-`pnpm verify:packages` 为四个包生成 tarball，检查公开入口、类型声明、映射源码和依赖版本，再分别安装到仓库外临时目录，执行公共工具、类型检查、SDK 请求投影和依赖隔离检查。尚未发布的 `@elmino/shared` 和 `@elmino/llm` 由消费项目的 pnpm overrides 指向同批 tarball，打包文件中的正常版本声明保持不变。临时目录保留供失败诊断，不读取用户模型配置，不调用真实模型服务
+`pnpm verify:packages` 为六个包生成 tarball，检查公开入口、类型声明、映射源码和依赖版本，再分别安装到仓库外临时目录，执行公共工具、类型检查、SDK 请求投影、文件内容读写、数据库建库、事务回滚、关闭重开和依赖隔离检查。尚未发布的内部依赖由消费项目的 pnpm overrides 指向同批 tarball，打包文件中的正常版本声明保持不变。临时目录保留供失败诊断，不读取用户模型配置，不调用真实模型服务
 
 交付集成测试位于 [tests/packages/verify-packages.mjs](tests/packages/verify-packages.mjs)，由 `pnpm verify:packages` 单独执行。tarball 输出到 `dist/packs`，根项目不参与打包。qygent 的接入与旧实现删除作为后续独立批次执行
 
@@ -89,6 +92,47 @@ const result = await provider.generate({
 Chat Completions 使用 `@elmino/llm-openai/chat-completions` 的 `ChatCompletionsProvider`；Anthropic 使用 `@elmino/llm-anthropic` 的 `AnthropicMessagesProvider`，三者共用 `Request`、`Result` 和 `Event` 契约
 
 公共协议按 `message`、`request`、`stream`、`usage`、`object`、`cache`、`provider` 和 `adapter` 提供子路径。`baseURL` 指定兼容服务地址，`providerName` 选择厂商差异；免认证接口设置 `apiKeyRequired: false`，不发送保存的凭据。适配器实例保存自身配置，Responses 续接状态属于该实例，建议按会话或 Turn 创建实例
+
+## 存储使用
+
+从契约包选择本地内容存储，SQLite 实现独立安装；文件能力由宿主提供，满足 `@elmino/store/local` 的 `BlobFiles` 契约
+
+```ts
+import type { RuntimeStore } from '@elmino/store'
+import { LocalBlobStore } from '@elmino/store/local'
+import { SqliteStore } from '@elmino/store-sqlite'
+
+const blobStore = LocalBlobStore.create({
+  files: persistenceFiles,
+  rootDir: blobsDir,
+})
+const store: RuntimeStore = await SqliteStore.create({
+  dataDir: databaseDir,
+  blobStore,
+})
+
+try {
+  await store.transaction(async (tx) => {
+    await tx.threads.upsert({ id: threadId, agentId, dir: workspaceDir })
+    await tx.artifacts.write({
+      threadId,
+      contentKind: 'text',
+      contentText: '需要保存的运行内容',
+    })
+  })
+}
+finally {
+  await store.close()
+}
+```
+
+`RuntimeStore` 保存 Thread、Turn、Step、工具调用、Canonical 历史、transcript、子线程关系与 artifact 元信息。SQLite 中小文本或 JSON 可以内联，大正文和二进制内容通过注入的 `BlobStore` 保存；更换数据库实现时实现同一契约，更换内容存储时实现 `write`、`read`、`exists` 即可
+
+同一数据库目录共享连接时必须共享同一个 `BlobStore` 实例，由装配方统一关闭；先关闭再更换内容存储实现。数据库事务只回滚数据库记录，已经成功写出的 blob 不随数据库回滚；文件能力实现负责目录创建、实际路径权限和写入原子性。`exists` 只在确认内容缺失时返回 `false`，访问失败应拒绝，避免数据库把临时故障当成永久缺失
+
+线程标题未设置时返回空缺，展示默认文案由宿主提供。文档扩展名和模型配置 ID 作为数据保存，解析支持与凭据管理留在宿主。最终报告、导出文件等成果仍通过工作区文件能力写入，不由 BlobStore 扫描收集
+
+SQLite 原始版本化迁移包含在发布包的 `drizzle/runtime/migrations` 中，仓库外安装后可直接建库和重开；迁移失败拒绝打开并保留原数据，不执行自动清库
 
 ## 迁移顺序
 

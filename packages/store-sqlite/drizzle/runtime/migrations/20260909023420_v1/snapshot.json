@@ -1,0 +1,1862 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "id": "150ab403-4326-4206-a8aa-baf21b052d37",
+  "prevIds": [
+    "00000000-0000-0000-0000-000000000000"
+  ],
+  "ddl": [
+    {
+      "name": "artifacts",
+      "entityType": "tables"
+    },
+    {
+      "name": "canonical_messages",
+      "entityType": "tables"
+    },
+    {
+      "name": "canonical_parts",
+      "entityType": "tables"
+    },
+    {
+      "name": "steps",
+      "entityType": "tables"
+    },
+    {
+      "name": "thread_spawn_edges",
+      "entityType": "tables"
+    },
+    {
+      "name": "threads",
+      "entityType": "tables"
+    },
+    {
+      "name": "tool_calls",
+      "entityType": "tables"
+    },
+    {
+      "name": "transcript_messages",
+      "entityType": "tables"
+    },
+    {
+      "name": "turn_spawn_edges",
+      "entityType": "tables"
+    },
+    {
+      "name": "turns",
+      "entityType": "tables"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "artifacts"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "thread_id",
+      "entityType": "columns",
+      "table": "artifacts"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "storage",
+      "entityType": "columns",
+      "table": "artifacts"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "content_kind",
+      "entityType": "columns",
+      "table": "artifacts"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "inline_text",
+      "entityType": "columns",
+      "table": "artifacts"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "inline_json",
+      "entityType": "columns",
+      "table": "artifacts"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "blob_key",
+      "entityType": "columns",
+      "table": "artifacts"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "uri",
+      "entityType": "columns",
+      "table": "artifacts"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "mime_type",
+      "entityType": "columns",
+      "table": "artifacts"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "encoding",
+      "entityType": "columns",
+      "table": "artifacts"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "size_bytes",
+      "entityType": "columns",
+      "table": "artifacts"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "sha256",
+      "entityType": "columns",
+      "table": "artifacts"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "preview_text",
+      "entityType": "columns",
+      "table": "artifacts"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "state",
+      "entityType": "columns",
+      "table": "artifacts"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "missing_at",
+      "entityType": "columns",
+      "table": "artifacts"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "artifacts"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "artifacts"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'{}'",
+      "generated": null,
+      "name": "metadata_json",
+      "entityType": "columns",
+      "table": "artifacts"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "canonical_messages"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "thread_id",
+      "entityType": "columns",
+      "table": "canonical_messages"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "turn_id",
+      "entityType": "columns",
+      "table": "canonical_messages"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "seq",
+      "entityType": "columns",
+      "table": "canonical_messages"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "role",
+      "entityType": "columns",
+      "table": "canonical_messages"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "provider_id",
+      "entityType": "columns",
+      "table": "canonical_messages"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "finish_reason",
+      "entityType": "columns",
+      "table": "canonical_messages"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "raw_finish_reason",
+      "entityType": "columns",
+      "table": "canonical_messages"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'{}'",
+      "generated": null,
+      "name": "metadata_json",
+      "entityType": "columns",
+      "table": "canonical_messages"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "canonical_messages"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "canonical_parts"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "message_id",
+      "entityType": "columns",
+      "table": "canonical_parts"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "seq",
+      "entityType": "columns",
+      "table": "canonical_parts"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "type",
+      "entityType": "columns",
+      "table": "canonical_parts"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "size_bytes",
+      "entityType": "columns",
+      "table": "canonical_parts"
+    },
+    {
+      "type": "blob",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "content_blob",
+      "entityType": "columns",
+      "table": "canonical_parts"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "canonical_parts"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "steps"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "turn_id",
+      "entityType": "columns",
+      "table": "steps"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "status",
+      "entityType": "columns",
+      "table": "steps"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "input",
+      "entityType": "columns",
+      "table": "steps"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "output",
+      "entityType": "columns",
+      "table": "steps"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "reasoning",
+      "entityType": "columns",
+      "table": "steps"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "cache_write",
+      "entityType": "columns",
+      "table": "steps"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "cache_read",
+      "entityType": "columns",
+      "table": "steps"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "estimated",
+      "entityType": "columns",
+      "table": "steps"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "steps"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ended_at",
+      "entityType": "columns",
+      "table": "steps"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "child_thread_id",
+      "entityType": "columns",
+      "table": "thread_spawn_edges"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "parent_thread_id",
+      "entityType": "columns",
+      "table": "thread_spawn_edges"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "owner_id",
+      "entityType": "columns",
+      "table": "thread_spawn_edges"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "thread_spawn_edges"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "threads"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "dir",
+      "entityType": "columns",
+      "table": "threads"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'active'",
+      "generated": null,
+      "name": "lifecycle",
+      "entityType": "columns",
+      "table": "threads"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "agent_id",
+      "entityType": "columns",
+      "table": "threads"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "auto_title",
+      "entityType": "columns",
+      "table": "threads"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "user_title",
+      "entityType": "columns",
+      "table": "threads"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "status",
+      "entityType": "columns",
+      "table": "threads"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "false",
+      "generated": null,
+      "name": "pinned",
+      "entityType": "columns",
+      "table": "threads"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "unread_at",
+      "entityType": "columns",
+      "table": "threads"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "archived_at",
+      "entityType": "columns",
+      "table": "threads"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "threads"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "threads"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "last_interaction_at",
+      "entityType": "columns",
+      "table": "threads"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'{}'",
+      "generated": null,
+      "name": "metadata_json",
+      "entityType": "columns",
+      "table": "threads"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "settings_json",
+      "entityType": "columns",
+      "table": "threads"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'{}'",
+      "generated": null,
+      "name": "state_json",
+      "entityType": "columns",
+      "table": "threads"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "tool_calls"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "turn_id",
+      "entityType": "columns",
+      "table": "tool_calls"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "assistant_message_id",
+      "entityType": "columns",
+      "table": "tool_calls"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "assistant_part_id",
+      "entityType": "columns",
+      "table": "tool_calls"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "provider_call_id",
+      "entityType": "columns",
+      "table": "tool_calls"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "name",
+      "entityType": "columns",
+      "table": "tool_calls"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "args_json",
+      "entityType": "columns",
+      "table": "tool_calls"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "status",
+      "entityType": "columns",
+      "table": "tool_calls"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "decision",
+      "entityType": "columns",
+      "table": "tool_calls"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "started_at",
+      "entityType": "columns",
+      "table": "tool_calls"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "completed_at",
+      "entityType": "columns",
+      "table": "tool_calls"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "error_message",
+      "entityType": "columns",
+      "table": "tool_calls"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "result_part_id",
+      "entityType": "columns",
+      "table": "tool_calls"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "transcript_messages"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "thread_id",
+      "entityType": "columns",
+      "table": "transcript_messages"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "turn_id",
+      "entityType": "columns",
+      "table": "transcript_messages"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "seq",
+      "entityType": "columns",
+      "table": "transcript_messages"
+    },
+    {
+      "type": "blob",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "content_blob",
+      "entityType": "columns",
+      "table": "transcript_messages"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "child_turn_id",
+      "entityType": "columns",
+      "table": "turn_spawn_edges"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "parent_tool_call_id",
+      "entityType": "columns",
+      "table": "turn_spawn_edges"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "turn_spawn_edges"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "turns"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "thread_id",
+      "entityType": "columns",
+      "table": "turns"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "status",
+      "entityType": "columns",
+      "table": "turns"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "model_config_json",
+      "entityType": "columns",
+      "table": "turns"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "subagent_role_json",
+      "entityType": "columns",
+      "table": "turns"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "subagent_roles_json",
+      "entityType": "columns",
+      "table": "turns"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "agent_snapshot_json",
+      "entityType": "columns",
+      "table": "turns"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "approval_mode",
+      "entityType": "columns",
+      "table": "turns"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "subagent_mode",
+      "entityType": "columns",
+      "table": "turns"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "turns"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "turns"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "started_at",
+      "entityType": "columns",
+      "table": "turns"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ended_at",
+      "entityType": "columns",
+      "table": "turns"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "error_message",
+      "entityType": "columns",
+      "table": "turns"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "interrupt_json",
+      "entityType": "columns",
+      "table": "turns"
+    },
+    {
+      "columns": [
+        "thread_id"
+      ],
+      "tableTo": "threads",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_artifacts_thread_id_threads_id_fk",
+      "entityType": "fks",
+      "table": "artifacts"
+    },
+    {
+      "columns": [
+        "thread_id"
+      ],
+      "tableTo": "threads",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_canonical_messages_thread_id_threads_id_fk",
+      "entityType": "fks",
+      "table": "canonical_messages"
+    },
+    {
+      "columns": [
+        "turn_id"
+      ],
+      "tableTo": "turns",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_canonical_messages_turn_id_turns_id_fk",
+      "entityType": "fks",
+      "table": "canonical_messages"
+    },
+    {
+      "columns": [
+        "message_id"
+      ],
+      "tableTo": "canonical_messages",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_canonical_parts_message_id_canonical_messages_id_fk",
+      "entityType": "fks",
+      "table": "canonical_parts"
+    },
+    {
+      "columns": [
+        "turn_id"
+      ],
+      "tableTo": "turns",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_steps_turn_id_turns_id_fk",
+      "entityType": "fks",
+      "table": "steps"
+    },
+    {
+      "columns": [
+        "child_thread_id"
+      ],
+      "tableTo": "threads",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_thread_spawn_edges_child_thread_id_threads_id_fk",
+      "entityType": "fks",
+      "table": "thread_spawn_edges"
+    },
+    {
+      "columns": [
+        "parent_thread_id"
+      ],
+      "tableTo": "threads",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_thread_spawn_edges_parent_thread_id_threads_id_fk",
+      "entityType": "fks",
+      "table": "thread_spawn_edges"
+    },
+    {
+      "columns": [
+        "turn_id"
+      ],
+      "tableTo": "turns",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_tool_calls_turn_id_turns_id_fk",
+      "entityType": "fks",
+      "table": "tool_calls"
+    },
+    {
+      "columns": [
+        "assistant_message_id"
+      ],
+      "tableTo": "transcript_messages",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_tool_calls_assistant_message_id_transcript_messages_id_fk",
+      "entityType": "fks",
+      "table": "tool_calls"
+    },
+    {
+      "columns": [
+        "result_part_id"
+      ],
+      "tableTo": "canonical_parts",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "name": "fk_tool_calls_result_part_id_canonical_parts_id_fk",
+      "entityType": "fks",
+      "table": "tool_calls"
+    },
+    {
+      "columns": [
+        "thread_id"
+      ],
+      "tableTo": "threads",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_transcript_messages_thread_id_threads_id_fk",
+      "entityType": "fks",
+      "table": "transcript_messages"
+    },
+    {
+      "columns": [
+        "turn_id"
+      ],
+      "tableTo": "turns",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_transcript_messages_turn_id_turns_id_fk",
+      "entityType": "fks",
+      "table": "transcript_messages"
+    },
+    {
+      "columns": [
+        "child_turn_id"
+      ],
+      "tableTo": "turns",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_turn_spawn_edges_child_turn_id_turns_id_fk",
+      "entityType": "fks",
+      "table": "turn_spawn_edges"
+    },
+    {
+      "columns": [
+        "parent_tool_call_id"
+      ],
+      "tableTo": "tool_calls",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_turn_spawn_edges_parent_tool_call_id_tool_calls_id_fk",
+      "entityType": "fks",
+      "table": "turn_spawn_edges"
+    },
+    {
+      "columns": [
+        "thread_id"
+      ],
+      "tableTo": "threads",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_turns_thread_id_threads_id_fk",
+      "entityType": "fks",
+      "table": "turns"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "artifacts_pk",
+      "table": "artifacts",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "canonical_messages_pk",
+      "table": "canonical_messages",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "canonical_parts_pk",
+      "table": "canonical_parts",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "steps_pk",
+      "table": "steps",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "child_thread_id"
+      ],
+      "nameExplicit": false,
+      "name": "thread_spawn_edges_pk",
+      "table": "thread_spawn_edges",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "threads_pk",
+      "table": "threads",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "tool_calls_pk",
+      "table": "tool_calls",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "transcript_messages_pk",
+      "table": "transcript_messages",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "child_turn_id"
+      ],
+      "nameExplicit": false,
+      "name": "turn_spawn_edges_pk",
+      "table": "turn_spawn_edges",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "turns_pk",
+      "table": "turns",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        {
+          "value": "thread_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_artifacts_thread",
+      "entityType": "indexes",
+      "table": "artifacts"
+    },
+    {
+      "columns": [
+        {
+          "value": "thread_id",
+          "isExpression": false
+        },
+        {
+          "value": "seq",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_canonical_messages_thread_seq",
+      "entityType": "indexes",
+      "table": "canonical_messages"
+    },
+    {
+      "columns": [
+        {
+          "value": "turn_id",
+          "isExpression": false
+        },
+        {
+          "value": "seq",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_canonical_messages_turn",
+      "entityType": "indexes",
+      "table": "canonical_messages"
+    },
+    {
+      "columns": [
+        {
+          "value": "message_id",
+          "isExpression": false
+        },
+        {
+          "value": "seq",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_canonical_parts_message_seq",
+      "entityType": "indexes",
+      "table": "canonical_parts"
+    },
+    {
+      "columns": [
+        {
+          "value": "turn_id",
+          "isExpression": false
+        },
+        {
+          "value": "created_at",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_steps_turn_created",
+      "entityType": "indexes",
+      "table": "steps"
+    },
+    {
+      "columns": [
+        {
+          "value": "parent_thread_id",
+          "isExpression": false
+        },
+        {
+          "value": "created_at",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_thread_spawn_parent",
+      "entityType": "indexes",
+      "table": "thread_spawn_edges"
+    },
+    {
+      "columns": [
+        {
+          "value": "pinned",
+          "isExpression": false
+        },
+        {
+          "value": "last_interaction_at",
+          "isExpression": false
+        },
+        {
+          "value": "updated_at",
+          "isExpression": false
+        },
+        {
+          "value": "id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": "\"threads\".\"archived_at\" IS NULL AND \"threads\".\"lifecycle\" = 'active'",
+      "origin": "manual",
+      "name": "idx_threads_active_list",
+      "entityType": "indexes",
+      "table": "threads"
+    },
+    {
+      "columns": [
+        {
+          "value": "archived_at",
+          "isExpression": false
+        },
+        {
+          "value": "id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": "\"threads\".\"archived_at\" IS NOT NULL AND \"threads\".\"lifecycle\" = 'active'",
+      "origin": "manual",
+      "name": "idx_threads_archived_list",
+      "entityType": "indexes",
+      "table": "threads"
+    },
+    {
+      "columns": [
+        {
+          "value": "status",
+          "isExpression": false
+        },
+        {
+          "value": "id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": "\"threads\".\"archived_at\" IS NULL AND \"threads\".\"status\" = 'running' AND \"threads\".\"lifecycle\" = 'active'",
+      "origin": "manual",
+      "name": "idx_threads_running_roots",
+      "entityType": "indexes",
+      "table": "threads"
+    },
+    {
+      "columns": [
+        {
+          "value": "assistant_part_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_tool_calls_part",
+      "entityType": "indexes",
+      "table": "tool_calls"
+    },
+    {
+      "columns": [
+        {
+          "value": "turn_id",
+          "isExpression": false
+        },
+        {
+          "value": "provider_call_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_tool_calls_provider_call",
+      "entityType": "indexes",
+      "table": "tool_calls"
+    },
+    {
+      "columns": [
+        {
+          "value": "turn_id",
+          "isExpression": false
+        },
+        {
+          "value": "started_at",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_tool_calls_turn_started",
+      "entityType": "indexes",
+      "table": "tool_calls"
+    },
+    {
+      "columns": [
+        {
+          "value": "thread_id",
+          "isExpression": false
+        },
+        {
+          "value": "seq",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_transcript_messages_thread_seq",
+      "entityType": "indexes",
+      "table": "transcript_messages"
+    },
+    {
+      "columns": [
+        {
+          "value": "turn_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_transcript_messages_turn",
+      "entityType": "indexes",
+      "table": "transcript_messages"
+    },
+    {
+      "columns": [
+        {
+          "value": "parent_tool_call_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_turn_spawn_parent_tool",
+      "entityType": "indexes",
+      "table": "turn_spawn_edges"
+    },
+    {
+      "columns": [
+        {
+          "value": "thread_id",
+          "isExpression": false
+        },
+        {
+          "value": "created_at",
+          "isExpression": false
+        },
+        {
+          "value": "id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_turns_thread_latest",
+      "entityType": "indexes",
+      "table": "turns"
+    },
+    {
+      "value": "\"storage\" IN ('inline', 'blob')",
+      "name": "artifacts_storage_check",
+      "entityType": "checks",
+      "table": "artifacts"
+    },
+    {
+      "value": "\"content_kind\" IN ('text', 'json', 'bytes')",
+      "name": "artifacts_content_kind_check",
+      "entityType": "checks",
+      "table": "artifacts"
+    },
+    {
+      "value": "\"state\" IN ('available', 'missing', 'pending')",
+      "name": "artifacts_state_check",
+      "entityType": "checks",
+      "table": "artifacts"
+    },
+    {
+      "value": "\"inline_json\" IS NULL OR json_valid(\"inline_json\")",
+      "name": "artifacts_inline_json_check",
+      "entityType": "checks",
+      "table": "artifacts"
+    },
+    {
+      "value": "json_valid(\"metadata_json\")",
+      "name": "artifacts_metadata_json_check",
+      "entityType": "checks",
+      "table": "artifacts"
+    },
+    {
+      "value": "\"role\" IN ('user', 'assistant', 'tool', 'system')",
+      "name": "canonical_messages_role_check",
+      "entityType": "checks",
+      "table": "canonical_messages"
+    },
+    {
+      "value": "json_valid(\"metadata_json\")",
+      "name": "canonical_messages_metadata_json_check",
+      "entityType": "checks",
+      "table": "canonical_messages"
+    },
+    {
+      "value": "\"type\" IN ('text', 'reasoning', 'image', 'document', 'tool-call', 'tool-result')",
+      "name": "canonical_parts_type_check",
+      "entityType": "checks",
+      "table": "canonical_parts"
+    },
+    {
+      "value": "\"size_bytes\" >= 0",
+      "name": "canonical_parts_size_bytes_check",
+      "entityType": "checks",
+      "table": "canonical_parts"
+    },
+    {
+      "value": "\"status\" IN ('running', 'completed', 'failed', 'interrupted')",
+      "name": "steps_status_check",
+      "entityType": "checks",
+      "table": "steps"
+    },
+    {
+      "value": "\"input\" >= 0",
+      "name": "steps_input_check",
+      "entityType": "checks",
+      "table": "steps"
+    },
+    {
+      "value": "\"output\" >= 0",
+      "name": "steps_output_check",
+      "entityType": "checks",
+      "table": "steps"
+    },
+    {
+      "value": "\"reasoning\" >= 0",
+      "name": "steps_reasoning_check",
+      "entityType": "checks",
+      "table": "steps"
+    },
+    {
+      "value": "\"cache_write\" >= 0",
+      "name": "steps_cache_write_check",
+      "entityType": "checks",
+      "table": "steps"
+    },
+    {
+      "value": "\"cache_read\" >= 0",
+      "name": "steps_cache_read_check",
+      "entityType": "checks",
+      "table": "steps"
+    },
+    {
+      "value": "\"estimated\" >= 0",
+      "name": "steps_estimated_check",
+      "entityType": "checks",
+      "table": "steps"
+    },
+    {
+      "value": "\"status\" IN ('idle', 'running', 'completed', 'failed', 'interrupted')",
+      "name": "threads_status_check",
+      "entityType": "checks",
+      "table": "threads"
+    },
+    {
+      "value": "\"lifecycle\" IN ('active', 'deleting')",
+      "name": "threads_lifecycle_check",
+      "entityType": "checks",
+      "table": "threads"
+    },
+    {
+      "value": "json_valid(\"metadata_json\")",
+      "name": "threads_metadata_json_check",
+      "entityType": "checks",
+      "table": "threads"
+    },
+    {
+      "value": "json_valid(\"settings_json\")",
+      "name": "threads_settings_json_check",
+      "entityType": "checks",
+      "table": "threads"
+    },
+    {
+      "value": "json_valid(\"state_json\")",
+      "name": "threads_state_json_check",
+      "entityType": "checks",
+      "table": "threads"
+    },
+    {
+      "value": "\"status\" IN ('pending', 'running', 'completed', 'failed', 'skipped')",
+      "name": "tool_calls_status_check",
+      "entityType": "checks",
+      "table": "tool_calls"
+    },
+    {
+      "value": "\"decision\" IS NULL OR \"decision\" IN ('auto', 'approve', 'reject', 'edit', 'respond')",
+      "name": "tool_calls_decision_check",
+      "entityType": "checks",
+      "table": "tool_calls"
+    },
+    {
+      "value": "json_valid(\"args_json\")",
+      "name": "tool_calls_args_json_check",
+      "entityType": "checks",
+      "table": "tool_calls"
+    },
+    {
+      "value": "\"status\" IN ('queued', 'running', 'completed', 'failed', 'interrupted', 'cancelled')",
+      "name": "turns_status_check",
+      "entityType": "checks",
+      "table": "turns"
+    },
+    {
+      "value": "json_valid(\"model_config_json\")",
+      "name": "turns_model_config_json_check",
+      "entityType": "checks",
+      "table": "turns"
+    },
+    {
+      "value": "json_valid(\"subagent_role_json\")",
+      "name": "turns_subagent_role_json_check",
+      "entityType": "checks",
+      "table": "turns"
+    },
+    {
+      "value": "json_valid(\"subagent_roles_json\")",
+      "name": "turns_subagent_roles_json_check",
+      "entityType": "checks",
+      "table": "turns"
+    },
+    {
+      "value": "json_valid(\"agent_snapshot_json\")",
+      "name": "turns_agent_snapshot_json_check",
+      "entityType": "checks",
+      "table": "turns"
+    },
+    {
+      "value": "\"approval_mode\" IN ('auto', 'fullAccess', 'request')",
+      "name": "turns_approval_mode_check",
+      "entityType": "checks",
+      "table": "turns"
+    },
+    {
+      "value": "\"subagent_mode\" IN ('explicitOnly', 'proactive')",
+      "name": "turns_subagent_mode_check",
+      "entityType": "checks",
+      "table": "turns"
+    },
+    {
+      "value": "\"interrupt_json\" IS NULL OR json_valid(\"interrupt_json\")",
+      "name": "turns_interrupt_json_check",
+      "entityType": "checks",
+      "table": "turns"
+    }
+  ],
+  "renames": []
+}

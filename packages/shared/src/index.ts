@@ -1,3 +1,6 @@
+export { createId } from './id/create.js'
+export { jsonParse } from './json/parse.js'
 export { deepEqual } from './object/equal.js'
+export { objectPick } from './object/pick.js'
 export { isPlainRecord } from './object/record.js'
-export type { Promisable, UnknownRecord } from 'type-fest'
+export type { Except, ExcludeStrict, JsonValue, Promisable, UnknownRecord } from 'type-fest'

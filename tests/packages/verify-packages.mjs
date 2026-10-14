@@ -10,8 +10,9 @@ import { promisify } from 'node:util'
 /** 在仓库外检查真实 tarball 的运行、类型和依赖隔离 */
 const run = promisify(execFile)
 const root = fileURLToPath(new URL('../../', import.meta.url))
-const packageNames = ['shared', 'llm', 'llm-openai', 'llm-anthropic']
+const packageNames = ['shared', 'llm', 'llm-openai', 'llm-anthropic', 'store', 'store-sqlite']
 const archives = new Map()
+const nodeTypes = JSON.parse(await readFile(path.join(root, 'node_modules/@types/node/package.json'), 'utf8'))
 
 for (const name of packageNames) {
   const source = JSON.parse(await readFile(path.join(root, 'packages', name, 'package.json'), 'utf8'))
@@ -25,7 +26,8 @@ for (const name of packageNames) {
   assert.ok(!manifest.private)
   for (const file of files) {
     assert.ok(file === 'package/package.json'
-      || file.startsWith('package/dist/') || file.startsWith('package/src/'), file)
+      || file.startsWith('package/dist/') || file.startsWith('package/src/')
+      || (name === 'store-sqlite' && file.startsWith('package/drizzle/runtime/migrations/')), file)
   }
   for (const entry of Object.values(manifest.exports)) {
     assert.ok(files.has(`package/${entry.import.slice(2)}`), entry.import)
@@ -47,26 +49,103 @@ for (const name of packageNames) {
   archives.set(name, archive)
 }
 
+/** 本地 BlobStore 的真实公开入口消费，不依赖产品 Sandbox */
+const blobFixture = `
+import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
+import path from 'node:path'
+import type { BlobStore } from '@elmino/store'
+import { LocalBlobStore } from '@elmino/store/local'
+const blobs: BlobStore = LocalBlobStore.create({
+  rootDir: path.resolve('blobs'),
+  files: {
+    async exists(file: string) {
+      try { await access(file); return true }
+      catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false
+        throw error
+      }
+    },
+    async readBytes(file: string) { return new Uint8Array(await readFile(file)) },
+    async writeBytes(file: string, bytes: Uint8Array) {
+      await mkdir(path.dirname(file), { recursive: true })
+      await writeFile(file, bytes)
+      return {}
+    },
+  },
+})
+const content = new TextEncoder().encode('published artifact content')
+const blob = await blobs.write(content)
+if (!await blobs.exists(blob.blobKey)) throw new Error('文件内容没有落盘')
+if (new TextDecoder().decode(await blobs.read(blob.blobKey)) !== 'published artifact content')
+  throw new Error('文件内容无法回读')
+if ((await blobs.write(content)).blobKey !== blob.blobKey) throw new Error('相同内容未复用')
+`
+
+/** 仓库外消费 SQLite 包，确认版本化迁移、事务和重开 */
+const sqliteFixture = `
+${blobFixture}
+import type { RuntimeStore } from '@elmino/store'
+import { SqliteStore } from '@elmino/store-sqlite'
+const options = { dataDir: path.resolve('database'), blobStore: blobs }
+let store: RuntimeStore = await SqliteStore.create(options)
+try {
+  const thread = await store.threads.upsert({
+    id: 'thread_package', agentId: 'agent_package', dir: '.',
+  })
+  const artifact = await store.artifacts.write({
+    threadId: thread.id, contentKind: 'text', contentText: 'installed database',
+  })
+  const binary = await store.artifacts.write({
+    threadId: thread.id, contentKind: 'bytes', contentBytes: content,
+  })
+  if (binary.storage !== 'blob' || !binary.blobKey || !await blobs.exists(binary.blobKey))
+    throw new Error('数据库未引用注入的内容存储')
+  const failure = new Error('expected rollback')
+  try {
+    await store.transaction(async (tx) => {
+      await tx.threads.upsert({ id: thread.id, pinned: true })
+      throw failure
+    })
+    throw new Error('失败事务未拒绝')
+  }
+  catch (error) { if (error !== failure) throw error }
+  if ((await store.threads.read(thread.id))?.pinned) throw new Error('失败事务未回滚')
+  await store.close()
+  store = await SqliteStore.create(options)
+  if ((await store.artifacts.readText(artifact.id))?.content !== 'installed database')
+    throw new Error('数据库重开后未保留正文')
+  if ((await store.artifacts.read(binary.id))?.blobKey !== binary.blobKey)
+    throw new Error('数据库重开后未保留内容引用')
+}
+finally { await store.close() }
+`
+
 for (const name of packageNames) {
   const dir = await mkdtemp(path.join(tmpdir(), `elmino-${name}-consumer-`))
   const dependencies = { [`@elmino/${name}`]: `file:${archives.get(name)}` }
   const isAdapter = name === 'llm-openai' || name === 'llm-anthropic'
+  const isModel = name === 'llm' || isAdapter
+  const isStorage = name === 'store' || name === 'store-sqlite'
   const sdk = name === 'llm-openai' ? 'openai' : '@anthropic-ai/sdk'
   const Adapter = name === 'llm-openai' ? 'ResponsesProvider' : 'AnthropicMessagesProvider'
 
-  if (name !== 'shared')
+  if (isAdapter)
     dependencies['@elmino/llm'] = `file:${archives.get('llm')}`
+  if (name === 'store-sqlite')
+    dependencies['@elmino/store'] = `file:${archives.get('store')}`
   await writeFile(path.join(dir, 'package.json'), JSON.stringify({
     private: true,
     type: 'module',
     packageManager: 'pnpm@11.18.0',
     dependencies,
+    ...(isStorage ? { devDependencies: { '@types/node': nodeTypes.version } } : {}),
   }, null, 2))
   // 尚未发布的内部依赖用同批 tarball 解析，保持真实打包后的版本声明不变
   await writeFile(
     path.join(dir, 'pnpm-workspace.yaml'),
-    `overrides:\n  '@elmino/shared': ${JSON.stringify(`file:${archives.get('shared')}`)}\n`
-    + `  '@elmino/llm': ${JSON.stringify(`file:${archives.get('llm')}`)}\n`,
+    `overrides:\n${packageNames.map(packageName =>
+      `  '@elmino/${packageName}': ${JSON.stringify(`file:${archives.get(packageName)}`)}\n`,
+    ).join('')}`,
   )
   console.log(`验证 @elmino/${name}：${dir}`)
   await run('pnpm', ['install', '--ignore-scripts', '--config.verifyDepsBeforeRun=false'], {
@@ -81,16 +160,22 @@ for (const name of packageNames) {
     assert.ok(!store.some(entry => entry.startsWith('@anthropic-ai+sdk@')))
   if (name !== 'llm-openai')
     assert.ok(!store.some(entry => entry.startsWith('openai@')))
-  if (name === 'shared') {
+  if (!isModel) {
     assert.ok(!store.some(entry => entry.startsWith('zod@')))
-    assert.ok(!store.some(entry => entry.startsWith('p-queue@')))
     assert.ok(!store.some(entry => entry.startsWith('@elmino+llm@')))
+  }
+  assert.ok(!store.some(entry => entry.startsWith('p-queue@')))
+  if (name !== 'store-sqlite') {
+    assert.ok(!store.some(entry => entry.startsWith('drizzle-orm@')))
+    assert.ok(!store.some(entry => entry.startsWith('dayjs@')))
   }
   if (isAdapter)
     assert.ok(store.some(entry => entry.startsWith(`${sdk.replace('/', '+')}@`)))
 
-  const fixture = name === 'shared'
-    ? `
+  const fixture = isStorage
+    ? name === 'store' ? blobFixture : sqliteFixture
+    : name === 'shared'
+      ? `
 import { deepEqual, isPlainRecord } from '@elmino/shared'
 import type { Promisable, UnknownRecord } from '@elmino/shared'
 const record: UnknownRecord = { nested: { value: 1 }, items: ['ok'] }
@@ -102,7 +187,7 @@ if (!deepEqual(resolved, { nested: { value: 1 }, items: ['ok'] }))
 if (deepEqual(resolved, { nested: { value: 2 }, items: ['ok'] }))
   throw new Error('对象差异无法判定')
 `
-    : `
+      : `
 import { extractText } from '@elmino/llm'
 import type { Message, Provider, Request } from '@elmino/llm'
 import { createToolCall } from '@elmino/llm/adapter'
@@ -164,6 +249,7 @@ ChatCompletionsProvider.create({ model: 'local', apiKeyRequired: false })`
     '--strict',
     '--skipLibCheck',
     'false',
+    ...(isStorage ? ['--types', 'node'] : []),
     'consumer.ts',
   ], { cwd: dir })
   await run(process.execPath, ['consumer.js'], { cwd: dir })
