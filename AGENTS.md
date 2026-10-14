@@ -25,7 +25,7 @@
 - `shared` 持有实际跨包复用的纯工具和通用类型，领域类型留在实际拥有该能力的包，不整包复制产品共用代码
 - `store` 持有 RuntimeStore、BlobStore、运行记录和持久化线程数据契约；本地 BlobStore 从 `/local` 引入，基础入口不加载 Node 实现
 - `store-sqlite` 持有 SqliteStore、Drizzle 仓储与运行数据库迁移，不持有产品 control.db、工作区目录装配或 UI 默认文案
-- 下一批 `engine` 持有 Agent 调度与执行生命周期，执行实体按 `Thread -> Turn -> Step -> ToolInvocation` 组织；单轮执行、工具与插件通过执行器接入
+- `engine` 持有 Agent 调度与执行生命周期，执行实体按 `Thread -> Turn -> Step -> ToolInvocation` 组织；`loop` 持有单轮执行，`agent` 装配工具、Hooks、Loop、Thread 和 Runtime，插件体系暂不迁入
 - 模型解析、持久化、运行环境与事件处理通过实际能力契约注入，避免内核依赖具体应用
 - 产品预设、品牌、账号、市场、遥测上报和 UI 不进入内核
 - 框架实现不反向依赖 qygent；迁移完成后由 qygent 消费框架包并删除旧实现
@@ -66,4 +66,5 @@
 - 测试通过参数注入临时目录，不修改 `HOME`
 - 删除、迁移和重命名目录前说明绝对路径与影响范围，再执行最小范围操作
 - 默认保持未提交，用户明确要求后才提交；提交主题使用 conventional commits 和中文描述
+- 提交通过 Husky 运行 lint-staged 与 commitlint；pre-commit 对已暂存 JS/TS 执行 ESLint 自动修复，不手工提前运行 `--fix`，不绕过 Hook
 - 不在未授权时创建远程、推送或改写已有提交

@@ -2,7 +2,7 @@
 
 elmino 是面向应用开发的可复用 Agent 框架，首阶段聚焦模型适配与 Agent 内核
 
-当前已落地通用工具、模型协议与适配器、可插拔存储契约和 SQLite 实现；Agent 引擎尚待迁入，qygent 暂时继续使用原实现
+当前已落地通用工具、模型适配、可插拔存储、线程事实、工具执行契约与运行环境；单轮执行与 Agent 引擎继续迁移，qygent 暂时使用原实现
 
 ## 首阶段边界
 
@@ -14,13 +14,18 @@ elmino 是面向应用开发的可复用 Agent 框架，首阶段聚焦模型适
 | `@elmino/llm-anthropic` | [packages/llm-anthropic](packages/llm-anthropic) | Anthropic SDK 及 Messages 和兼容服务差异 |
 | `@elmino/store` | [packages/store](packages/store) | RuntimeStore、BlobStore、运行记录与持久化线程数据契约；`/local` 提供 LocalBlobStore |
 | `@elmino/store-sqlite` | [packages/store-sqlite](packages/store-sqlite) | SqliteStore、数据库仓储、版本化迁移与事务生命周期 |
+| `@elmino/sandbox` | [packages/sandbox](packages/sandbox) | 文件、Shell、PTY 与执行权限的纯契约 |
+| `@elmino/sandbox-local` | [packages/sandbox-local](packages/sandbox-local) | 本机文件、进程、PTY、命令评审与资源释放 |
+| `@elmino/runtime` | [packages/runtime](packages/runtime) | 线程执行位置与 Runtime 生命周期；`/local` 通过注入 Sandbox 装配 |
+| `@elmino/tool` | [packages/tool](packages/tool) | 工具定义、参数校验、作用域、审批、HostServices 与子智能体控制契约 |
+| `@elmino/thread` | [packages/thread](packages/thread) | Canonical 上下文、恢复快照、消息投影、工具事实提交和运行事件 |
 | `@elmino/engine` | 待迁入 | Agent 调度、Thread 执行互斥、Turn 接纳与结算、中断恢复及资源释放；单轮执行器由宿主注入 |
 
 模型适配层独立于执行内核。模型适配器包依赖 `llm` 契约和各自 SDK，`llm` 与 `engine` 不依赖具体适配器包。执行内核通过宿主注入模型、存储、运行环境和事件处理能力
 
 产品身份、账号、模型目录管理、内置产品插件、HTTP 服务、客户端 SDK 与 UI 由应用或后续阶段承载
 
-只为实际能力创建包目录；`engine` 尚未创建，不用空实现占位
+只为实际能力创建包目录；本地沙箱实现单独安装，基础契约、Runtime 和工具包不引入 PTY、ripgrep 等本机依赖
 
 `shared` 提供对象判断、比较、字段提取、ID、JSON 与实际使用的通用类型，模型包和存储包通过公开入口复用。异步调度和 Node 工具随后续迁入模块的实际依赖继续提取；模型消息处理和 Provider 差异继续归模型包，产品配置和 UI 实现归应用
 
@@ -38,7 +43,7 @@ elmino 是面向应用开发的可复用 Agent 框架，首阶段聚焦模型适
 - 数据库存储独立交付，安装 `store` 不安装 Drizzle、dayjs 或模型 SDK；基础入口不引入本地文件实现
 - 已接入 Changesets，模型包与共享基础的 minor 变更记录在 `.changeset`；当前开发版本为 `0.0.0`，尚未发布到 npm
 
-`pnpm verify:packages` 为六个包生成 tarball，检查公开入口、类型声明、映射源码和依赖版本，再分别安装到仓库外临时目录，执行公共工具、类型检查、SDK 请求投影、文件内容读写、数据库建库、事务回滚、关闭重开和依赖隔离检查。尚未发布的内部依赖由消费项目的 pnpm overrides 指向同批 tarball，打包文件中的正常版本声明保持不变。临时目录保留供失败诊断，不读取用户模型配置，不调用真实模型服务
+`pnpm verify:packages` 为各能力包生成 tarball，检查公开入口、类型声明、映射源码和依赖版本，再分别安装到仓库外临时目录，执行公共工具、类型检查、SDK 请求投影、文件内容读写、数据库建库、事务回滚、关闭重开和依赖隔离检查。尚未发布的内部依赖由消费项目的 pnpm overrides 指向同批 tarball，打包文件中的正常版本声明保持不变。临时目录保留供失败诊断，不读取用户模型配置，不调用真实模型服务
 
 交付集成测试位于 [tests/packages/verify-packages.mjs](tests/packages/verify-packages.mjs)，由 `pnpm verify:packages` 单独执行。tarball 输出到 `dist/packs`，根项目不参与打包。qygent 的接入与旧实现删除作为后续独立批次执行
 
@@ -140,7 +145,7 @@ SQLite 原始版本化迁移包含在发布包的 `drizzle/runtime/migrations` �
 2. **P1 模型适配**：从 qygent 提取 `llm` 契约和独立 Provider 包，消除产品依赖，验证构建、打包、仓库外安装与类型消费
 3. **P2 共享基础**：按跨包实际消费迁入纯工具和通用类型，消除模型包中的重复实现，验证共享包独立消费
 4. **P3 引擎与持久化**：先明确 Thread、Turn、消息记录及设置的契约归属，再并行迁入运行事实存储、具体存储适配器和调度引擎。沿用 `RuntimeStore`、`BlobStore`、`SqliteStore`、`LocalBlobStore` 的现有名称，验证事务、重启、中断和恢复
-5. **P4 完整 Agent 执行**：保留现有单轮执行语义，按实际能力迁入 Loop、工具、插件与运行环境，验证审批、子智能体与完整 Agent 调用
+5. **P4 完整 Agent 执行**：保留现有单轮执行语义，按实际能力迁入 Loop、工具与运行环境，执行扩展由宿主直接注入，验证审批、子智能体与完整 Agent 调用
 
 持久化拆分区分运行记录、artifact 内容与工作区文件。数据库实现通过 `BlobStore` 注入内容存储，`LocalBlobStore` 通过文件能力注入本地读写；长期产品资产 `control.db` 和品牌目录装配留在 qygent。现有 Store 还消费产品协议中的线程消息与设置，迁入前先明确这些数据的领域所有权，避免把整个产品协议或临时占位类型带入框架
 
@@ -148,4 +153,4 @@ SQLite 原始版本化迁移包含在发布包的 `drizzle/runtime/migrations` �
 
 每个批次完成后分别验证；qygent 在对应能力可独立消费后切换依赖并删除旧实现
 
-开发约定见 [AGENTS.md](AGENTS.md)
+开发命令与工程基建见 [开发指南](docs/contributing.md)，约定见 [AGENTS.md](AGENTS.md)

@@ -11,19 +11,30 @@
   },
   "scripts": {
     "lint": "eslint --cache .",
-    "build": "pnpm -r build",
-    "typecheck": "pnpm build && pnpm -r typecheck",
-    "test": "pnpm build && pnpm -r test",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "spellcheck": "cspell lint --config cspell.json --gitignore --no-progress '**/*.{cjs,js,json,jsonc,jsx,md,mjs,ts,tsx,yaml,yml}'",
     "changeset": "changeset",
     "version:packages": "changeset version",
     "pack:packages": "pnpm --filter '@elmino/*' -r pack --pack-destination ./dist/packs",
-    "verify:packages": "pnpm pack:packages && node tests/packages/verify-packages.mjs"
+    "verify:packages": "pnpm pack:packages && node tests/packages/verify-packages.mjs",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "@commitlint/cli": "catalog:",
+    "@commitlint/config-conventional": "catalog:",
     "@changesets/cli": "catalog:",
     "@types/node": "catalog:",
     "@violetflux/eslint-config-harness": "catalog:",
+    "cspell": "catalog:",
     "eslint": "catalog:",
+    "husky": "catalog:",
+    "lint-staged": "catalog:",
+    "turbo": "catalog:",
     "typescript": "catalog:"
+  },
+  "lint-staged": {
+    "*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}": "eslint --cache --fix"
   }
 }

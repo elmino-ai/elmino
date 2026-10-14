@@ -1,0 +1,61 @@
+name: Checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Node 24 / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+          cache: true
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Check pull request commit messages
+        if: github.event_name == 'pull_request'
+        env:
+          COMMIT_BASE: ${{ github.event.pull_request.base.sha }}
+          COMMIT_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: pnpm exec commitlint --from "$COMMIT_BASE" --to "$COMMIT_HEAD"
+      - name: Build packages
+        run: pnpm build
+      - name: Check types
+        run: pnpm typecheck
+      - name: Test packages
+        run: pnpm test
+      - name: Check source
+        run: pnpm lint
+      - name: Check spelling
+        run: pnpm spellcheck
+      - name: Check SQLite migrations
+        run: pnpm --filter @elmino/store-sqlite db:check
+      - name: Verify npm package delivery
+        run: pnpm verify:packages
