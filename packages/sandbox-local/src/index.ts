@@ -13,6 +13,6 @@ export type {
   LocalPtySubscription,
 } from './pty/host.js'
 export { LocalSandboxReviewer } from './review/reviewer.js'
-export { LocalSandbox } from './sandbox.js'
-export type { LocalSandboxOptions } from './sandbox.js'
+export { LocalSandbox } from './sandbox/sandbox.js'
+export type { LocalSandboxOptions } from './sandbox/sandbox.js'
 export { LocalSandboxShell } from './shell/shell.js'
