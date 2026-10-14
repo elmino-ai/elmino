@@ -20,6 +20,13 @@ for (const entry of await readdir(path.join(root, 'packages'), { withFileTypes: 
   if (!manifest.private)
     manifests.set(entry.name, manifest)
 }
+const publicPackages = new Set([...manifests.values()].map(manifest => manifest.name))
+for (const manifest of manifests.values()) {
+  for (const [dependency, version] of Object.entries(manifest.dependencies ?? {})) {
+    if (version.startsWith('workspace:'))
+      assert.ok(publicPackages.has(dependency), `${manifest.name} 依赖了公开能力包之外的工作区: ${dependency}`)
+  }
+}
 const requested = process.argv.slice(2).flatMap(value => value.split(','))
 const packageNames = requested.length
   ? [...new Set(requested.map(name => name.replace(/^@elmino\//u, '')))]
@@ -74,7 +81,6 @@ for (const name of packedNames) {
   }
   for (const [dependency, version] of Object.entries(manifest.dependencies ?? {})) {
     assert.ok(!/^(?:workspace:|catalog:|file:|link:)/u.test(version), `${dependency}: ${version}`)
-    assert.ok(!dependency.startsWith('@qygent/'), dependency)
   }
   if (name === 'loop' || name === 'engine') {
     const prompts = [...files].filter(file => file.startsWith('package/dist/prompts/template/') && file.endsWith('.md'))
@@ -116,7 +122,6 @@ const nodeTypes = JSON.parse(await readFile(path.join(root, 'node_modules/@types
 async function assertInstalledClosure(dir, name, closure) {
   const allowed = new Set([...closure].flatMap(item => Object.keys(packedManifests.get(item).dependencies ?? {})))
   const installed = await readdir(path.join(dir, 'node_modules/.pnpm'))
-  assert.ok(!installed.some(entry => entry.startsWith('@qygent+')))
   for (const dependency of isolatedDependencies) {
     const prefix = `${dependency.replace('/', '+')}@`
     assert.equal(installed.some(entry => entry.startsWith(prefix)), allowed.has(dependency), `${name}: ${dependency}`)

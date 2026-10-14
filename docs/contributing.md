@@ -87,13 +87,13 @@ pnpm verify:packages
 
 `verify:packages` 先在 `dist/packs` 生成各能力包的 tarball，再由 [交付集成测试](../tests/packages/verify-packages.mjs) 检查入口、类型、资源、映射源码与依赖版本，并安装到仓库外临时目录验证公开 API 和安装边界
 
-尚未发布的同批内部依赖通过验收项目的 pnpm overrides 指向对应 tarball；发布内容本身必须保存正常版本声明，不能依赖 workspace 协议、仓库路径或 qygent 源码。验收临时目录保留供诊断，测试不读取用户模型配置、不调用真实模型服务
+尚未发布的同批内部依赖通过验收项目的 pnpm overrides 指向对应 tarball；发布内容本身必须保存正常版本声明，不能依赖 workspace 协议、仓库路径或宿主应用源码。验收临时目录保留供诊断，测试不读取用户模型配置、不调用真实模型服务
 
 发布 npm 需要独立授权。CI 执行交付验证，不上传或发布包
 
 ## 持续集成
 
-旧 qygent 仓库没有 GitHub Actions 工作流；[CI 工作流](../.github/workflows/ci.yml) 是针对独立框架新增的验收入口
+[CI 工作流](../.github/workflows/ci.yml) 是 elmino 的独立框架验收入口
 
 工作流在 push、pull request 和手动触发时运行，在 Ubuntu 与 macOS 上使用相同的 Node.js 24、pnpm 11 和冻结锁文件，覆盖构建、类型、包级测试、ESLint、拼写、SQLite 迁移及仓库外安装验收。pull request 额外检查提交信息
 

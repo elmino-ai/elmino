@@ -220,7 +220,6 @@
     "PYTHONPATH",
     "PYTHONUNBUFFERED",
     "qwen",
-    "qygent",
     "raku",
     "rcfile",
     "rcmdcheck",
