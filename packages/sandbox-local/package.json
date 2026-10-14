@@ -1,0 +1,45 @@
+{
+  "name": "@elmino/sandbox-local",
+  "type": "module",
+  "version": "0.0.0",
+  "description": "本地文件、Shell、PTY与审批预检实现",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=24.18.1"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "prepack": "pnpm build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@elmino/sandbox": "workspace:^",
+    "@elmino/shared": "workspace:^",
+    "@lydell/node-pty": "catalog:",
+    "@vscode/ripgrep": "catalog:",
+    "cross-spawn": "catalog:",
+    "shell-quote": "catalog:",
+    "trash": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "@types/cross-spawn": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

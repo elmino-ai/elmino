@@ -1,0 +1,44 @@
+{
+  "name": "@elmino/thread",
+  "type": "module",
+  "version": "0.0.0",
+  "description": "线程恢复快照、Canonical上下文与工具执行事实提交",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=24.18.1"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "prepack": "pnpm build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@elmino/llm": "workspace:^",
+    "@elmino/runtime": "workspace:^",
+    "@elmino/shared": "workspace:^",
+    "@elmino/store": "workspace:^",
+    "dayjs": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "@elmino/store-sqlite": "workspace:^"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
