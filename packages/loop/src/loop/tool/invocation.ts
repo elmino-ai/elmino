@@ -101,6 +101,7 @@ export async function executeInvocation(
   let saved = ''
   let savedAt = 0
   let progressQueue = Promise.resolve()
+  let acceptingProgress = true
   let output = ''
   let content: ToolResultContent | undefined
   let status: ToolRuntimeStatus = 'completed'
@@ -154,6 +155,9 @@ export async function executeInvocation(
       status: 'running',
     })
 
+    // started 事件等待宿主期间也可能取消，之后不能再启动工具副作用
+    throwIfAborted(signal)
+
     const reviewInput = handler?.review?.(call.args)
     const grants = reviewInput
       ? toolContext.sandbox.reviewer.approval(reviewInput).grants ?? []
@@ -166,7 +170,7 @@ export async function executeInvocation(
       sandbox: executionSandbox,
       toolCallId: ownership.id,
       onToolProgress: (outputDelta) => {
-        if (!outputDelta)
+        if (!outputDelta || !acceptingProgress)
           return
 
         // stdout 和 stderr 可以并发到达；串行队列固定累计文本、偏移和事件顺序
@@ -193,16 +197,34 @@ export async function executeInvocation(
           })
         })
 
+        // 调用方可不等待回调；队列立即接管拒绝，结尾仍从原 Promise 读取失败
+        progressQueue.catch(() => undefined)
         return progressQueue
       },
     }
-    const result = await runHandler({
+    const execution = await runHandler({
       call,
       handlers,
       toolContext: executionContext,
-    })
+    }).then(
+      result => ({ fulfilled: true, result } as const),
+      (error: unknown) => ({ fulfilled: false, error } as const),
+    )
 
-    await progressQueue
+    // 处理器退出后只等待已接纳的进度，任何终态写入都不能被迟到输出越过
+    acceptingProgress = false
+    try {
+      await progressQueue
+    }
+    catch (error) {
+      // 进度失败不能覆盖已抛出的主异常或处理器正规化后的失败结果
+      if (execution.fulfilled && execution.result.status === 'completed')
+        throw error
+    }
+    if (!execution.fulfilled)
+      throw execution.error
+
+    const result = execution.result
     output = result.output
     content = result.content
     status = result.status
