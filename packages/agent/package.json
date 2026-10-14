@@ -1,0 +1,44 @@
+{
+  "name": "@elmino/agent",
+  "type": "module",
+  "version": "0.0.0",
+  "description": "Agent 工具、执行扩展与默认运行装配",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=24.18.1"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "prepack": "pnpm build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@elmino/llm": "workspace:^",
+    "@elmino/loop": "workspace:^",
+    "@elmino/runtime": "workspace:^",
+    "@elmino/shared": "workspace:^",
+    "@elmino/thread": "workspace:^",
+    "@elmino/tool": "workspace:^"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
