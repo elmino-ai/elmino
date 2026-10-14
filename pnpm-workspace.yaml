@@ -1,0 +1,17 @@
+packages:
+  - packages/*
+
+engineStrict: true
+strictPeerDependencies: true
+strictDepBuilds: true
+verifyDepsBeforeRun: error
+nodeVersion: 24.18.1
+
+minimumReleaseAgeExclude:
+  - '@violetflux/eslint-config-harness@0.1.12'
+
+catalog:
+  '@types/node': 24.13.3
+  '@violetflux/eslint-config-harness': 0.1.12
+  eslint: 10.8.0
+  typescript: 6.0.3

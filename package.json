@@ -1,0 +1,21 @@
+{
+  "name": "elmino",
+  "version": "0.0.0",
+  "description": "可复用的 Agent 开发框架",
+  "type": "module",
+  "private": true,
+  "packageManager": "pnpm@11.18.0",
+  "engines": {
+    "node": ">=24.18.1 <25",
+    "pnpm": "11.18.0"
+  },
+  "scripts": {
+    "lint": "eslint --cache ."
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@violetflux/eslint-config-harness": "catalog:",
+    "eslint": "catalog:",
+    "typescript": "catalog:"
+  }
+}
