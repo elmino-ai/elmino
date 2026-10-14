@@ -1,1 +1,1 @@
-export { AnthropicMessagesProvider } from './provider.js'
+export { AnthropicMessagesProvider } from './provider'

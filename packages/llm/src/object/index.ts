@@ -1,2 +1,2 @@
-export { ObjectParseError, parseObject } from './parse.js'
-export type { ObjectResult } from './parse.js'
+export { ObjectParseError, parseObject } from './parse'
+export type { ObjectResult } from './parse'

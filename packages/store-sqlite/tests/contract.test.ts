@@ -9,8 +9,8 @@ import { SqliteStore } from '@elmino/store-sqlite'
 import { LocalBlobStore } from '@elmino/store/local'
 import { NodeSQLiteSession } from 'drizzle-orm/node-sqlite/session'
 import { expect, test, vi } from 'vitest'
-import { testFiles } from './support/files.js'
-import { testSubagentRole, testSubagentRoles } from './support/subagent.js'
+import { testFiles } from './support/files'
+import { testSubagentRole, testSubagentRoles } from './support/subagent'
 
 /** -------------------- 常量 -------------------- */
 /** 测试路径稳定前缀 */

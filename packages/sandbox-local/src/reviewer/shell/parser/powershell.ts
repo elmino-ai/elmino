@@ -1,7 +1,7 @@
-import type { ShellCommandAssessment, ShellReviewContext } from '../policy/types.js'
-import type { ShellReviewer } from './types.js'
-import { assessShellCommand, isPermittedShellAssessment } from '../policy/index.js'
-import { dangerous, splitCommandSegments, splitShellWords, unknown } from './shared.js'
+import type { ShellCommandAssessment, ShellReviewContext } from '../policy/types'
+import type { ShellReviewer } from './types'
+import { assessShellCommand, isPermittedShellAssessment } from '../policy/index'
+import { dangerous, splitCommandSegments, splitShellWords, unknown } from './shared'
 
 /** -------------------- 核心类 -------------------- */
 /**

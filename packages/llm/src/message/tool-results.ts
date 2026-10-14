@@ -1,5 +1,5 @@
-import type { Message, ToolResultContent, ToolResultPart } from './types.js'
-import { toolCalls } from './content.js'
+import type { Message, ToolResultContent, ToolResultPart } from './types'
+import { toolCalls } from './content'
 
 /** -------------------- Provider 工具结果 -------------------- */
 /**

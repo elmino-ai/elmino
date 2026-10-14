@@ -1,1 +1,1 @@
-export { ResponsesProvider } from './provider.js'
+export { ResponsesProvider } from './provider'

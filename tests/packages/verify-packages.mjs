@@ -165,7 +165,7 @@ for (const name of packageNames) {
   const overrides = [...archives].map(([item, archive]) =>
     `  '@elmino/${item}': ${JSON.stringify(`file:${archive}`)}\n`,
   ).join('')
-  await writeFile(path.join(dir, 'pnpm-workspace.yaml'), `overrides:\n${overrides}`)
+  await writeFile(path.join(dir, 'pnpm-workspace.yaml'), `hoist: false\noverrides:\n${overrides}`)
   console.log(`验证 @elmino/${name}：${dir}`)
   if (extraPackages.length) {
     assert.ok(!productionClosure.has('store-sqlite'), `${name} 正式依赖绑定了数据库实现`)

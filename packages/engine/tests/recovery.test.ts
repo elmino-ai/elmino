@@ -1,6 +1,6 @@
 import type { AgentEngine } from '@elmino/engine'
 import type { RuntimeStore, RuntimeStoreTx, ThreadMessage } from '@elmino/store'
-import type { TestTurnContext } from './support/engine.js'
+import type { TestTurnContext } from './support/engine'
 import { ContextProjection } from '@elmino/loop'
 import { createId, delay } from '@elmino/shared'
 import { appendCanonicalMessage, hydrateThreadMessages } from '@elmino/thread'
@@ -20,7 +20,7 @@ import {
   turnModel,
   turnRequest,
   waitForChildTurns,
-} from './support/engine.js'
+} from './support/engine'
 
 /** -------------------- 测试 -------------------- */
 test('Repeated recovery preserves five Child Turns already accepted by the same Engine', async () => {

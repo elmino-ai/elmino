@@ -1,12 +1,12 @@
 import type { ToolCallPart, ToolResultContent, ToolResultPart } from '@elmino/llm'
 import type { RuntimeToolCallStatus as ToolRuntimeStatus } from '@elmino/store'
 import type { ToolExecutionContext } from '@elmino/tool'
-import type { ToolInvocation } from './types.js'
+import type { ToolInvocation } from './types'
 import { createToolResultPart } from '@elmino/llm'
 import { commitToolState } from '@elmino/thread'
 import dayjs from 'dayjs'
-import { applyApproval, decisionOutput } from '../../approval/index.js'
-import { runHandler, throwIfAborted } from './handler.js'
+import { applyApproval, decisionOutput } from '../../approval/index'
+import { runHandler, throwIfAborted } from './handler'
 
 /** -------------------- 类型 -------------------- */
 /** 单个工具调用状态更新 */

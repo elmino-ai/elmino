@@ -1,8 +1,8 @@
 import type { UnknownRecord } from '@elmino/shared'
-import type { DefinedTool, DefinedTools, ToolDefinition, ToolExecutionContext, ToolResult } from '../types/types.js'
+import type { DefinedTool, DefinedTools, ToolDefinition, ToolExecutionContext, ToolResult } from '../types/types'
 import { objectEntries, objectValues } from '@elmino/shared'
 import * as z from 'zod'
-import { formatToolArgsIssues } from './format.js'
+import { formatToolArgsIssues } from './format'
 
 /** -------------------- 类型 -------------------- */
 /** 批量定义工具时的源定义映射 */

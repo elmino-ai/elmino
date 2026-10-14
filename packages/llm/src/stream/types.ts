@@ -1,6 +1,6 @@
 import type { Promisable } from '@elmino/shared'
-import type { Part } from '../message/index.js'
-import type { Usage } from '../usage/index.js'
+import type { Part } from '../message/index'
+import type { Usage } from '../usage/index'
 
 /** -------------------- 类型 -------------------- */
 /** 可见文本或推理增量；Adapter 不得为 context-only reasoning 发布增量 */

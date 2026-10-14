@@ -1,5 +1,5 @@
 import type { UnknownRecord } from '@elmino/shared'
-import type { FinishReason, Message, Part, ToolCallPart } from '../message/index.js'
+import type { FinishReason, Message, Part, ToolCallPart } from '../message/index'
 import { isPlainRecord } from '@elmino/shared'
 
 /** -------------------- 核心函数 -------------------- */

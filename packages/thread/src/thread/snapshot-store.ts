@@ -8,12 +8,12 @@ import type {
   ThreadStatus,
   ThreadTokenUsage,
 } from '@elmino/store'
-import type { ThreadInterrupt } from '../runtime/interrupt.js'
-import type { CreateThreadSnapshotRecordInput, ThreadSnapshotRecord, ThreadSnapshotUpdate } from './types.js'
+import type { ThreadInterrupt } from '../runtime/interrupt'
+import type { CreateThreadSnapshotRecordInput, ThreadSnapshotRecord, ThreadSnapshotUpdate } from './types'
 import { objectEntries, objectPick } from '@elmino/shared'
 import { createTokenUsage, mergeTokenUsage } from '@elmino/store'
 import dayjs from 'dayjs'
-import { createThreadSnapshotRecord } from './snapshot.js'
+import { createThreadSnapshotRecord } from './snapshot'
 
 /** -------------------- 类型 -------------------- */
 /** threads.state_json 唯一允许保存的可恢复上下文 */

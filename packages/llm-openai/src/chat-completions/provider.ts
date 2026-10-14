@@ -20,16 +20,16 @@ import type {
   ChatCompletionMessageParam,
 } from 'openai/resources/chat/completions/completions'
 import type { CompletionUsage } from 'openai/resources/completions'
-import type { ProviderReuseStrategy } from '../policy/reuse.js'
-import type { ChatCompletionsProfile } from './profile.js'
+import type { ProviderReuseStrategy } from '../policy/reuse'
+import type { ChatCompletionsProfile } from './profile'
 import { parseObject } from '@elmino/llm'
 import { createAssistantMessage, createToolCall, createToolCallStart, rawRecord, tokenCount } from '@elmino/llm/adapter'
 import { resolveProviderAuth } from '@elmino/llm/provider'
 import { isPlainRecord } from '@elmino/shared'
 import OpenAI from 'openai'
 import { z } from 'zod'
-import { resolveReuse } from '../policy/reuse.js'
-import { resolveChatProfile } from './profile.js'
+import { resolveReuse } from '../policy/reuse'
+import { resolveChatProfile } from './profile'
 
 /** -------------------- 类型 -------------------- */
 /** OpenAI Chat Completions 适配器配置 */

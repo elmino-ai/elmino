@@ -10,4 +10,4 @@ export type {
   ToolInterruptResult,
   ToolProjectionResult,
   ToolResumeResult,
-} from './types.js'
+} from './types'

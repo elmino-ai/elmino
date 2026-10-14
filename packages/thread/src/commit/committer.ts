@@ -1,4 +1,4 @@
-import type { RuntimeStore } from '@elmino/store'
+import type { RuntimeStore, RuntimeThreadRecord } from '@elmino/store'
 import type {
   CheckpointInput,
   CompactionInput,
@@ -6,9 +6,9 @@ import type {
   PartialCommitInput,
   StepCommitInput,
   TurnRef,
-} from './types.js'
-import { persistCompaction } from './compaction.js'
-import { checkpointStep, persistPartial, persistStep } from './step.js'
+} from './types'
+import { persistCompaction } from './compaction'
+import { checkpointStep, persistPartial, persistStep } from './step'
 
 /** -------------------- 类型 -------------------- */
 /** Turn 绑定后的持久提交方法入参 */
@@ -38,7 +38,7 @@ export class ThreadCommitter {
   /**
    * 初始化运行期线程元信息
    */
-  public initialize(input: BoundInput<InitializeInput>) {
+  public initialize(input: BoundInput<InitializeInput>): Promise<RuntimeThreadRecord> {
     return this._store.threads.upsert({
       id: this._ref.threadId,
       autoTitle: input.autoTitle,

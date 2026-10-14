@@ -1,5 +1,5 @@
 import type { Sandbox } from '@elmino/sandbox'
-import type { Runtime, RuntimeCreateContext, RuntimeDefinition, ThreadLocation } from '../definition/types.js'
+import type { Runtime, RuntimeCreateContext, RuntimeDefinition, ThreadLocation } from '../definition/types'
 
 /** 本地 Runtime 装配参数 */
 export interface LocalRuntimeOptions {

@@ -1,4 +1,4 @@
-import type { ThreadMessage } from '../thread/message.js'
+import type { ThreadMessage } from '../thread/message'
 
 /** -------------------- 类型 -------------------- */
 /** 持久化 transcript 消息投影仓储 */

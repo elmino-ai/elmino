@@ -1,7 +1,7 @@
 import type { ToolCallPart } from '@elmino/llm'
 import type { RuntimeToolCallRecord, RuntimeToolDecision as ToolRuntimeDecision } from '@elmino/store'
 import type { ToolApprovalDecision } from '@elmino/tool'
-import type { ActiveTurn } from '../turn/active.js'
+import type { ActiveTurn } from '../turn/active'
 
 /** -------------------- 类型 -------------------- */
 /** 单次工具调用的完整执行事实 */

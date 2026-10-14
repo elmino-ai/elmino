@@ -1,4 +1,4 @@
-import type { ShellCommandAssessment, ShellCommandPolicy, ShellReviewContext } from './types.js'
+import type { ShellCommandAssessment, ShellCommandPolicy, ShellReviewContext } from './types'
 import { lstatSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 

@@ -1,12 +1,12 @@
 import type { RuntimeStoreTx, RuntimeThreadSpawnEdgeRecord, RuntimeTurnSpawnEdgeRecord } from '@elmino/store'
-import type { RuntimeDrizzleDatabase } from '../types/index.js'
+import type { RuntimeDrizzleDatabase } from '../types/index'
 import { createTokenUsage } from '@elmino/store'
 import dayjs from 'dayjs'
 import { and, asc, desc, eq, gt, notExists, or } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/sqlite-core'
-import { threadFromRow, turnFromRow } from '../codec/index.js'
-import { readTurnUsage } from '../query/index.js'
-import * as schema from '../schema/index.js'
+import { threadFromRow, turnFromRow } from '../codec/index'
+import { readTurnUsage } from '../query/index'
+import * as schema from '../schema/index'
 
 /** -------------------- 核心函数 -------------------- */
 /**

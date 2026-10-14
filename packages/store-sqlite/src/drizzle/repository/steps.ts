@@ -1,9 +1,9 @@
 import type { RuntimeStepRecord, RuntimeStepRepository } from '@elmino/store'
-import type { RuntimeDrizzleDatabase } from '../types/index.js'
+import type { RuntimeDrizzleDatabase } from '../types/index'
 import { createId } from '@elmino/shared'
 import dayjs from 'dayjs'
 import { and, asc, eq } from 'drizzle-orm'
-import * as schema from '../schema/index.js'
+import * as schema from '../schema/index'
 
 /** -------------------- 核心函数 -------------------- */
 /**

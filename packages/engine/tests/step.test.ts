@@ -10,9 +10,9 @@ import { createId, delay } from '@elmino/shared'
 import { SqliteStore } from '@elmino/store-sqlite'
 import { LocalBlobStore } from '@elmino/store/local'
 import { expect, test } from 'vitest'
-import { createTrackedTurnModel } from '../src/engine/step.js'
-import { getBuiltinSubagentRoles } from '../src/subagent/roles.js'
-import { testFiles } from './support/files.js'
+import { createTrackedTurnModel } from '../src/engine/step'
+import { getBuiltinSubagentRoles } from '../src/subagent/roles'
+import { testFiles } from './support/files'
 
 const testSubagentRoles = getBuiltinSubagentRoles()
 const testSubagentRole = testSubagentRoles[0]!

@@ -3,4 +3,4 @@ export {
   CONTEXT_COMPACTION_SUMMARY_PROMPT,
   CONTINUATION_PROMPT,
   EMPTY_RESPONSE_REMINDER_PROMPT,
-} from './templates.js'
+} from './templates'

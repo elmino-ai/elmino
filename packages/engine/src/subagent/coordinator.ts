@@ -12,10 +12,10 @@ import type {
   SubagentWaitInput,
   SubagentWaitResult,
 } from '@elmino/tool'
-import type { TurnControlRegistry } from '../engine/control.js'
-import type { TurnExecutor } from '../engine/execution.js'
-import type { JobQueue } from '../job/index.js'
-import type { PreparedTurn, TurnHandle, TurnRequest } from '../turn/types.js'
+import type { TurnControlRegistry } from '../engine/control'
+import type { TurnExecutor } from '../engine/execution'
+import type { JobQueue } from '../job/index'
+import type { PreparedTurn, TurnHandle, TurnRequest } from '../turn/types'
 import { extractText } from '@elmino/llm'
 import { createId } from '@elmino/shared'
 import {

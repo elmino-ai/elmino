@@ -14,9 +14,9 @@ import { LocalBlobStore } from '@elmino/store/local'
 import { defineThread, readThreadSnapshot } from '@elmino/thread'
 import { defineTools } from '@elmino/tool'
 import { onTestFinished } from 'vitest'
-import { testFiles } from './files.js'
-import { createMockSandbox } from './sandbox.js'
-import { testSubagentRole } from './subagent.js'
+import { testFiles } from './files'
+import { createMockSandbox } from './sandbox'
+import { testSubagentRole } from './subagent'
 
 /** 独立 Loop 验收的真实运行依赖 */
 export interface HarnessOptions {

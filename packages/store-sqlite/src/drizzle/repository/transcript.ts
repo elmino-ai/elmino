@@ -1,10 +1,10 @@
 import type { RuntimeTranscriptRepository, ThreadMessage } from '@elmino/store'
-import type { RuntimeDrizzleDatabase } from '../types/index.js'
+import type { RuntimeDrizzleDatabase } from '../types/index'
 import { Buffer } from 'node:buffer'
 import { jsonParse } from '@elmino/shared'
 import { and, asc, eq, inArray } from 'drizzle-orm'
-import { nextSeq } from '../query/index.js'
-import * as schema from '../schema/index.js'
+import { nextSeq } from '../query/index'
+import * as schema from '../schema/index'
 
 /** -------------------- 核心函数 -------------------- */
 /**

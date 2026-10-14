@@ -1,7 +1,7 @@
 import type { ToolCallPart } from '@elmino/llm'
 import type { Sandbox } from '@elmino/sandbox'
 import type { DefinedTool } from '@elmino/tool'
-import type { PendingCall } from './types.js'
+import type { PendingCall } from './types'
 
 /** -------------------- 核心函数 -------------------- */
 /**

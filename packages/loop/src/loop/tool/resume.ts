@@ -1,9 +1,9 @@
-import type { ActiveTurn } from '../turn/active.js'
-import type { TurnResumeInput } from '../types/index.js'
+import type { ActiveTurn } from '../turn/active'
+import type { TurnResumeInput } from '../types/index'
 import { createToolResultPart, pendingToolCalls } from '@elmino/llm'
 import { updateToolPart } from '@elmino/thread'
 import { readToolApprovalPayload, readToolApprovalResponse } from '@elmino/tool'
-import { executeBatch } from './batch.js'
+import { executeBatch } from './batch'
 
 /** -------------------- 类型 -------------------- */
 /** Loop 恢复工具批次处理结果 */

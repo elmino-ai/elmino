@@ -1,1 +1,1 @@
-export { ChatCompletionsProvider } from './provider.js'
+export { ChatCompletionsProvider } from './provider'

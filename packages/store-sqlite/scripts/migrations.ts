@@ -4,7 +4,7 @@ import { createRequire } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import config from '../drizzle/runtime/config/drizzle.js'
+import config from '../drizzle/runtime/config/drizzle'
 
 /** -------------------- 常量 -------------------- */
 /** SQLite 包的开发目录，检查与生成均不连接用户数据库 */

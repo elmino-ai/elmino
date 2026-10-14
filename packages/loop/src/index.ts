@@ -1,10 +1,6 @@
 /** -------------------- 模块出口 -------------------- */
-export { ContextProjection } from './context-projection/index.js'
-export type {
-  ContextProcessor,
-  ContextProjectionOptions,
-  ContextProjectionRequest,
-} from './context-projection/index.js'
+export { ContextProjection } from './context-projection/index'
+export type { ContextProcessor, ContextProjectionOptions, ContextProjectionRequest } from './context-projection/index'
 export type {
   ExecutionEventMap,
   ExecutionHooks,
@@ -17,9 +13,9 @@ export type {
   ToolInterruptResult,
   ToolProjectionResult,
   ToolResumeResult,
-} from './hooks/index.js'
-export { resolveLoopInteraction } from './interaction/index.js'
-export { defineLoop } from './loop/define/index.js'
+} from './hooks/index'
+export { resolveLoopInteraction } from './interaction/index'
+export { defineLoop } from './loop/define/index'
 export type {
   Loop,
   LoopInvoker,
@@ -33,5 +29,5 @@ export type {
   TurnRuntimeEventHandler,
   TurnServices,
   TurnSteering,
-} from './loop/define/index.js'
-export { estimateTokens } from './token/index.js'
+} from './loop/define/index'
+export { estimateTokens } from './token/index'

@@ -5,7 +5,7 @@ import { DatabaseSync } from 'node:sqlite'
 import { sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/node-sqlite'
 import { expect, test } from 'vitest'
-import { migrateRuntimeStore } from '../src/drizzle/index.js'
+import { migrateRuntimeStore } from '../src/drizzle/index'
 
 /** -------------------- 常量 -------------------- */
 /** RuntimeStore 迁移后的全部业务表 */

@@ -1,1 +1,1 @@
-export { estimateTokens, truncateToEstimatedTokens } from './estimate.js'
+export { estimateTokens, truncateToEstimatedTokens } from './estimate'

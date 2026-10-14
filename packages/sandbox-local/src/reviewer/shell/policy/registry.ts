@@ -1,8 +1,8 @@
-import type { ShellCommandAssessment, ShellCommandPolicy, ShellReviewContext } from './types.js'
-import { createAgentCliPolicies } from './agent.js'
-import { createSubcommandPolicy } from './fixed.js'
-import { createPlatformPolicies } from './platform.js'
-import { createResearchPolicies } from './research.js'
+import type { ShellCommandAssessment, ShellCommandPolicy, ShellReviewContext } from './types'
+import { createAgentCliPolicies } from './agent'
+import { createSubcommandPolicy } from './fixed'
+import { createPlatformPolicies } from './platform'
+import { createResearchPolicies } from './research'
 import {
   assessArduino,
   assessCast,
@@ -24,7 +24,7 @@ import {
   assessWorkspaceOutputTool,
   createInterpreterPolicies,
   isTrustedScriptFile,
-} from './specialized.js'
+} from './specialized'
 
 /** -------------------- 常量 -------------------- */
 /** 明确修改系统、仓库或进程状态的命令 */

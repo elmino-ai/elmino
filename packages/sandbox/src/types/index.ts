@@ -16,16 +16,16 @@ export type {
   SandboxRemoveResult,
   SandboxWriteOptions,
   SandboxWriteResult,
-} from './file.js'
-export type { SandboxInternet, SandboxInternetReviewInput } from './internet.js'
+} from './file'
+export type { SandboxInternet, SandboxInternetReviewInput } from './internet'
 export type {
   SandboxApprovalReview,
   SandboxReviewer,
   SandboxReviewInput,
   SandboxScope,
   SandboxScopeReview,
-} from './reviewer.js'
-export type { Sandbox, SandboxEnv } from './sandbox.js'
+} from './reviewer'
+export type { Sandbox, SandboxEnv } from './sandbox'
 export type {
   SandboxRunOptions,
   SandboxShell,
@@ -34,4 +34,4 @@ export type {
   SandboxShellReviewInput,
   SandboxShellStatus,
   SandboxShellWriteOptions,
-} from './shell.js'
+} from './shell'

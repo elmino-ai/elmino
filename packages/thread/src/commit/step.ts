@@ -1,20 +1,20 @@
 import type { UnknownRecord } from '@elmino/shared'
 import type { RuntimeStore, RuntimeStoreTx, ThreadMessage, ThreadPart, ThreadPartStatus } from '@elmino/store'
-import type { ThreadToolPart } from '../thread/types.js'
-import type { CheckpointInput, MessageRef, PartialCommitInput, StepCommitInput } from './types.js'
+import type { ThreadToolPart } from '../thread/types'
+import type { CheckpointInput, MessageRef, PartialCommitInput, StepCommitInput } from './types'
 import { createToolResultPart } from '@elmino/llm'
 import { createId, isPlainRecord } from '@elmino/shared'
 import dayjs from 'dayjs'
-import { appendCanonicalMessage } from '../context/canonical.js'
-import { projectThreadPart, projectTranscriptMessages } from '../thread/message-transform.js'
-import { updateThreadSnapshotTx } from '../thread/snapshot-store.js'
-import { settleTurnToolsTx } from '../tool/state.js'
+import { appendCanonicalMessage } from '../context/canonical'
+import { projectThreadPart, projectTranscriptMessages } from '../thread/message-transform'
+import { updateThreadSnapshotTx } from '../thread/snapshot-store'
+import { settleTurnToolsTx } from '../tool/state'
 
 /** -------------------- Provider Step 持久提交 -------------------- */
 /**
  * 建立或更新运行中正文与 reasoning 检查点但不修改 Provider Context
  */
-export function checkpointStep(store: RuntimeStore, input: CheckpointInput) {
+export function checkpointStep(store: RuntimeStore, input: CheckpointInput): Promise<ThreadPart> {
   return store.transaction(async (tx) => {
     const message = await readTranscript(tx, input)
     const updatedAt = dayjs().toISOString()
@@ -69,7 +69,7 @@ export async function settleTurnOutputTx(
 /**
  * 原子提交完整 Provider Message、UI transcript、下一轮 Context 与工具归属
  */
-export async function persistStep(store: RuntimeStore, input: StepCommitInput) {
+export async function persistStep(store: RuntimeStore, input: StepCommitInput): Promise<ThreadMessage> {
   const executeTools = input.toolFailure === undefined
   const projections = new Map<string, {
     /** 当前工具是否由宿主接管消息投影 */

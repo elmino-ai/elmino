@@ -1,4 +1,4 @@
-import type { ShellCommandAssessment, ShellCommandCategory, ShellCommandPolicy, ShellReviewContext } from './types.js'
+import type { ShellCommandAssessment, ShellCommandCategory, ShellCommandPolicy, ShellReviewContext } from './types'
 
 /** -------------------- 常量 -------------------- */
 /** 常见帮助和版本查询参数 */

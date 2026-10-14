@@ -1,5 +1,5 @@
 import type { JsonValue } from 'type-fest'
-import { isPlainRecord, objectValues } from '../object/index.js'
+import { isPlainRecord, objectValues } from '../object/index'
 
 /** -------------------- 核心函数 -------------------- */
 /**

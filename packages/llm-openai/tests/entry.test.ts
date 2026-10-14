@@ -9,7 +9,7 @@ import {
   openAIResponse,
   qwenResponse,
   request,
-} from './support/provider.js'
+} from './support/provider'
 
 describe('OpenAI 独立包公共入口', () => {
   test.each([ChatCompletionsProvider, ResponsesProvider])(

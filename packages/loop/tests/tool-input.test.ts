@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { readPartialToolArgs } from '../src/loop/step/tool-input.js'
+import { readPartialToolArgs } from '../src/loop/step/tool-input'
 
 /** -------------------- 测试 -------------------- */
 describe('流式工具参数草稿', () => {

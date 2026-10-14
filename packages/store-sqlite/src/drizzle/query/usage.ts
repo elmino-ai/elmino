@@ -1,8 +1,8 @@
 import type { ThreadTokenUsage } from '@elmino/store'
-import type { RuntimeDrizzleDatabase } from '../types/index.js'
+import type { RuntimeDrizzleDatabase } from '../types/index'
 import { createTokenUsage } from '@elmino/store'
 import { inArray, sql } from 'drizzle-orm'
-import * as schema from '../schema/index.js'
+import * as schema from '../schema/index'
 
 /** -------------------- 常量 -------------------- */
 /** 按 Step 限制子项上限后汇总，供 Turn 和线程共享同一用量口径 */

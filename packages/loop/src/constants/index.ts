@@ -1,5 +1,5 @@
 /** -------------------- 模块出口 -------------------- */
-export { AUTO_APPROVAL_SCHEMA } from './approval.js'
+export { AUTO_APPROVAL_SCHEMA } from './approval'
 export {
   BASE_DELAY_MS,
   DEFAULT_MAX_TOKENS,
@@ -9,4 +9,4 @@ export {
   MAX_EMPTY_RESPONSE_RETRIES,
   MAX_TRANSIENT_RETRIES,
   PROMPT_TOO_LONG_PATTERN,
-} from './recovery.js'
+} from './recovery'

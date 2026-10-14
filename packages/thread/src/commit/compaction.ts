@@ -1,5 +1,5 @@
 import type { RuntimeStore, ThreadMessage } from '@elmino/store'
-import type { CompactionInput, TurnRef } from './types.js'
+import type { CompactionInput, TurnRef } from './types'
 import { createId } from '@elmino/shared'
 
 /** -------------------- 核心函数 -------------------- */

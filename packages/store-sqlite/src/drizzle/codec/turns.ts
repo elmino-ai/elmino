@@ -1,6 +1,6 @@
 import type { RuntimeTurnRecord, SubagentRole, ThreadTokenUsage } from '@elmino/store'
-import type * as schema from '../schema/index.js'
-import { readJson, readJsonObject } from './json.js'
+import type * as schema from '../schema/index'
+import { readJson, readJsonObject } from './json'
 
 /** -------------------- 核心函数 -------------------- */
 /**

@@ -1,2 +1,2 @@
-export { ChatCompletionsProvider } from './chat-completions/index.js'
-export { ResponsesProvider } from './responses/index.js'
+export { ChatCompletionsProvider } from './chat-completions/index'
+export { ResponsesProvider } from './responses/index'

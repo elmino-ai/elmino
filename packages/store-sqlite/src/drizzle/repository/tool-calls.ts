@@ -1,9 +1,9 @@
 import type { RuntimeToolCallRecord, RuntimeToolCallRepository, UpdateRuntimeToolCallInput } from '@elmino/store'
-import type { RuntimeDrizzleDatabase } from '../types/index.js'
+import type { RuntimeDrizzleDatabase } from '../types/index'
 import { createId } from '@elmino/shared'
 import { asc, eq } from 'drizzle-orm'
-import { readJsonObject } from '../codec/index.js'
-import * as schema from '../schema/index.js'
+import { readJsonObject } from '../codec/index'
+import * as schema from '../schema/index'
 
 /** -------------------- 核心函数 -------------------- */
 /**

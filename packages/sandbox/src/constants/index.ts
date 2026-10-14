@@ -8,4 +8,4 @@ export {
   SANDBOX_READ_MAX_BYTES,
   SANDBOX_READ_MAX_LINE_LENGTH,
   SANDBOX_READ_MAX_LINES,
-} from './values.js'
+} from './values'

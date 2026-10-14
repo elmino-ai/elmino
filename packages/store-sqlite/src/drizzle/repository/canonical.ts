@@ -5,14 +5,14 @@ import type {
   RuntimeCanonicalPartRecord,
   RuntimeCanonicalRepository,
 } from '@elmino/store'
-import type { RuntimeDrizzleDatabase } from '../types/index.js'
+import type { RuntimeDrizzleDatabase } from '../types/index'
 import { Buffer } from 'node:buffer'
 import { createId } from '@elmino/shared'
 import dayjs from 'dayjs'
 import { and, asc, eq, gt, inArray, lte, sql } from 'drizzle-orm'
-import { readJsonObject } from '../codec/index.js'
-import { nextSeq } from '../query/index.js'
-import * as schema from '../schema/index.js'
+import { readJsonObject } from '../codec/index'
+import { nextSeq } from '../query/index'
+import * as schema from '../schema/index'
 
 /** -------------------- 类型与常量 -------------------- */
 /** readContext 单页最大 JSON 字符数 */

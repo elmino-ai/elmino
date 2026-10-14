@@ -1,4 +1,4 @@
-import type { ShellCommandAssessment, ShellCommandPolicy, ShellReviewContext } from './types.js'
+import type { ShellCommandAssessment, ShellCommandPolicy, ShellReviewContext } from './types'
 import { objectEntries } from '@elmino/shared'
 
 /** -------------------- 类型 -------------------- */

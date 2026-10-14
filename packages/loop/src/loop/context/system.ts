@@ -1,5 +1,5 @@
 import type { TextPart } from '@elmino/llm'
-import type { PromptContextSection } from '../../hooks/index.js'
+import type { PromptContextSection } from '../../hooks/index'
 
 /** -------------------- 下一请求 Context 投影 -------------------- */
 /**

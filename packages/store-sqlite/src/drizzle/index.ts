@@ -1,5 +1,5 @@
 /** -------------------- 模块出口 -------------------- */
-export { migrateRuntimeStore } from './migration/index.js'
-export { createDrizzleRuntimeStore } from './root/index.js'
-export { runtimeRelations } from './schema/index.js'
-export type { DrizzleRuntimeStoreOptions, RuntimeDrizzleDatabase } from './types/index.js'
+export { migrateRuntimeStore } from './migration/index'
+export { createDrizzleRuntimeStore } from './root/index'
+export { runtimeRelations } from './schema/index'
+export type { DrizzleRuntimeStoreOptions, RuntimeDrizzleDatabase } from './types/index'

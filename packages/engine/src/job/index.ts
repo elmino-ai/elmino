@@ -1,2 +1,2 @@
-export { JobQueue } from './queue.js'
-export type { JobStatus } from './queue.js'
+export { JobQueue } from './queue'
+export type { JobStatus } from './queue'

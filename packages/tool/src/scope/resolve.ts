@@ -1,4 +1,4 @@
-import type { DefinedTool, ToolExecutionContext, ToolScopeReview } from '../types/types.js'
+import type { DefinedTool, ToolExecutionContext, ToolScopeReview } from '../types/types'
 
 /** -------------------- 核心函数 -------------------- */
 /**

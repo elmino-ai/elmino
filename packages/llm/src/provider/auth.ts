@@ -1,4 +1,4 @@
-import type { CachePolicy } from '../cache/index.js'
+import type { CachePolicy } from '../cache/index'
 
 /** 模型接口的显式认证方式 */
 export type ProviderAuth = {

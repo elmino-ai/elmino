@@ -6,7 +6,7 @@ import { createId } from '@elmino/shared'
 import { createRuntimeEvent } from '@elmino/thread'
 import dayjs from 'dayjs'
 import { expect, onTestFinished, test, vi } from 'vitest'
-import { TurnControlRegistry } from '../src/engine/control.js'
+import { TurnControlRegistry } from '../src/engine/control'
 
 import {
   completedTurnResult,
@@ -18,9 +18,9 @@ import {
   posixTest,
   testId,
   turnRequest,
-} from './support/engine.js'
-import { waitForProcessExit } from './support/process.js'
-import { createTestSandbox } from './support/sandbox.js'
+} from './support/engine'
+import { waitForProcessExit } from './support/process'
+import { createTestSandbox } from './support/sandbox'
 
 /** -------------------- 测试 -------------------- */
 test('Steering submitted before the final Step closes keeps its synchronous acceptance', async () => {

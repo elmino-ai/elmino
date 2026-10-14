@@ -1,7 +1,7 @@
 import type { z } from 'zod'
-import type { Message } from '../message/index.js'
-import type { Result } from '../request/index.js'
-import { extractText } from '../message/index.js'
+import type { Message } from '../message/index'
+import type { Result } from '../request/index'
+import { extractText } from '../message/index'
 
 /** -------------------- 类型 -------------------- */
 /** 结构化对象生成结果 */

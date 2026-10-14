@@ -1,4 +1,4 @@
-import type { ThreadInputContent } from './types.js'
+import type { ThreadInputContent } from './types'
 
 /** -------------------- 核心函数 -------------------- */
 /**

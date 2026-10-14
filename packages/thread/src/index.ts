@@ -1,6 +1,6 @@
 /** -------------------- 模块出口 -------------------- */
-export { ThreadCommitter } from './commit/committer.js'
-export { settleTurnOutputTx } from './commit/step.js'
+export { ThreadCommitter } from './commit/committer'
+export { settleTurnOutputTx } from './commit/step'
 export type {
   CheckpointInput,
   CompactionInput,
@@ -9,16 +9,16 @@ export type {
   PartialCommitInput,
   StepCommitInput,
   TurnRef,
-} from './commit/types.js'
+} from './commit/types'
 export {
   appendCanonicalMessage,
   appendCanonicalMessages,
   canonicalRecordToMessage,
   canonicalToolResultToText,
-} from './context/canonical.js'
-export type { AppendCanonicalMessageInput } from './context/canonical.js'
-export { readThreadMentionReference } from './input/mention.js'
-export { readThreadInputText, sortThreadInputContent } from './input/text.js'
+} from './context/canonical'
+export type { AppendCanonicalMessageInput } from './context/canonical'
+export { readThreadMentionReference } from './input/mention'
+export { readThreadInputText, sortThreadInputContent } from './input/text'
 export type {
   ResumeTurnInput,
   ThreadInputContent,
@@ -26,33 +26,34 @@ export type {
   ThreadInputImageContent,
   ThreadInputMentionContent,
   ThreadInputTextContent,
-} from './input/types.js'
-export type { ThreadContextBudget, ThreadContextBudgetEstimation, ThreadUsagePayload } from './runtime/budget.js'
+} from './input/types'
+export type { ThreadContextBudget, ThreadContextBudgetEstimation, ThreadUsagePayload } from './runtime/budget'
 export type {
   RuntimeMessagePartDelta,
   RuntimeMessagePartDeltaPayload,
   RuntimeTextPartDelta,
   RuntimeToolOutputPartDelta,
-} from './runtime/delta.js'
+} from './runtime/delta'
 export {
   applyRuntimeToolOutputDelta,
   readRuntimeEventPartDeltaPayload,
   readRuntimeEventPartPayload,
-} from './runtime/delta.js'
-export type { CreateRuntimeEventInput, RuntimeEvent, RuntimeEventType } from './runtime/event.js'
-export { createRuntimeEvent, RUNTIME_EVENT_TYPES, TERMINAL_TURN_EVENT_TYPES } from './runtime/event.js'
+} from './runtime/delta'
+export type { CreateRuntimeEventInput, RuntimeEvent, RuntimeEventType } from './runtime/event'
+export { createRuntimeEvent, RUNTIME_EVENT_TYPES, TERMINAL_TURN_EVENT_TYPES } from './runtime/event'
 export type {
   ThreadInteractionInterrupt,
   ThreadInterrupt,
   ThreadInterruptKind,
   ThreadInterruptResumeAction,
   ThreadInterruptStatus,
-} from './runtime/interrupt.js'
-export { readThreadInteraction, readThreadInterrupt } from './runtime/interrupt.js'
-export type { ThreadRuntimeState } from './runtime/state.js'
-export { hydrateThreadMessages } from './thread/hydrate.js'
-export { runtimeRecordsToThreadListItem } from './thread/list.js'
-export { defineThread } from './thread/projection.js'
+} from './runtime/interrupt'
+export { readThreadInteraction, readThreadInterrupt } from './runtime/interrupt'
+export type { ThreadRuntimeState } from './runtime/state'
+export { hydrateThreadMessages } from './thread/hydrate'
+export { runtimeRecordsToThreadListItem } from './thread/list'
+export { defineThread } from './thread/projection'
+export { createThreadSnapshotRecord } from './thread/snapshot'
 export {
   readThreadSnapshot,
   removeThreadSnapshot,
@@ -62,9 +63,8 @@ export {
   updateThreadExtensionStateTx,
   updateThreadSnapshot,
   writeThreadSnapshot,
-} from './thread/snapshot-store.js'
-export { createThreadSnapshotRecord } from './thread/snapshot.js'
-export type { ThreadChildState, ThreadListItem, ThreadState, ThreadTurnState } from './thread/state.js'
+} from './thread/snapshot-store'
+export type { ThreadChildState, ThreadListItem, ThreadState, ThreadTurnState } from './thread/state'
 export type {
   ContextProjectionState,
   CreateThreadSnapshotRecordInput,
@@ -77,8 +77,8 @@ export type {
   ThreadStateInput,
   ThreadToolPart,
   ThreadToolPartProjector,
-} from './thread/types.js'
-export { readAffectedThreadUsages, readThreadUsage } from './thread/usage.js'
-export { commitToolState, projectLiveToolPart, updateToolPart } from './tool/index.js'
-export type { LiveToolPartInput } from './tool/projection.js'
-export type { CommitToolStateInput, RuntimeEmitter } from './tool/state.js'
+} from './thread/types'
+export { readAffectedThreadUsages, readThreadUsage } from './thread/usage'
+export { commitToolState, projectLiveToolPart, updateToolPart } from './tool/index'
+export type { LiveToolPartInput } from './tool/projection'
+export type { CommitToolStateInput, RuntimeEmitter } from './tool/state'

@@ -1,7 +1,7 @@
-export type { Fetch, FetchInit, FetchInput } from './fetch/types.js'
-export { createId } from './id/create.js'
-export { jsonParse } from './json/parse.js'
-export { isJsonValue } from './json/value.js'
+export type { Fetch, FetchInit, FetchInput } from './fetch/types'
+export { createId } from './id/create'
+export { jsonParse } from './json/parse'
+export { isJsonValue } from './json/value'
 export {
   deepEqual,
   deepMerge,
@@ -12,14 +12,14 @@ export {
   objectOmit,
   objectPick,
   objectValues,
-} from './object/index.js'
-export type { DeepMerge } from './object/index.js'
-export { delay } from './promise/delay.js'
-export { KeyedMutex } from './promise/keyed-mutex.js'
-export { throwSettledErrors } from './promise/settled.js'
-export { createPromptTemplate } from './prompt/template.js'
-export type { PromptTemplate, PromptTemplateVariable, PromptTemplateVariables } from './prompt/template.js'
-export { isOneOf } from './value/value.js'
+} from './object/index'
+export type { DeepMerge } from './object/index'
+export { delay } from './promise/delay'
+export { KeyedMutex } from './promise/keyed-mutex'
+export { throwSettledErrors } from './promise/settled'
+export { createPromptTemplate } from './prompt/template'
+export type { PromptTemplate, PromptTemplateVariable, PromptTemplateVariables } from './prompt/template'
+export { isOneOf } from './value/value'
 export type {
   Arrayable,
   Except,

@@ -1,4 +1,4 @@
-export { readToolApprovalPayload, readToolApprovalResponse } from './approval/approval.js'
+export { readToolApprovalPayload, readToolApprovalResponse } from './approval/approval'
 export type {
   ApprovalMode,
   ToolApprovalActionRequest,
@@ -9,15 +9,15 @@ export type {
   ToolApprovalReviewConfig,
   ToolRuntimeDecision,
   ToolRuntimeStatus,
-} from './approval/approval.js'
-export { defineTool, defineTools, formatToolArgsIssues, mergeTools } from './define/index.js'
-export type { ToolArgsIssue } from './define/index.js'
-export { resolveToolScope } from './scope/resolve.js'
-export { auxQueueHostService } from './services/job.js'
-export type { AuxiliaryQueue } from './services/job.js'
-export { createHostServices, defineHostService, provideHostService } from './services/services.js'
-export type { HostService, HostServiceBinding, HostServices } from './services/services.js'
-export { subagentHostService } from './services/subagent.js'
+} from './approval/approval'
+export { defineTool, defineTools, formatToolArgsIssues, mergeTools } from './define/index'
+export type { ToolArgsIssue } from './define/index'
+export { resolveToolScope } from './scope/resolve'
+export { auxQueueHostService } from './services/job'
+export type { AuxiliaryQueue } from './services/job'
+export { createHostServices, defineHostService, provideHostService } from './services/services'
+export type { HostService, HostServiceBinding, HostServices } from './services/services'
+export { subagentHostService } from './services/subagent'
 export type {
   DefinedTool,
   DefinedTools,
@@ -37,4 +37,4 @@ export type {
   ToolScope,
   ToolScopeResolver,
   ToolScopeReview,
-} from './types/types.js'
+} from './types/types'

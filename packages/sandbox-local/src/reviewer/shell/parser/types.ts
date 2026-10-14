@@ -1,4 +1,4 @@
-import type { ShellCommandAssessment, ShellReviewContext } from '../policy/types.js'
+import type { ShellCommandAssessment, ShellReviewContext } from '../policy/types'
 
 /** -------------------- 类型 -------------------- */
 /** Shell 语法解析与命令事实评审器 */

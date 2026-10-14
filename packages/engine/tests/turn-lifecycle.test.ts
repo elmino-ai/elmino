@@ -2,7 +2,7 @@ import type { TurnContext } from '@elmino/loop'
 import type { RuntimeCreateContext } from '@elmino/runtime'
 import type { RuntimeStore, SubagentRole } from '@elmino/store'
 import type { RuntimeEvent, ThreadInterrupt } from '@elmino/thread'
-import type { TestTurnContext } from './support/engine.js'
+import type { TestTurnContext } from './support/engine'
 import { JobQueue } from '@elmino/engine/job'
 import { createId } from '@elmino/shared'
 import { createRuntimeEvent, hydrateThreadMessages } from '@elmino/thread'
@@ -23,8 +23,8 @@ import {
   testSubagentRoles,
   turnModel,
   turnRequest,
-} from './support/engine.js'
-import { createTestSandbox } from './support/sandbox.js'
+} from './support/engine'
+import { createTestSandbox } from './support/sandbox'
 
 /** -------------------- 测试 -------------------- */
 test('AgentEngine accepts the same TurnRequest outside HTTP', async () => {

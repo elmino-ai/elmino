@@ -1,8 +1,8 @@
 import type { UnknownRecord } from '@elmino/shared'
-import type { PaginationResult } from '../pagination/types.js'
-import type { ThreadListSummary, ThreadSearchHit } from '../thread/search.js'
-import type { ThreadSettings } from '../thread/settings.js'
-import type { ThreadStatus } from './state.js'
+import type { PaginationResult } from '../pagination/types'
+import type { ThreadListSummary, ThreadSearchHit } from '../thread/search'
+import type { ThreadSettings } from '../thread/settings'
+import type { ThreadStatus } from './state'
 
 /** -------------------- 类型 -------------------- */
 /** 线程删除生命周期 */

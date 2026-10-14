@@ -20,7 +20,7 @@
     "node": ">=24.18.1"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsdown --config ../../tsdown.config.mjs",
     "typecheck": "tsc -p tsconfig.json",
     "prepack": "pnpm build"
   },
@@ -28,6 +28,7 @@
     "@elmino/shared": "workspace:^"
   },
   "devDependencies": {
+    "tsdown": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },

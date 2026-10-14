@@ -7,8 +7,8 @@ import { SqliteStore } from '@elmino/store-sqlite'
 import { LocalBlobStore } from '@elmino/store/local'
 import { NodeSQLiteSession } from 'drizzle-orm/node-sqlite/session'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
-import { testFiles } from './support/files.js'
-import { testSubagentRole, testSubagentRoles } from './support/subagent.js'
+import { testFiles } from './support/files'
+import { testSubagentRole, testSubagentRoles } from './support/subagent'
 
 /** -------------------- 测试状态 -------------------- */
 let root = ''

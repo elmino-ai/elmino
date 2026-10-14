@@ -1,6 +1,6 @@
 import type { BlobStore } from '@elmino/store'
 import type { NodeSQLiteDatabase } from 'drizzle-orm/node-sqlite'
-import type { runtimeRelations } from '../schema/index.js'
+import type { runtimeRelations } from '../schema/index'
 
 /** -------------------- 类型 -------------------- */
 /** Drizzle RuntimeStore 初始化参数 */

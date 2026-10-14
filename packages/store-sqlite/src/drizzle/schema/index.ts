@@ -1,5 +1,5 @@
 /** -------------------- 模块出口 -------------------- */
-export { runtimeRelations } from './relations.js'
+export { runtimeRelations } from './relations'
 export {
   artifacts,
   canonicalMessages,
@@ -11,4 +11,4 @@ export {
   transcriptMessages,
   turns,
   turnSpawnEdges,
-} from './tables.js'
+} from './tables'

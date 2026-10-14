@@ -1,14 +1,14 @@
 import type { Message } from '@elmino/llm'
-import type { SampleInput } from './types.js'
+import type { SampleInput } from './types'
 import { toolCalls as readToolCalls } from '@elmino/llm'
-import { createContextBudget } from '../../budget/index.js'
+import { createContextBudget } from '../../budget/index'
 import {
   CONTINUATION_PROMPT,
   EMPTY_RESPONSE_REMINDER_PROMPT,
   isPromptTooLongError,
   MAX_CONTINUATION_RETRIES,
   MAX_EMPTY_RESPONSE_RETRIES,
-} from '../../recovery/index.js'
+} from '../../recovery/index'
 
 /** -------------------- Step 生命周期决策 -------------------- */
 /**

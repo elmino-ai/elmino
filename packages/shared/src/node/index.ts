@@ -1,2 +1,2 @@
-export { isPathWithin, normalizePathForDisplay } from './path.js'
-export { readPromptTemplate } from './prompt.js'
+export { isPathWithin, normalizePathForDisplay } from './path'
+export { readPromptTemplate } from './prompt'

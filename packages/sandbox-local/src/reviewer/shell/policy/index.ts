@@ -1,4 +1,4 @@
-export { assessShellCommand } from './assessment.js'
-export { isPermittedShellAssessment, projectApproval, projectScope } from './projection.js'
-export { SHELL_COMMAND_POLICIES } from './registry.js'
-export type { ShellCommandAssessment, ShellCommandCategory, ShellCommandPolicy, ShellReviewContext } from './types.js'
+export { assessShellCommand } from './assessment'
+export { isPermittedShellAssessment, projectApproval, projectScope } from './projection'
+export { SHELL_COMMAND_POLICIES } from './registry'
+export type { ShellCommandAssessment, ShellCommandCategory, ShellCommandPolicy, ShellReviewContext } from './types'

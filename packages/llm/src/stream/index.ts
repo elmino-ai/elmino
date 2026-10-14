@@ -1,1 +1,1 @@
-export type { Event, EventHandler, PartDelta } from './types.js'
+export type { Event, EventHandler, PartDelta } from './types'

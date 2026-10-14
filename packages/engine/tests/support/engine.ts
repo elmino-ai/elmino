@@ -19,8 +19,8 @@ import { LocalBlobStore } from '@elmino/store/local'
 import { auxQueueHostService, createHostServices, subagentHostService } from '@elmino/tool'
 import dayjs from 'dayjs'
 import { test } from 'vitest'
-import { testFiles } from './files.js'
-import { createTestSandbox } from './sandbox.js'
+import { testFiles } from './files'
+import { createTestSandbox } from './sandbox'
 
 /** -------------------- 类型 -------------------- */
 /** 自定义 Loop 接收 Engine 真正注入的控制服务 */

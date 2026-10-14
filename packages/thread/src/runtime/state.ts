@@ -1,6 +1,6 @@
 import type { ApprovalMode, ThreadStatus, ThreadTokenUsage } from '@elmino/store'
-import type { ThreadContextBudget } from './budget.js'
-import type { ThreadInterrupt } from './interrupt.js'
+import type { ThreadContextBudget } from './budget'
+import type { ThreadInterrupt } from './interrupt'
 
 /** -------------------- 类型 -------------------- */
 /** 从持久化执行事实投影的线程运行状态 */

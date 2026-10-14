@@ -4,7 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { LocalSandboxShell } from '@elmino/sandbox-local'
 import { expect, test } from 'vitest'
-import { createTestSandbox as createSandboxWithEnv, TEST_ENV } from './support/sandbox.js'
+import { createTestSandbox as createSandboxWithEnv, TEST_ENV } from './support/sandbox'
 
 /** -------------------- 常量 -------------------- */
 /** 仅在 @lydell/node-pty 提供预构建包的平台运行 PTY 测试 */

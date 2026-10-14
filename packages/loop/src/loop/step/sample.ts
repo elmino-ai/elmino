@@ -1,8 +1,8 @@
 import type { Request } from '@elmino/llm'
-import type { SampleInput } from './types.js'
+import type { SampleInput } from './types'
 import { extractReasoning, extractText } from '@elmino/llm'
-import { DEFAULT_MAX_TOKENS, ESCALATED_MAX_TOKENS } from '../../recovery/index.js'
-import { createLiveView } from './live.js'
+import { DEFAULT_MAX_TOKENS, ESCALATED_MAX_TOKENS } from '../../recovery/index'
+import { createLiveView } from './live'
 
 /** -------------------- Provider Step 采样 -------------------- */
 /**

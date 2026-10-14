@@ -1,9 +1,9 @@
 import type { Event, ToolCallPart } from '@elmino/llm'
 import type { ThreadPart } from '@elmino/store'
-import type { SampleInput } from './types.js'
+import type { SampleInput } from './types'
 import { projectLiveToolPart } from '@elmino/thread'
 import dayjs from 'dayjs'
-import { readPartialToolArgs } from './tool-input.js'
+import { readPartialToolArgs } from './tool-input'
 
 /** -------------------- 类型 -------------------- */
 /** 临时 UI Part 的稳定范围 */

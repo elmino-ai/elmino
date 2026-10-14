@@ -1,7 +1,7 @@
 import os from 'node:os'
 import { LocalPtyHost } from '@elmino/sandbox-local'
 import { expect, test, vi } from 'vitest'
-import { TEST_ENV } from './support/sandbox.js'
+import { TEST_ENV } from './support/sandbox'
 
 /** -------------------- 测试 -------------------- */
 test('LocalPtyHost 统一管理输入、尺寸、游标重放与退出', async () => {

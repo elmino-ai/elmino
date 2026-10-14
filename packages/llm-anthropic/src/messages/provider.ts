@@ -14,13 +14,13 @@ import type {
   Usage,
 } from '@elmino/llm'
 import type { ProviderAuth, ProviderOptions } from '@elmino/llm/provider'
-import type { ProviderReuseStrategy } from '../policy/reuse.js'
+import type { ProviderReuseStrategy } from '../policy/reuse'
 import AnthropicClient from '@anthropic-ai/sdk'
 import { EMPTY_USAGE, mergeUsage, parseObject } from '@elmino/llm'
 import { createAssistantMessage, createToolCall, createToolCallStart, rawRecord, tokenCount } from '@elmino/llm/adapter'
 import { resolveProviderAuth } from '@elmino/llm/provider'
 import { z } from 'zod'
-import { resolveReuse } from '../policy/reuse.js'
+import { resolveReuse } from '../policy/reuse'
 
 /** -------------------- 类型 -------------------- */
 /** Anthropic 适配器配置 */

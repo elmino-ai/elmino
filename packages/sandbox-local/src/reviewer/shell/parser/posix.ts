@@ -1,9 +1,9 @@
 import type { ParseEntry } from 'shell-quote'
-import type { ShellCommandAssessment, ShellReviewContext } from '../policy/types.js'
-import type { ShellReviewer } from './types.js'
+import type { ShellCommandAssessment, ShellReviewContext } from '../policy/types'
+import type { ShellReviewer } from './types'
 import { parse } from 'shell-quote'
-import { assessShellCommand, isPermittedShellAssessment } from '../policy/index.js'
-import { dangerous, unknown } from './shared.js'
+import { assessShellCommand, isPermittedShellAssessment } from '../policy/index'
+import { dangerous, unknown } from './shared'
 
 /** -------------------- 核心类 -------------------- */
 /**

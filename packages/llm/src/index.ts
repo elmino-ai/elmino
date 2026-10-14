@@ -1,5 +1,5 @@
 /** -------------------- 模块出口 -------------------- */
-export type { CacheBreakpoint, CacheCapability, CacheControl, CacheMode, CachePolicy } from './cache/index.js'
+export type { CacheBreakpoint, CacheCapability, CacheControl, CacheMode, CachePolicy } from './cache/index'
 export {
   attachToolResults,
   createToolResultPart,
@@ -7,7 +7,7 @@ export {
   extractText,
   pendingToolCalls,
   toolCalls,
-} from './message/index.js'
+} from './message/index'
 export type {
   DocumentPart,
   FinishReason,
@@ -20,9 +20,9 @@ export type {
   ToolCallPart,
   ToolResultContent,
   ToolResultPart,
-} from './message/index.js'
-export { ObjectParseError, parseObject } from './object/index.js'
-export type { ObjectResult } from './object/index.js'
+} from './message/index'
+export { ObjectParseError, parseObject } from './object/index'
+export type { ObjectResult } from './object/index'
 export type {
   CountTokensRequest,
   ModelTurnConfig,
@@ -30,8 +30,8 @@ export type {
   Provider,
   ProviderCapabilities,
   TurnModel,
-} from './provider/index.js'
-export type { Request, ResponseFormat, Result, Tool } from './request/index.js'
-export type { Event, EventHandler, PartDelta } from './stream/index.js'
-export { addUsage, EMPTY_USAGE, mergeUsage } from './usage/index.js'
-export type { Usage } from './usage/index.js'
+} from './provider/index'
+export type { Request, ResponseFormat, Result, Tool } from './request/index'
+export type { Event, EventHandler, PartDelta } from './stream/index'
+export { addUsage, EMPTY_USAGE, mergeUsage } from './usage/index'
+export type { Usage } from './usage/index'

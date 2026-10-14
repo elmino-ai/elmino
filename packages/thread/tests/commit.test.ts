@@ -7,7 +7,7 @@ import {
   ThreadCommitter,
 } from '@elmino/thread'
 import { expect, test } from 'vitest'
-import { createThreadStore } from './support/store.js'
+import { createThreadStore } from './support/store'
 
 test('完整 sampling 保留 Provider 事实与工具关联，显示输出不污染恢复后的模型结果', async () => {
   const { store, threadId, turnId } = await createThreadStore()

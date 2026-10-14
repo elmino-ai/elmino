@@ -1,4 +1,4 @@
-import { defineHostService } from './services.js'
+import { defineHostService } from './services'
 
 /** 宿主提供的辅助模型任务调度能力 */
 export interface AuxiliaryQueue {

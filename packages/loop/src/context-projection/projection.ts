@@ -8,12 +8,12 @@ import type {
   RuntimeToolCallRecord,
 } from '@elmino/store'
 import type { ContextProjectionState } from '@elmino/thread'
-import type { PromptMessage } from '../hooks/index.js'
+import type { PromptMessage } from '../hooks/index'
 import { extractText } from '@elmino/llm'
 import { canonicalRecordToMessage } from '@elmino/thread'
-import { CONTEXT_COMPACTION_SUMMARY_PROMPT } from '../prompts/constants/index.js'
-import { DEFAULT_MAX_TOKENS, ESCALATED_MAX_TOKENS, isPromptTooLongError } from '../recovery/index.js'
-import { estimateTokens } from '../token/index.js'
+import { CONTEXT_COMPACTION_SUMMARY_PROMPT } from '../prompts/constants/index'
+import { DEFAULT_MAX_TOKENS, ESCALATED_MAX_TOKENS, isPromptTooLongError } from '../recovery/index'
+import { estimateTokens } from '../token/index'
 
 /** -------------------- 类型 -------------------- */
 /** 仅转换模型上下文消息，不写回原始历史 */

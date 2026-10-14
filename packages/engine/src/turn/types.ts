@@ -5,8 +5,8 @@ import type { ThreadLocation } from '@elmino/runtime'
 import type { SubagentMode, SubagentRole, ThreadTurnStatus } from '@elmino/store'
 import type { ResumeTurnInput } from '@elmino/thread'
 import type { ApprovalMode, DefinedTools } from '@elmino/tool'
-import type { TurnControl } from '../engine/control.js'
-import type { TurnInputPart } from './input.js'
+import type { TurnControl } from '../engine/control'
+import type { TurnInputPart } from './input'
 /** -------------------- 类型 -------------------- */
 /** HTTP、子智能体和未来定时调度器统一提交的 Turn 请求 */
 export interface TurnRequest<Input = TurnInputPart[] | (() => Promise<TurnInputPart[]>)> {

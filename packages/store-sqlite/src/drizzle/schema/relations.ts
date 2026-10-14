@@ -1,5 +1,5 @@
 import { defineRelations } from 'drizzle-orm'
-import * as schema from './tables.js'
+import * as schema from './tables'
 
 /** -------------------- 表关系 -------------------- */
 /** 按现有外键描述双向关系，查询只在显式 with 时加载关联，聚合和复杂分页仍按需使用 SQL */

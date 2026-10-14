@@ -11,7 +11,7 @@ import type {
 } from '@elmino/sandbox'
 import type * as NodeChildProcess from 'node:child_process'
 import type { Dirent } from 'node:fs'
-import type { LocalSandboxPermissions } from './permissions.js'
+import type { LocalSandboxPermissions } from './permissions'
 import { Buffer } from 'node:buffer'
 import { createHash } from 'node:crypto'
 import { existsSync, lstatSync, readdirSync, statSync } from 'node:fs'

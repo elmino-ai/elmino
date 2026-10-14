@@ -1,4 +1,4 @@
-import type { ShellCommandAssessment } from '../policy/types.js'
+import type { ShellCommandAssessment } from '../policy/types'
 
 /** -------------------- 工具函数 -------------------- */
 /**

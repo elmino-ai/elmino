@@ -1,6 +1,6 @@
-import type { SandboxFileReviewInput } from './file.js'
-import type { SandboxInternetReviewInput } from './internet.js'
-import type { SandboxShellReviewInput } from './shell.js'
+import type { SandboxFileReviewInput } from './file'
+import type { SandboxInternetReviewInput } from './internet'
+import type { SandboxShellReviewInput } from './shell'
 
 /** -------------------- 类型 -------------------- */
 /** 沙箱审批预检结果 */

@@ -1,5 +1,5 @@
 import type { UnknownRecord } from '@elmino/shared'
-import type { ThreadPart } from './parts.js'
+import type { ThreadPart } from './parts'
 
 /** -------------------- 类型 -------------------- */
 /** 持久化 transcript 消息角色，工具结果归所属 assistant 消息 */

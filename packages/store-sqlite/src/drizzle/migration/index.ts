@@ -1,2 +1,2 @@
 /** -------------------- 模块出口 -------------------- */
-export { migrateRuntimeStore } from './migrate.js'
+export { migrateRuntimeStore } from './migrate'

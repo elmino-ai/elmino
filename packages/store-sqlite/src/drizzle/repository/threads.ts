@@ -1,11 +1,11 @@
 import type { RuntimeThreadRepository } from '@elmino/store'
-import type { RuntimeDrizzleDatabase } from '../types/index.js'
+import type { RuntimeDrizzleDatabase } from '../types/index'
 import { objectPick } from '@elmino/shared'
 import { DEFAULT_THREAD_SETTINGS } from '@elmino/store'
 import dayjs from 'dayjs'
 import { and, asc, count, desc, eq, isNotNull, isNull, notExists, sql } from 'drizzle-orm'
-import { threadFromRow } from '../codec/index.js'
-import * as schema from '../schema/index.js'
+import { threadFromRow } from '../codec/index'
+import * as schema from '../schema/index'
 
 /** -------------------- 核心函数 -------------------- */
 /**

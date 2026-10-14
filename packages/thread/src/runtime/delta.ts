@@ -1,6 +1,6 @@
-import type { RuntimeEvent } from './event.js'
+import type { RuntimeEvent } from './event'
 import { isPlainRecord } from '@elmino/shared'
-import { ThreadPartSchema } from './part-schema.js'
+import { ThreadPartSchema } from './part-schema'
 
 /** -------------------- 类型 -------------------- */
 /** 新增 assistant 文本 */

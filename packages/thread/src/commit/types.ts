@@ -1,6 +1,6 @@
 import type { Message } from '@elmino/llm'
 import type { ThreadMessageStatus } from '@elmino/store'
-import type { ThreadSnapshotUpdate, ThreadToolPartProjector } from '../thread/types.js'
+import type { ThreadSnapshotUpdate, ThreadToolPartProjector } from '../thread/types'
 
 /** -------------------- 类型 -------------------- */
 /** Thread 持久提交所需 Turn 标识 */

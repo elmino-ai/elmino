@@ -1,4 +1,4 @@
-export { CmdReviewer } from './cmd.js'
-export { PosixShellReviewer } from './posix.js'
-export { PowershellReviewer } from './powershell.js'
-export type { ShellReviewer } from './types.js'
+export { CmdReviewer } from './cmd'
+export { PosixShellReviewer } from './posix'
+export { PowershellReviewer } from './powershell'
+export type { ShellReviewer } from './types'

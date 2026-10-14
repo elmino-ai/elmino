@@ -1,6 +1,6 @@
 import type { UnknownRecord } from '@elmino/shared'
-import type { ApprovalMode } from '../runtime/state.js'
-import type { SubagentMode } from '../runtime/subagent.js'
+import type { ApprovalMode } from '../runtime/state'
+import type { SubagentMode } from '../runtime/subagent'
 
 /** -------------------- 类型 -------------------- */
 /** 按插件稳定 ID 隔离的线程级设置 */

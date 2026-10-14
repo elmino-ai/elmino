@@ -1,4 +1,4 @@
-import { isPlainRecord } from './record.js'
+import { isPlainRecord } from './record'
 
 /** -------------------- 类型 -------------------- */
 /** 可深合并的普通对象 */

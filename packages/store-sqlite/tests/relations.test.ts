@@ -8,9 +8,9 @@ import { LocalBlobStore } from '@elmino/store/local'
 import { drizzle } from 'drizzle-orm/node-sqlite'
 import { NodeSQLiteSession } from 'drizzle-orm/node-sqlite/session'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
-import { runtimeRelations, transcriptMessages } from '../src/drizzle/schema/index.js'
-import { testFiles } from './support/files.js'
-import { testSubagentRole } from './support/subagent.js'
+import { runtimeRelations, transcriptMessages } from '../src/drizzle/schema/index'
+import { testFiles } from './support/files'
+import { testSubagentRole } from './support/subagent'
 
 /** -------------------- 测试状态 -------------------- */
 let root = ''

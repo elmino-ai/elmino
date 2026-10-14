@@ -1,6 +1,6 @@
-export { LocalSandboxFiles } from './filesystem/files.js'
-export { LocalSandboxPermissions } from './filesystem/permissions.js'
-export { LocalPtyHost } from './pty/host.js'
+export { LocalSandboxFiles } from './filesystem/files'
+export { LocalSandboxPermissions } from './filesystem/permissions'
+export { LocalPtyHost } from './pty/host'
 export type {
   LocalPtyEvent,
   LocalPtyExit,
@@ -11,8 +11,8 @@ export type {
   LocalPtySize,
   LocalPtySnapshot,
   LocalPtySubscription,
-} from './pty/host.js'
-export { LocalSandboxReviewer } from './review/reviewer.js'
-export { LocalSandbox } from './sandbox/sandbox.js'
-export type { LocalSandboxOptions } from './sandbox/sandbox.js'
-export { LocalSandboxShell } from './shell/shell.js'
+} from './pty/host'
+export { LocalSandboxReviewer } from './review/reviewer'
+export { LocalSandbox } from './sandbox/sandbox'
+export type { LocalSandboxOptions } from './sandbox/sandbox'
+export { LocalSandboxShell } from './shell/shell'

@@ -1,8 +1,8 @@
-import type { SandboxFiles } from './file.js'
-import type { SandboxInternet } from './internet.js'
-import type { LocalShellKind } from './local.js'
-import type { SandboxReviewer } from './reviewer.js'
-import type { SandboxShell } from './shell.js'
+import type { SandboxFiles } from './file'
+import type { SandboxInternet } from './internet'
+import type { LocalShellKind } from './local'
+import type { SandboxReviewer } from './reviewer'
+import type { SandboxShell } from './shell'
 
 /** -------------------- 类型 -------------------- */
 /** 沙箱公开给模型的执行环境 */

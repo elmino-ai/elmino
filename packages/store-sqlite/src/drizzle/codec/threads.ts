@@ -1,6 +1,6 @@
 import type { RuntimeThreadRecord, ThreadSettings } from '@elmino/store'
-import type * as schema from '../schema/index.js'
-import { readJsonObject } from './json.js'
+import type * as schema from '../schema/index'
+import { readJsonObject } from './json'
 
 /** -------------------- 核心函数 -------------------- */
 /**

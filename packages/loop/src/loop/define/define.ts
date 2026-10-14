@@ -1,5 +1,5 @@
-import type { Loop } from '../types/index.js'
-import { executeTurn } from '../turn/execute.js'
+import type { Loop } from '../types/index'
+import { executeTurn } from '../turn/execute'
 
 /** -------------------- 核心函数 -------------------- */
 /**

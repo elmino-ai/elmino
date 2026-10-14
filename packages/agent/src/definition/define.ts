@@ -1,4 +1,4 @@
-import type { Agent, AgentDefinition } from './types.js'
+import type { Agent, AgentDefinition } from './types'
 import { defineLoop } from '@elmino/loop'
 import { defineThread } from '@elmino/thread'
 import { defineTools } from '@elmino/tool'

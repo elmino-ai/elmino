@@ -24,7 +24,7 @@ import {
 } from '@elmino/sandbox'
 import { createId, throwSettledErrors } from '@elmino/shared'
 import crossSpawn from 'cross-spawn'
-import { LocalPtyHost } from '../pty/host.js'
+import { LocalPtyHost } from '../pty/host'
 
 /** -------------------- 类型 -------------------- */
 /** 子进程退出结果 */

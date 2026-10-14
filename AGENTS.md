@@ -14,6 +14,7 @@
 - 工程命令从根目录执行，依赖声明变化后使用 `pnpm install` 更新锁文件
 - 不手工修改锁文件，不新增 npm 或 yarn 锁文件
 - 公共编译策略在 `tsconfig.base.json` 维护，发布包输出可直接被 Node.js 消费的 JavaScript 和类型声明
+- TypeScript 相对导入省略文件后缀；各包共用 `tsdown.config.mjs` 保留模块目录，并为 ESM 产物与类型声明补齐 `.js`，仓库外验收继续使用严格 NodeNext
 - 能力包位于 `packages/<能力>`，公开包名使用 `@elmino/*`，跨包通过公开入口导入
 - 文档随内容增长归根 `docs`，包根不重复维护工程文档
 

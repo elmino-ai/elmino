@@ -8,7 +8,7 @@ export {
   SANDBOX_READ_MAX_BYTES,
   SANDBOX_READ_MAX_LINE_LENGTH,
   SANDBOX_READ_MAX_LINES,
-} from './constants/values.js'
+} from './constants/values'
 export type {
   Sandbox,
   SandboxApprovalReview,
@@ -42,5 +42,5 @@ export type {
   SandboxShellWriteOptions,
   SandboxWriteOptions,
   SandboxWriteResult,
-} from './types/index.js'
-export type { EnvVars, LocalShell, LocalShellKind, LocalShellResolver } from './types/local.js'
+} from './types/index'
+export type { EnvVars, LocalShell, LocalShellKind, LocalShellResolver } from './types/local'

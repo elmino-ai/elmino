@@ -1,4 +1,4 @@
-import { objectEntries } from '../object/entries.js'
+import { objectEntries } from '../object/entries'
 
 /** -------------------- 类型 -------------------- */
 /** Prompt 模板变量值 */

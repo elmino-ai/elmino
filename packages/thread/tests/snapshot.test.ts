@@ -1,7 +1,7 @@
 import { createId } from '@elmino/shared'
 import { defineThread, readThreadSnapshot, updateThreadExtensionState, updateThreadSnapshot } from '@elmino/thread'
 import { expect, test } from 'vitest'
-import { createThreadStore } from './support/store.js'
+import { createThreadStore } from './support/store'
 
 test('快照从 Turn 事实恢复模型、中断和状态，不将执行字段写入第二份恢复状态', async () => {
   const { store, threadId, turnId, location } = await createThreadStore()

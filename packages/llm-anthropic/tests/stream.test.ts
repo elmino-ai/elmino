@@ -1,7 +1,7 @@
 import type { Event } from '@elmino/llm'
 import { AnthropicMessagesProvider } from '@elmino/llm-anthropic'
 import { describe, expect, test } from 'vitest'
-import { asyncIterable, explicitCache, injectClient, request } from './support/provider.js'
+import { asyncIterable, explicitCache, injectClient, request } from './support/provider'
 
 describe('anthropic stream', () => {
   test('Anthropic 流式工具参数从空 input 开始按多个 delta 合成完整 Part', async () => {

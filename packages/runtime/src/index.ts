@@ -5,4 +5,4 @@ export type {
   RuntimeDefinition,
   ThreadLocation,
   WorkspaceKind,
-} from './definition/types.js'
+} from './definition/types'

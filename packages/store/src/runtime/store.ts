@@ -1,12 +1,12 @@
 import type { Except } from '@elmino/shared'
-import type { RuntimeArtifactRepository } from './artifact.js'
-import type { RuntimeCanonicalRepository } from './canonical.js'
-import type { RuntimeThreadSpawnEdgeRepository, RuntimeTurnSpawnEdgeRepository } from './spawn.js'
-import type { RuntimeStepRepository } from './step.js'
-import type { RuntimeThreadRepository } from './thread.js'
-import type { RuntimeToolCallRepository } from './tool.js'
-import type { RuntimeTranscriptRepository } from './transcript.js'
-import type { RuntimeTurnRepository } from './turn.js'
+import type { RuntimeArtifactRepository } from './artifact'
+import type { RuntimeCanonicalRepository } from './canonical'
+import type { RuntimeThreadSpawnEdgeRepository, RuntimeTurnSpawnEdgeRepository } from './spawn'
+import type { RuntimeStepRepository } from './step'
+import type { RuntimeThreadRepository } from './thread'
+import type { RuntimeToolCallRepository } from './tool'
+import type { RuntimeTranscriptRepository } from './transcript'
+import type { RuntimeTurnRepository } from './turn'
 
 /** -------------------- 类型 -------------------- */
 /** 事务内 RuntimeStore 视图 */

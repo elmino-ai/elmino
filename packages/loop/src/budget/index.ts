@@ -1,1 +1,1 @@
-export { createContextBudget, createEmptyContextBudget } from './budget.js'
+export { createContextBudget, createEmptyContextBudget } from './budget'

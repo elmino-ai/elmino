@@ -1,12 +1,12 @@
 import type { RuntimeArtifactRecord, RuntimeArtifactRepository, WriteRuntimeArtifactInput } from '@elmino/store'
-import type { DrizzleRuntimeStoreOptions } from '../types/index.js'
+import type { DrizzleRuntimeStoreOptions } from '../types/index'
 import { Buffer } from 'node:buffer'
 import { createId } from '@elmino/shared'
 import { sha256 } from '@elmino/store/local'
 import dayjs from 'dayjs'
 import { eq } from 'drizzle-orm'
-import { readJson, readJsonObject } from '../codec/index.js'
-import * as schema from '../schema/index.js'
+import { readJson, readJsonObject } from '../codec/index'
+import * as schema from '../schema/index'
 
 /** -------------------- 类型与常量 -------------------- */
 /** artifact 内联存储阈值 */

@@ -1,6 +1,6 @@
-import type { Request } from '../request/index.js'
-import type { CacheCapability, CacheControl, CachePolicy } from './policy.js'
-import { validateCache } from './policy.js'
+import type { Request } from '../request/index'
+import type { CacheCapability, CacheControl, CachePolicy } from './policy'
+import { validateCache } from './policy'
 
 /** 请求默认缓存与能力约束 */
 interface RequestCacheConfig {

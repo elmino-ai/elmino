@@ -24,7 +24,7 @@
     "node": ">=24.18.1"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && node --input-type=module -e \"import { cp } from 'node:fs/promises'; await cp('src/prompts/template', 'dist/prompts/template', { recursive: true })\"",
+    "build": "tsdown --config ../../tsdown.config.mjs && node --input-type=module -e \"import { cp } from 'node:fs/promises'; await cp('src/prompts/template', 'dist/prompts/template', { recursive: true })\"",
     "typecheck": "tsc -p tsconfig.json",
     "prepack": "pnpm build",
     "test": "vitest run"
@@ -46,6 +46,7 @@
   "devDependencies": {
     "@elmino/sandbox-local": "workspace:^",
     "@elmino/store-sqlite": "workspace:^",
+    "tsdown": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },

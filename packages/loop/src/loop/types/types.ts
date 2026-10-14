@@ -12,7 +12,7 @@ import type {
   ThreadToolPart,
 } from '@elmino/thread'
 import type { DefinedTools, HostServiceBinding } from '@elmino/tool'
-import type { ExecutionHooks, ToolResumeResult } from '../../hooks/index.js'
+import type { ExecutionHooks, ToolResumeResult } from '../../hooks/index'
 
 /** -------------------- 类型 -------------------- */
 /** Turn 运行依赖 */

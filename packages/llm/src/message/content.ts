@@ -1,4 +1,4 @@
-import type { Message, Part, ReasoningPart, TextPart, ToolCallPart } from './types.js'
+import type { Message, Part, ReasoningPart, TextPart, ToolCallPart } from './types'
 
 /** -------------------- Message 内容读取 -------------------- */
 /**

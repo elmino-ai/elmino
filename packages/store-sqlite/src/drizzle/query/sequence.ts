@@ -1,5 +1,5 @@
-import type * as schema from '../schema/index.js'
-import type { RuntimeDrizzleDatabase } from '../types/index.js'
+import type * as schema from '../schema/index'
+import type { RuntimeDrizzleDatabase } from '../types/index'
 import { eq, sql } from 'drizzle-orm'
 
 /** -------------------- 核心函数 -------------------- */

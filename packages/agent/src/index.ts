@@ -1,4 +1,4 @@
-export { defineAgent } from './definition/define.js'
+export { defineAgent } from './definition/define'
 export type {
   Agent,
   AgentDefinition,
@@ -6,4 +6,4 @@ export type {
   AgentSnapshot,
   InteractionResolution,
   StateResolution,
-} from './definition/types.js'
+} from './definition/types'

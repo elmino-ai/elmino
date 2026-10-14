@@ -1,4 +1,4 @@
-import type { ShellCommandPolicy } from './types.js'
+import type { ShellCommandPolicy } from './types'
 
 /** -------------------- 类型 -------------------- */
 /** 固定子命令工具的分类配置 */

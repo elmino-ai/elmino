@@ -6,7 +6,7 @@ import { DatabaseSync } from 'node:sqlite'
 import { asc, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/node-sqlite'
 import { afterEach, beforeEach, expect, test } from 'vitest'
-import { migrateRuntimeStore } from '../src/drizzle/migration/index.js'
+import { migrateRuntimeStore } from '../src/drizzle/migration/index'
 import {
   canonicalMessages,
   canonicalParts,
@@ -14,7 +14,7 @@ import {
   threads,
   transcriptMessages,
   turns,
-} from '../src/drizzle/schema/index.js'
+} from '../src/drizzle/schema/index'
 
 /** -------------------- 测试状态 -------------------- */
 /** 使用真实迁移与默认 SQLite 映射，不引入测试专用列或 Codec */

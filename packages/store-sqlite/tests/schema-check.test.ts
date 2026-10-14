@@ -4,7 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { expect, onTestFinished, test } from 'vitest'
-import { checkRuntimeMigrations } from '../scripts/migrations.js'
+import { checkRuntimeMigrations } from '../scripts/migrations'
 
 /** -------------------- 常量 -------------------- */
 /** 包内提交的真实 RuntimeStore 迁移资源 */

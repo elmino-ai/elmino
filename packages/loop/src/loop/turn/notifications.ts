@@ -1,6 +1,6 @@
 import type { ThreadMessage } from '@elmino/store'
-import type { ExecutionNotification } from '../../hooks/index.js'
-import type { TurnRuntimeEventEmitter } from '../types/index.js'
+import type { ExecutionNotification } from '../../hooks/index'
+import type { TurnRuntimeEventEmitter } from '../types/index'
 import { createId } from '@elmino/shared'
 
 /** -------------------- 核心函数 -------------------- */

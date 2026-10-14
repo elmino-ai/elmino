@@ -1,4 +1,4 @@
-import type { DefinedTool, DefinedTools } from '../types/types.js'
+import type { DefinedTool, DefinedTools } from '../types/types'
 import { objectEntries, objectValues } from '@elmino/shared'
 
 /** -------------------- 核心函数 -------------------- */

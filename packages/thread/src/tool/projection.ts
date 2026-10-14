@@ -1,7 +1,7 @@
 import type { RuntimeStore } from '@elmino/store'
-import type { ThreadToolPart } from '../thread/types.js'
+import type { ThreadToolPart } from '../thread/types'
 import dayjs from 'dayjs'
-import { projectThreadPart } from '../thread/message-transform.js'
+import { projectThreadPart } from '../thread/message-transform'
 
 /** -------------------- 类型 -------------------- */
 /** 宿主消息片段投影上下文 */

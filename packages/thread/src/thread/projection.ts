@@ -1,8 +1,8 @@
 import type { UnknownRecord } from '@elmino/shared'
-import type { ThreadRuntimeState } from '../runtime/state.js'
-import type { Thread, ThreadExtensionState } from './types.js'
+import type { ThreadRuntimeState } from '../runtime/state'
+import type { Thread, ThreadExtensionState } from './types'
 import { objectOmit, objectPick } from '@elmino/shared'
-import { createThreadSnapshotRecord } from './snapshot.js'
+import { createThreadSnapshotRecord } from './snapshot'
 
 /** -------------------- 核心函数 -------------------- */
 /**

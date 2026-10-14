@@ -5,14 +5,22 @@
   "description": "Agent 单轮模型采样、工具执行、上下文与恢复流程",
   "sideEffects": false,
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist", "src"],
-  "engines": { "node": ">=24.18.1" },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=24.18.1"
+  },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && node --input-type=module -e \"import { cp } from 'node:fs/promises'; await cp('src/prompts/template', 'dist/prompts/template', { recursive: true })\"",
+    "build": "tsdown --config ../../tsdown.config.mjs && node --input-type=module -e \"import { cp } from 'node:fs/promises'; await cp('src/prompts/template', 'dist/prompts/template', { recursive: true })\"",
     "typecheck": "tsc -p tsconfig.json",
     "prepack": "pnpm build",
     "test": "vitest run"
@@ -30,8 +38,11 @@
   },
   "devDependencies": {
     "@elmino/store-sqlite": "workspace:*",
+    "tsdown": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
-  "publishConfig": { "access": "public" }
+  "publishConfig": {
+    "access": "public"
+  }
 }

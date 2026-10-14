@@ -3,11 +3,11 @@ import type { JsonValue } from '@elmino/shared'
 import type { ApprovalMode } from '@elmino/store'
 import type { ThreadInteractionInterrupt } from '@elmino/thread'
 import type { DefinedTool, ToolApprovalInterruptPayload, ToolExecutionContext } from '@elmino/tool'
-import type { PendingCall } from './types.js'
+import type { PendingCall } from './types'
 import { createId, isJsonValue } from '@elmino/shared'
 import dayjs from 'dayjs'
-import { autoReview } from './auto.js'
-import { reviewCall } from './review.js'
+import { autoReview } from './auto'
+import { reviewCall } from './review'
 
 /** -------------------- 核心函数 -------------------- */
 /**

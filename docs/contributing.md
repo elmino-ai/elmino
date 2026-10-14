@@ -28,6 +28,10 @@ pnpm install
 
 [Turbo 配置](../turbo.json) 按包依赖安排构建，`typecheck` 和 `test` 会先构建本包及其依赖。跨包从公开入口消费 `dist`，不使用源码路径别名
 
+各包共用 [tsdown 配置](../tsdown.config.mjs)，采用 `unbundle` 模式保留 `src` 到 `dist` 的模块目录。TypeScript 源码使用无后缀的相对导入；JavaScript 和类型声明产物自动补齐 `.js`，消费项目继续按 NodeNext 检查，不需要特殊加载器。源码检查使用 `moduleResolution: Bundler`，类型检查由 TypeScript 执行
+
+构建时重建各包的 `dist` 产物，避免删除或移动源码后留下旧文件；Loop 与 Engine 的提示词资源随后复制到对应产物目录，SQLite 迁移继续由包的文件白名单交付。外部依赖保持独立，不内联其他能力包或供应商 SDK。构建行为见 [tsdown unbundle 文档](https://tsdown.dev/options/unbundle)
+
 ```sh
 pnpm build
 pnpm typecheck

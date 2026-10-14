@@ -1,7 +1,7 @@
-import type { CapturedRequest } from './support/provider.js'
+import type { CapturedRequest } from './support/provider'
 import { AnthropicMessagesProvider } from '@elmino/llm-anthropic'
 import { describe, expect, test } from 'vitest'
-import { automaticCache, captureCreate, explicitCache, injectClient, request } from './support/provider.js'
+import { automaticCache, captureCreate, explicitCache, injectClient, request } from './support/provider'
 
 describe('anthropic generation', () => {
   test('Anthropic 映射显式断点、Reasoning、工具调用和缓存用量', async () => {

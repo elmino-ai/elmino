@@ -2,7 +2,7 @@ import type { Tool, ToolResultContent } from '@elmino/llm'
 import type { Sandbox, SandboxReviewInput } from '@elmino/sandbox'
 import type { Promisable } from '@elmino/shared'
 import type * as z from 'zod'
-import type { HostServices } from '../services/services.js'
+import type { HostServices } from '../services/services'
 
 /** -------------------- 类型 -------------------- */
 /** 同时保留 Runtime 文本投影与 Provider 富内容的工具结果 */

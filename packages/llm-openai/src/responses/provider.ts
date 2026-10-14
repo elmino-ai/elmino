@@ -21,14 +21,14 @@ import type {
   ResponseOutputItem,
   ResponseUsage,
 } from 'openai/resources/responses/responses'
-import type { ProviderReuseStrategy } from '../policy/reuse.js'
+import type { ProviderReuseStrategy } from '../policy/reuse'
 import { parseObject } from '@elmino/llm'
 import { createAssistantMessage, createToolCall, createToolCallStart, rawRecord, tokenCount } from '@elmino/llm/adapter'
 import { resolveProviderAuth } from '@elmino/llm/provider'
 import { deepEqual } from '@elmino/shared'
 import OpenAI from 'openai'
 import { z } from 'zod'
-import { resolveReuse } from '../policy/reuse.js'
+import { resolveReuse } from '../policy/reuse'
 
 /** -------------------- 类型 -------------------- */
 /** OpenAI Responses 适配器配置 */

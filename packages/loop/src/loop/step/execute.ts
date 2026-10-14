@@ -1,14 +1,14 @@
 import type { Message } from '@elmino/llm'
-import type { ActiveTurn } from '../turn/active.js'
-import type { SampleInput, StepResult } from './types.js'
+import type { ActiveTurn } from '../turn/active'
+import type { SampleInput, StepResult } from './types'
 import { attachToolResults, createToolResultPart, toolCalls as readToolCalls } from '@elmino/llm'
 import { createId, objectEntries, objectFromEntries } from '@elmino/shared'
 import { appendCanonicalMessage } from '@elmino/thread'
-import { isTransientProviderError, withRetry } from '../../recovery/index.js'
-import { prepareContext } from '../context/prepare.js'
-import { executeBatch } from '../tool/batch.js'
-import { decideError, decideMessage } from './decision.js'
-import { sampleStep } from './sample.js'
+import { isTransientProviderError, withRetry } from '../../recovery/index'
+import { prepareContext } from '../context/prepare'
+import { executeBatch } from '../tool/batch'
+import { decideError, decideMessage } from './decision'
+import { sampleStep } from './sample'
 
 /** -------------------- 核心函数 -------------------- */
 /**

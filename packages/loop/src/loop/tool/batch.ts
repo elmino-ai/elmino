@@ -1,12 +1,12 @@
 import type { ToolCallPart, ToolResultPart } from '@elmino/llm'
 import type { ToolApprovalResume } from '@elmino/tool'
-import type { ToolInterruptResult } from '../../hooks/index.js'
-import type { ActiveTurn } from '../turn/active.js'
+import type { ToolInterruptResult } from '../../hooks/index'
+import type { ActiveTurn } from '../turn/active'
 import { createToolResultPart } from '@elmino/llm'
 import { canonicalToolResultToText, commitToolState, updateToolPart } from '@elmino/thread'
 import dayjs from 'dayjs'
-import { createApprovalInterrupt, findApprovalCalls, readApprovalDecisions } from '../../approval/index.js'
-import { executeInvocation, settleInvocation } from './invocation.js'
+import { createApprovalInterrupt, findApprovalCalls, readApprovalDecisions } from '../../approval/index'
+import { executeInvocation, settleInvocation } from './invocation'
 
 /** -------------------- 已提交工具批次 -------------------- */
 /**

@@ -7,8 +7,8 @@ import { readThreadInteraction, readThreadSnapshot } from '@elmino/thread'
 import { defineTools } from '@elmino/tool'
 import { expect, test, vi } from 'vitest'
 import * as z from 'zod'
-import { createHarness } from './support/harness.js'
-import { createModel, response } from './support/model.js'
+import { createHarness } from './support/harness'
+import { createModel, response } from './support/model'
 
 /** 并行与审批行为共享的真实工具输入约束 */
 const schema = z.object({ label: z.string() })

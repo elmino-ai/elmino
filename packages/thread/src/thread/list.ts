@@ -1,6 +1,6 @@
 import type { RuntimeLatestTurnRecord, RuntimeThreadRecord } from '@elmino/store'
-import type { ThreadInterrupt } from '../runtime/interrupt.js'
-import type { ThreadListItem } from './state.js'
+import type { ThreadInterrupt } from '../runtime/interrupt'
+import type { ThreadListItem } from './state'
 
 /** -------------------- 核心函数 -------------------- */
 /**

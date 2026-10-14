@@ -1,8 +1,8 @@
 import type { Arrayable } from '@elmino/shared'
-import type { RecoveryStatus } from './types.js'
+import type { RecoveryStatus } from './types'
 import { delay } from '@elmino/shared'
 import dayjs from 'dayjs'
-import { BASE_DELAY_MS, MAX_DELAY_MS, MAX_TRANSIENT_RETRIES, PROMPT_TOO_LONG_PATTERN } from '../constants/index.js'
+import { BASE_DELAY_MS, MAX_DELAY_MS, MAX_TRANSIENT_RETRIES, PROMPT_TOO_LONG_PATTERN } from '../constants/index'
 
 /** -------------------- 核心函数 -------------------- */
 /**

@@ -1,8 +1,8 @@
 import type { ThreadLocation } from '@elmino/runtime'
 import type { JsonValue, UnknownRecord } from '@elmino/shared'
 import type { ThreadMessage, ThreadSettings, ThreadTurnStatus } from '@elmino/store'
-import type { ThreadInterrupt } from '../runtime/interrupt.js'
-import type { ThreadRuntimeState } from '../runtime/state.js'
+import type { ThreadInterrupt } from '../runtime/interrupt'
+import type { ThreadRuntimeState } from '../runtime/state'
 
 /** -------------------- 类型 -------------------- */
 /** 单个 Turn 的执行时间线摘要 */

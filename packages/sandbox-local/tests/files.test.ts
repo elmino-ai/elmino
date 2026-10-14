@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { expect, test } from 'vitest'
-import { createTestSandbox } from './support/sandbox.js'
+import { createTestSandbox } from './support/sandbox'
 
 /** -------------------- 常量 -------------------- */
 /** 测试路径稳定前缀 */

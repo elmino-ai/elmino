@@ -1,3 +1,3 @@
-export { createApprovalInterrupt, findApprovalCalls } from './approval.js'
-export { applyApproval, decisionOutput, readApprovalDecisions } from './decision.js'
-export type { PendingCall } from './types.js'
+export { createApprovalInterrupt, findApprovalCalls } from './approval'
+export { applyApproval, decisionOutput, readApprovalDecisions } from './decision'
+export type { PendingCall } from './types'

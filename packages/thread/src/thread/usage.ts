@@ -1,5 +1,5 @@
 import type { RuntimeStore, ThreadTokenUsage } from '@elmino/store'
-import type { ThreadUsagePayload } from '../runtime/budget.js'
+import type { ThreadUsagePayload } from '../runtime/budget'
 import { createTokenUsage, mergeTokenUsage } from '@elmino/store'
 
 /** -------------------- 类型 -------------------- */

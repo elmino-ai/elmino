@@ -1,9 +1,9 @@
 import type { Promisable } from '@elmino/shared'
 import type { ToolExecutionContext } from '@elmino/tool'
-import type { ExecutionScope } from '../../hooks/index.js'
-import type { TurnContext, TurnInputMessage, TurnRuntimeEventEmitter } from '../types/index.js'
-import type { ActiveTurn } from './active.js'
-import type { TurnSnapshots } from './snapshot.js'
+import type { ExecutionScope } from '../../hooks/index'
+import type { TurnContext, TurnInputMessage, TurnRuntimeEventEmitter } from '../types/index'
+import type { ActiveTurn } from './active'
+import type { TurnSnapshots } from './snapshot'
 import { objectPick } from '@elmino/shared'
 import {
   appendCanonicalMessages,
@@ -14,10 +14,10 @@ import {
 } from '@elmino/thread'
 import { createHostServices } from '@elmino/tool'
 import dayjs from 'dayjs'
-import { ContextProjection } from '../../context-projection/index.js'
-import { createTurnNotifications } from './notifications.js'
-import { createTurnSnapshots } from './snapshot.js'
-import { createTurnState } from './state.js'
+import { ContextProjection } from '../../context-projection/index'
+import { createTurnNotifications } from './notifications'
+import { createTurnSnapshots } from './snapshot'
+import { createTurnState } from './state'
 
 /** -------------------- 核心函数 -------------------- */
 /**

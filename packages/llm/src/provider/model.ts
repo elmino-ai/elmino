@@ -1,4 +1,4 @@
-import type { CacheMode } from '../cache/index.js'
+import type { CacheMode } from '../cache/index'
 
 /** -------------------- 类型 -------------------- */
 /** 单次 Turn 冻结的推理策略，原生请求参数由适配器解释 */

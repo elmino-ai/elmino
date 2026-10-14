@@ -1,5 +1,5 @@
 import type { RuntimeStore, ThreadMessage } from '@elmino/store'
-import { projectTranscriptMessages } from './message-transform.js'
+import { projectTranscriptMessages } from './message-transform'
 
 /** -------------------- 核心函数 -------------------- */
 /**

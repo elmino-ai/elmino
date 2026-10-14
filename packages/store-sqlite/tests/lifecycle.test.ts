@@ -5,8 +5,8 @@ import { DatabaseSync } from 'node:sqlite'
 import { SqliteStore } from '@elmino/store-sqlite'
 import { LocalBlobStore } from '@elmino/store/local'
 import { expect, onTestFinished, test, vi } from 'vitest'
-import { testFiles } from './support/files.js'
-import { testSubagentRole } from './support/subagent.js'
+import { testFiles } from './support/files'
+import { testSubagentRole } from './support/subagent'
 
 /** -------------------- 测试 -------------------- */
 test.each(['read', 'readText'] as const)('artifact %s queues missing writes with transactions', async (method) => {

@@ -16,7 +16,7 @@ import {
   testSubagentRoles,
   turnModel,
   turnRequest,
-} from './support/engine.js'
+} from './support/engine'
 
 test('同一模型显式缺省推理配置经 JSON 持久化后仍可恢复中断', async () => {
   const { root, store } = await createEngineStore()

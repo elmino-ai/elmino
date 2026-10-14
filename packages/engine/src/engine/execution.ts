@@ -29,9 +29,9 @@ import type {
   ThreadInterrupt,
 } from '@elmino/thread'
 import type { HostServiceBinding } from '@elmino/tool'
-import type { TurnInputPart } from '../turn/input.js'
-import type { PreparedTurn, PreparedTurnStatus, ResolvedTurnRequest } from '../turn/types.js'
-import type { TurnControl, TurnControlRegistry, TurnReservation } from './control.js'
+import type { TurnInputPart } from '../turn/input'
+import type { PreparedTurn, PreparedTurnStatus, ResolvedTurnRequest } from '../turn/types'
+import type { TurnControl, TurnControlRegistry, TurnReservation } from './control'
 import { resolveLoopInteraction } from '@elmino/loop'
 import { createId, isPlainRecord } from '@elmino/shared'
 import { DEFAULT_THREAD_SETTINGS } from '@elmino/store'
@@ -45,7 +45,7 @@ import {
   updateThreadExtensionStateTx,
 } from '@elmino/thread'
 import dayjs from 'dayjs'
-import { createTrackedTurnModel } from './step.js'
+import { createTrackedTurnModel } from './step'
 
 /** -------------------- 类型 -------------------- */
 /** Turn 准备阶段已经解析出的持久身份 */

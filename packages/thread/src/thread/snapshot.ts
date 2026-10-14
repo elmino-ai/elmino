@@ -1,4 +1,4 @@
-import type { CreateThreadSnapshotRecordInput, NormalizedThreadSnapshotRecord } from './types.js'
+import type { CreateThreadSnapshotRecordInput, NormalizedThreadSnapshotRecord } from './types'
 import { deepMerge } from '@elmino/shared'
 import { createTokenUsage, DEFAULT_THREAD_SETTINGS } from '@elmino/store'
 import dayjs from 'dayjs'

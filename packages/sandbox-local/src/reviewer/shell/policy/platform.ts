@@ -1,8 +1,8 @@
-import type { ShellCommandAssessment, ShellCommandPolicy, ShellReviewContext } from './types.js'
+import type { ShellCommandAssessment, ShellCommandPolicy, ShellReviewContext } from './types'
 import { Buffer } from 'node:buffer'
 import { lstatSync, readFileSync } from 'node:fs'
 import path from 'node:path'
-import { createSubcommandPolicy } from './fixed.js'
+import { createSubcommandPolicy } from './fixed'
 
 /** -------------------- 类型 -------------------- */
 /** SQL 客户端的查询参数约定 */

@@ -1,4 +1,4 @@
-import { isPlainRecord } from './record.js'
+import { isPlainRecord } from './record'
 
 /** -------------------- 核心函数 -------------------- */
 /**

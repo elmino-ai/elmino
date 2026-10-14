@@ -1,5 +1,5 @@
 import type { SandboxApprovalReview, SandboxScopeReview } from '@elmino/sandbox'
-import type { ShellCommandAssessment, ShellCommandCategory } from './types.js'
+import type { ShellCommandAssessment, ShellCommandCategory } from './types'
 
 /** -------------------- 常量 -------------------- */
 /** 受限开发模式允许的命令类别 */

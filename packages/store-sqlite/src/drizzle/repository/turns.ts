@@ -1,14 +1,14 @@
 import type { UnknownRecord } from '@elmino/shared'
 import type { RuntimeTurnRecord, RuntimeTurnRepository, UpdateRuntimeTurnInput } from '@elmino/store'
-import type { RuntimeDrizzleDatabase } from '../types/index.js'
+import type { RuntimeDrizzleDatabase } from '../types/index'
 import { createId, jsonParse } from '@elmino/shared'
 import { createTokenUsage } from '@elmino/store'
 import dayjs from 'dayjs'
 import { and, asc, desc, eq, gt, inArray, lt, notExists, or } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/sqlite-core'
-import { turnFromRow } from '../codec/index.js'
-import { readTurnUsage, STEP_USAGE_SELECTION } from '../query/index.js'
-import * as schema from '../schema/index.js'
+import { turnFromRow } from '../codec/index'
+import { readTurnUsage, STEP_USAGE_SELECTION } from '../query/index'
+import * as schema from '../schema/index'
 
 /** -------------------- 核心函数 -------------------- */
 /**

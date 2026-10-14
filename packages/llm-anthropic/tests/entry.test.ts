@@ -2,7 +2,7 @@ import type { Provider } from '@elmino/llm'
 import { AnthropicMessagesProvider } from '@elmino/llm-anthropic'
 import { describe, expect, test, vi } from 'vitest'
 import { z } from 'zod'
-import { asyncIterable, captureCreate, injectClient, request } from './support/provider.js'
+import { asyncIterable, captureCreate, injectClient, request } from './support/provider'
 
 /** SDK 替身完整响应 */
 const response = {

@@ -1,7 +1,7 @@
-import type { BlobStore, BlobWriteResult } from './types.js'
+import type { BlobStore, BlobWriteResult } from './types'
 import { Buffer } from 'node:buffer'
 import path from 'node:path'
-import { sha256 as hashSha256 } from './hash.js'
+import { sha256 as hashSha256 } from './hash'
 
 /** Blob 持久化依赖的最小文件能力 */
 export interface BlobFiles {

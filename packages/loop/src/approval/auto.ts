@@ -1,9 +1,9 @@
 import type { Message, ModelTurnConfig, TurnModel } from '@elmino/llm'
 import type { ToolExecutionContext } from '@elmino/tool'
-import type { PendingCall } from './types.js'
+import type { PendingCall } from './types'
 import { extractText, toolCalls } from '@elmino/llm'
-import { AUTO_APPROVAL_SCHEMA } from '../constants/index.js'
-import { AUTO_APPROVAL_SYSTEM_PROMPT } from '../prompts/constants/index.js'
+import { AUTO_APPROVAL_SCHEMA } from '../constants/index'
+import { AUTO_APPROVAL_SYSTEM_PROMPT } from '../prompts/constants/index'
 
 /** -------------------- 核心函数 -------------------- */
 /**

@@ -1,1 +1,1 @@
-export { createAssistantMessage, createToolCall, createToolCallStart, rawRecord, tokenCount } from './message.js'
+export { createAssistantMessage, createToolCall, createToolCallStart, rawRecord, tokenCount } from './message'

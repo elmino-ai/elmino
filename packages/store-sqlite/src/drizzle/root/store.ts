@@ -1,5 +1,5 @@
 import type { RuntimeStoreTx } from '@elmino/store'
-import type { DrizzleRuntimeStoreOptions } from '../types/index.js'
+import type { DrizzleRuntimeStoreOptions } from '../types/index'
 import {
   createArtifactRepository,
   createCanonicalRepository,
@@ -9,7 +9,7 @@ import {
   createToolCallRepository,
   createTranscriptRepository,
   createTurnRepository,
-} from '../repository/index.js'
+} from '../repository/index'
 
 /** -------------------- 核心函数 -------------------- */
 /**

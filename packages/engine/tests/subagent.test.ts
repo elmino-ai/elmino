@@ -2,7 +2,7 @@ import type { TurnHandle } from '@elmino/engine'
 import type { RuntimeStore, RuntimeStoreTx } from '@elmino/store'
 import type { RuntimeEvent, ThreadInterrupt } from '@elmino/thread'
 
-import type { TestTurnContext } from './support/engine.js'
+import type { TestTurnContext } from './support/engine'
 import { canonicalRecordToMessage } from '@elmino/thread'
 import dayjs from 'dayjs'
 import { expect, test } from 'vitest'
@@ -22,7 +22,7 @@ import {
   turnModel,
   turnRequest,
   waitForChildTurns,
-} from './support/engine.js'
+} from './support/engine'
 
 /** -------------------- 测试 -------------------- */
 test('A newly created child is failed when runtime preparation prevents queue ownership', async () => {

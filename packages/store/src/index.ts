@@ -1,6 +1,6 @@
 /** -------------------- 模块出口 -------------------- */
-export type { BlobStore, BlobWriteResult } from './blob/types.js'
-export type { PaginationResult } from './pagination/types.js'
+export type { BlobStore, BlobWriteResult } from './blob/types'
+export type { PaginationResult } from './pagination/types'
 export type {
   ReadRuntimeArtifactTextOptions,
   RuntimeArtifactContentKind,
@@ -10,7 +10,7 @@ export type {
   RuntimeArtifactStorage,
   RuntimeArtifactTextPage,
   WriteRuntimeArtifactInput,
-} from './runtime/artifact.js'
+} from './runtime/artifact'
 export type {
   AppendRuntimeCanonicalMessageInput,
   ReadRuntimeCanonicalPartPageOptions,
@@ -23,7 +23,7 @@ export type {
   RuntimeCanonicalRangeInput,
   RuntimeCanonicalRepository,
   RuntimeCanonicalRole,
-} from './runtime/canonical.js'
+} from './runtime/canonical'
 export type {
   CreateRuntimeThreadSpawnEdgeInput,
   CreateRuntimeTurnSpawnEdgeInput,
@@ -32,17 +32,17 @@ export type {
   RuntimeThreadSpawnEdgeRepository,
   RuntimeTurnSpawnEdgeRecord,
   RuntimeTurnSpawnEdgeRepository,
-} from './runtime/spawn.js'
-export type { ApprovalMode, ThreadStatus, ThreadTurnStatus } from './runtime/state.js'
+} from './runtime/spawn'
+export type { ApprovalMode, ThreadStatus, ThreadTurnStatus } from './runtime/state'
 export type {
   CreateRuntimeStepInput,
   RuntimeStepRecord,
   RuntimeStepRepository,
   RuntimeStepStatus,
   SettleRuntimeStepInput,
-} from './runtime/step.js'
-export type { RuntimeStore, RuntimeStoreTx } from './runtime/store.js'
-export type { SubagentMode, SubagentRole, SubagentRoleIcon } from './runtime/subagent.js'
+} from './runtime/step'
+export type { RuntimeStore, RuntimeStoreTx } from './runtime/store'
+export type { SubagentMode, SubagentRole, SubagentRoleIcon } from './runtime/subagent'
 export type {
   RuntimeThreadLifecycle,
   RuntimeThreadPageInput,
@@ -50,7 +50,7 @@ export type {
   RuntimeThreadRecord,
   RuntimeThreadRepository,
   UpsertRuntimeThreadInput,
-} from './runtime/thread.js'
+} from './runtime/thread'
 export type {
   CreateRuntimeToolCallInput,
   RuntimeToolCallRecord,
@@ -58,8 +58,8 @@ export type {
   RuntimeToolCallStatus,
   RuntimeToolDecision,
   UpdateRuntimeToolCallInput,
-} from './runtime/tool.js'
-export type { RuntimeTranscriptRepository } from './runtime/transcript.js'
+} from './runtime/tool'
+export type { RuntimeTranscriptRepository } from './runtime/transcript'
 export type {
   CreateRuntimeTurnInput,
   RuntimeLatestTurnRecord,
@@ -70,10 +70,10 @@ export type {
   RuntimeTurnRecord,
   RuntimeTurnRepository,
   UpdateRuntimeTurnInput,
-} from './runtime/turn.js'
-export type { ThreadTokenUsage } from './runtime/usage.js'
-export { createTokenUsage, mergeTokenUsage } from './runtime/usage.js'
-export type { ThreadMessage, ThreadMessageKind, ThreadMessageRole, ThreadMessageStatus } from './thread/message.js'
+} from './runtime/turn'
+export type { ThreadTokenUsage } from './runtime/usage'
+export { createTokenUsage, mergeTokenUsage } from './runtime/usage'
+export type { ThreadMessage, ThreadMessageKind, ThreadMessageRole, ThreadMessageStatus } from './thread/message'
 export type {
   ThreadDocumentPart,
   ThreadErrorPart,
@@ -88,7 +88,7 @@ export type {
   ThreadReasoningPart,
   ThreadTextPart,
   ThreadToolPart,
-} from './thread/parts.js'
-export type { ThreadListSummary, ThreadSearchHit } from './thread/search.js'
-export type { ThreadPluginSettings, ThreadSettings } from './thread/settings.js'
-export { DEFAULT_THREAD_SETTINGS } from './thread/settings.js'
+} from './thread/parts'
+export type { ThreadListSummary, ThreadSearchHit } from './thread/search'
+export type { ThreadPluginSettings, ThreadSettings } from './thread/settings'
+export { DEFAULT_THREAD_SETTINGS } from './thread/settings'

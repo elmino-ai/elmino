@@ -1,10 +1,10 @@
 import type { ThreadCommitter } from '@elmino/thread'
 import type { DefinedTools, ToolExecutionContext } from '@elmino/tool'
-import type { ContextProjection } from '../../context-projection/index.js'
-import type { ExecutionHooks } from '../../hooks/index.js'
-import type { TurnContext, TurnRuntimeEventEmitter } from '../types/index.js'
-import type { TurnSnapshots } from './snapshot.js'
-import type { TurnState } from './state.js'
+import type { ContextProjection } from '../../context-projection/index'
+import type { ExecutionHooks } from '../../hooks/index'
+import type { TurnContext, TurnRuntimeEventEmitter } from '../types/index'
+import type { TurnSnapshots } from './snapshot'
+import type { TurnState } from './state'
 
 /** -------------------- 类型 -------------------- */
 /** Turn 启动后持有的稳定能力与可变状态 */

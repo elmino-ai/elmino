@@ -5,8 +5,8 @@ import {
   DEFAULT_SUBAGENT_ROLE_MARKDOWN,
   EXPLORER_SUBAGENT_ROLE_MARKDOWN,
   WORKER_SUBAGENT_ROLE_MARKDOWN,
-} from '../prompts/constants/templates.js'
-import { parseSubagentRole } from './parse.js'
+} from '../prompts/constants/templates'
+import { parseSubagentRole } from './parse'
 
 /** -------------------- 常量 -------------------- */
 /** 按展示顺序固定的内置角色资产 */

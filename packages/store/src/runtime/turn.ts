@@ -1,7 +1,7 @@
 import type { UnknownRecord } from '@elmino/shared'
-import type { ApprovalMode, ThreadTurnStatus } from './state.js'
-import type { SubagentMode, SubagentRole } from './subagent.js'
-import type { ThreadTokenUsage } from './usage.js'
+import type { ApprovalMode, ThreadTurnStatus } from './state'
+import type { SubagentMode, SubagentRole } from './subagent'
+import type { ThreadTokenUsage } from './usage'
 
 /** -------------------- 类型 -------------------- */
 /** Turn 记录 */

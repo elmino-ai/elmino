@@ -12,12 +12,12 @@ import type {
   RuntimeTurnRepository,
   RuntimeTurnSpawnEdgeRepository,
 } from '@elmino/store'
-import type { RuntimeDrizzleDatabase } from '../drizzle/index.js'
+import type { RuntimeDrizzleDatabase } from '../drizzle/index'
 import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { drizzle } from 'drizzle-orm/node-sqlite'
-import { createDrizzleRuntimeStore, migrateRuntimeStore, runtimeRelations } from '../drizzle/index.js'
+import { createDrizzleRuntimeStore, migrateRuntimeStore, runtimeRelations } from '../drizzle/index'
 
 /** -------------------- 类型 -------------------- */
 /** SQLite RuntimeStore 初始化参数 */

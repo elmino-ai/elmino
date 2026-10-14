@@ -1,6 +1,6 @@
 import type { JsonValue } from '@elmino/shared'
 import { isJsonValue, isOneOf, isPlainRecord } from '@elmino/shared'
-import { INTERRUPT_ID_PATTERN, TURN_ID_PATTERN } from './id.js'
+import { INTERRUPT_ID_PATTERN, TURN_ID_PATTERN } from './id'
 
 /** -------------------- 类型 -------------------- */
 /** 线程中断类型 */

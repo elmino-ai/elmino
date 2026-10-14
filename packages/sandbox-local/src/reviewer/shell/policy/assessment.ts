@@ -1,6 +1,6 @@
-import type { ShellCommandAssessment, ShellReviewContext } from './types.js'
-import { SHELL_COMMAND_POLICIES } from './registry.js'
-import { assessDirectScriptCommand } from './specialized.js'
+import type { ShellCommandAssessment, ShellReviewContext } from './types'
+import { SHELL_COMMAND_POLICIES } from './registry'
+import { assessDirectScriptCommand } from './specialized'
 
 /** -------------------- 常量 -------------------- */
 /** 不具备加载或命令注入能力的 POSIX 环境前缀 */

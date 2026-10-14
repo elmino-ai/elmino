@@ -1,1 +1,1 @@
-export { resolveLoopInteraction } from './interaction.js'
+export { resolveLoopInteraction } from './interaction'

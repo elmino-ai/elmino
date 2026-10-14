@@ -8,8 +8,8 @@ import type {
 } from '@elmino/store'
 import { isPlainRecord, objectPick } from '@elmino/shared'
 import dayjs from 'dayjs'
-import { canonicalToolResultToText } from '../context/canonical.js'
-import { readThreadMentionReference } from '../input/mention.js'
+import { canonicalToolResultToText } from '../context/canonical'
+import { readThreadMentionReference } from '../input/mention'
 
 /** -------------------- 类型 -------------------- */
 /** 宿主投影转换为协议 Part 所需的完整归属 */

@@ -7,7 +7,7 @@ import {
   DEFAULT_SUBAGENT_ROLE_MARKDOWN,
   EXPLORER_SUBAGENT_ROLE_MARKDOWN,
   WORKER_SUBAGENT_ROLE_MARKDOWN,
-} from '../src/prompts/constants/templates.js'
+} from '../src/prompts/constants/templates'
 
 /** -------------------- 常量 -------------------- */
 /** 测试结束后需要删除的临时角色目录 */

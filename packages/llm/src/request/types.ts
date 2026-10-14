@@ -1,6 +1,6 @@
-import type { CachePolicy } from '../cache/index.js'
-import type { Message, TextPart } from '../message/index.js'
-import type { Usage } from '../usage/index.js'
+import type { CachePolicy } from '../cache/index'
+import type { Message, TextPart } from '../message/index'
+import type { Usage } from '../usage/index'
 
 /** -------------------- 类型 -------------------- */
 /** Provider 可调用的工具声明 */

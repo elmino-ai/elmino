@@ -1,8 +1,8 @@
-import type { StepResult } from '../step/types.js'
-import type { TurnContext, TurnResult } from '../types/index.js'
-import { executeStep } from '../step/execute.js'
-import { resumeBatch } from '../tool/resume.js'
-import { startTurn } from './start.js'
+import type { StepResult } from '../step/types'
+import type { TurnContext, TurnResult } from '../types/index'
+import { executeStep } from '../step/execute'
+import { resumeBatch } from '../tool/resume'
+import { startTurn } from './start'
 
 /** -------------------- 核心函数 -------------------- */
 /**

@@ -1,6 +1,6 @@
 import type { LocalShellKind, SandboxReviewer, SandboxReviewInput } from '@elmino/sandbox'
-import type { LocalSandboxPermissions } from '../filesystem/permissions.js'
-import type { ShellReviewContext, ShellReviewer } from '../reviewer/index.js'
+import type { LocalSandboxPermissions } from '../filesystem/permissions'
+import type { ShellReviewContext, ShellReviewer } from '../reviewer/index'
 import path from 'node:path'
 import {
   CmdReviewer,
@@ -9,7 +9,7 @@ import {
   PowershellReviewer,
   projectApproval,
   projectScope,
-} from '../reviewer/index.js'
+} from '../reviewer/index'
 
 /** -------------------- 核心类 -------------------- */
 /**

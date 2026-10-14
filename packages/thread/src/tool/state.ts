@@ -8,12 +8,12 @@ import type {
   ThreadToolPart,
   UpdateRuntimeToolCallInput,
 } from '@elmino/store'
-import type { RuntimeEvent, RuntimeEventType } from '../runtime/event.js'
+import type { RuntimeEvent, RuntimeEventType } from '../runtime/event'
 import { createToolResultPart } from '@elmino/llm'
 import { createId } from '@elmino/shared'
 import dayjs from 'dayjs'
-import { appendCanonicalMessage } from '../context/canonical.js'
-import { projectTranscriptMessages } from '../thread/message-transform.js'
+import { appendCanonicalMessage } from '../context/canonical'
+import { projectTranscriptMessages } from '../thread/message-transform'
 
 /** -------------------- 类型 -------------------- */
 /** 结构化运行事件输出 */

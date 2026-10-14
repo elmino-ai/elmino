@@ -11,9 +11,9 @@ import { LocalBlobStore } from '@elmino/store/local'
 import { defineTools } from '@elmino/tool'
 import { expect, onTestFinished, test } from 'vitest'
 import * as z from 'zod'
-import { testFiles } from './support/files.js'
-import { createModel, response } from './support/model.js'
-import { createTestSandbox } from './support/sandbox.js'
+import { testFiles } from './support/files'
+import { createModel, response } from './support/model'
+import { createTestSandbox } from './support/sandbox'
 
 test.each(['interrupt', 'close'] as const)('%s drains accepted progress before settlement', async (operation) => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'elmino-engine-progress-'))

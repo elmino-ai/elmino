@@ -1,5 +1,5 @@
-import type { RuntimeThreadRecord } from './thread.js'
-import type { RuntimeTurnRecord } from './turn.js'
+import type { RuntimeThreadRecord } from './thread'
+import type { RuntimeTurnRecord } from './turn'
 
 /** -------------------- 类型 -------------------- */
 /** 子线程派生关系 */

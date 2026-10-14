@@ -10,7 +10,7 @@ import type {
   ThreadToolPart,
 } from '@elmino/thread'
 import type { DefinedTool, ToolExecutionContext } from '@elmino/tool'
-import type { TurnContext, TurnOutcomeStatus } from '../loop/types/index.js'
+import type { TurnContext, TurnOutcomeStatus } from '../loop/types/index'
 
 /** 模型投影中的原始消息归属，处理器必须保留 id 和 turnId */
 export interface PromptMessage {

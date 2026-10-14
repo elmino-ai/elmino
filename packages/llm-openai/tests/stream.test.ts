@@ -1,5 +1,5 @@
 import type { Event } from '@elmino/llm'
-import type { CapturedRequest } from './support/provider.js'
+import type { CapturedRequest } from './support/provider'
 import { ChatCompletionsProvider, ResponsesProvider } from '@elmino/llm-openai'
 import { describe, expect, test } from 'vitest'
 import {
@@ -11,7 +11,7 @@ import {
   injectClient,
   openAIResponse,
   request,
-} from './support/provider.js'
+} from './support/provider'
 
 describe('openai stream', () => {
   test('Chat Completions 等待稳定工具身份后完整转发参数增量', async () => {

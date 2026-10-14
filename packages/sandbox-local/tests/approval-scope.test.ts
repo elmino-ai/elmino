@@ -2,8 +2,8 @@ import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { expect, test } from 'vitest'
-import { projectApproval, projectScope } from '../src/reviewer/shell/policy/index.js'
-import { createTestSandbox } from './support/sandbox.js'
+import { projectApproval, projectScope } from '../src/reviewer/shell/policy/index'
+import { createTestSandbox } from './support/sandbox'
 
 /** -------------------- 常量 -------------------- */
 /** 仅在 POSIX 主机执行的符号链接审批测试 */

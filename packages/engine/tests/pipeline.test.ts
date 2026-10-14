@@ -16,8 +16,8 @@ import { readThreadInteraction, readThreadInterrupt } from '@elmino/thread'
 import { defineTools } from '@elmino/tool'
 import { expect, onTestFinished, test, vi } from 'vitest'
 import * as z from 'zod'
-import { testFiles } from './support/files.js'
-import { createModel, response } from './support/model.js'
+import { testFiles } from './support/files'
+import { createModel, response } from './support/model'
 
 /** 以真实默认 Loop、SQLite 和本地执行环境验证公开装配 */
 async function createPipeline(tools?: DefinedTools, hooks?: AgentHooks) {

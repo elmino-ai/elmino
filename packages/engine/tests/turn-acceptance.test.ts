@@ -1,13 +1,6 @@
 import { setImmediate } from 'node:timers/promises'
 import { expect, test, vi } from 'vitest'
-import {
-  createAgent,
-  createEngine,
-  createEngineStore,
-  disposeEngineStore,
-  testId,
-  turnRequest,
-} from './support/engine.js'
+import { createAgent, createEngine, createEngineStore, disposeEngineStore, testId, turnRequest } from './support/engine'
 
 /** -------------------- 测试 -------------------- */
 test('Engine 仅在输入与启动状态持久化后确认接纳，后续失败不撤销确认', async () => {

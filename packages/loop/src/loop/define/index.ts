@@ -11,5 +11,5 @@ export type {
   TurnRuntimeEventHandler,
   TurnServices,
   TurnSteering,
-} from '../types/index.js'
-export { defineLoop } from './define.js'
+} from '../types/index'
+export { defineLoop } from './define'

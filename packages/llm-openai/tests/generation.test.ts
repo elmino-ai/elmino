@@ -1,5 +1,5 @@
 import type { Request } from '@elmino/llm'
-import type { CapturedRequest } from './support/provider.js'
+import type { CapturedRequest } from './support/provider'
 import { ChatCompletionsProvider, ResponsesProvider } from '@elmino/llm-openai'
 import { validateCache } from '@elmino/llm/cache'
 import { describe, expect, test } from 'vitest'
@@ -17,7 +17,7 @@ import {
   openAIResponse,
   qwenResponse,
   request,
-} from './support/provider.js'
+} from './support/provider'
 
 describe('openai generation', () => {
   test('需要认证的供应商缺少 API Key 时在工厂边界失败', () => {

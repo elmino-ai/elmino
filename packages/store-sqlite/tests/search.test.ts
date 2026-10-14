@@ -6,8 +6,8 @@ import { createId } from '@elmino/shared'
 import { SqliteStore } from '@elmino/store-sqlite'
 import { LocalBlobStore } from '@elmino/store/local'
 import { afterEach, beforeEach, expect, test } from 'vitest'
-import { testFiles } from './support/files.js'
-import { testSubagentRole, testSubagentRoles } from './support/subagent.js'
+import { testFiles } from './support/files'
+import { testSubagentRole, testSubagentRoles } from './support/subagent'
 
 /** -------------------- 测试环境 -------------------- */
 let root: string

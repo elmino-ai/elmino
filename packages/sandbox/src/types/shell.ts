@@ -1,5 +1,5 @@
 import type { Promisable } from '@elmino/shared'
-import type { LocalShellKind } from './local.js'
+import type { LocalShellKind } from './local'
 
 /** -------------------- 类型 -------------------- */
 /** Shell 会话状态 */

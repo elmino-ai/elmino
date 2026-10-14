@@ -1,1 +1,1 @@
-export { AnthropicMessagesProvider } from './messages/index.js'
+export { AnthropicMessagesProvider } from './messages/index'

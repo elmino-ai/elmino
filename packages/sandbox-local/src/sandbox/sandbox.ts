@@ -10,10 +10,10 @@ import type {
   SandboxShell,
 } from '@elmino/sandbox'
 import path from 'node:path'
-import { LocalSandboxFiles } from '../filesystem/files.js'
-import { LocalSandboxPermissions } from '../filesystem/permissions.js'
-import { LocalSandboxReviewer } from '../review/reviewer.js'
-import { LocalSandboxShell } from '../shell/shell.js'
+import { LocalSandboxFiles } from '../filesystem/files'
+import { LocalSandboxPermissions } from '../filesystem/permissions'
+import { LocalSandboxReviewer } from '../review/reviewer'
+import { LocalSandboxShell } from '../shell/shell'
 
 /** -------------------- 类型 -------------------- */
 /** 本地沙箱初始化参数 */

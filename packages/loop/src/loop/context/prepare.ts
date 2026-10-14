@@ -1,7 +1,7 @@
-import type { ActiveTurn } from '../turn/active.js'
+import type { ActiveTurn } from '../turn/active'
 import { appendCanonicalMessages } from '@elmino/thread'
-import { createContextBudget } from '../../budget/index.js'
-import { createSystemPrompt } from './system.js'
+import { createContextBudget } from '../../budget/index'
+import { createSystemPrompt } from './system'
 
 /** -------------------- 下一请求 Context 投影 -------------------- */
 /**

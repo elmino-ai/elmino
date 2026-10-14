@@ -38,8 +38,9 @@ elmino 是面向应用开发的可复用 Agent 框架，首阶段聚焦模型适
 独立包隔离安装依赖和发布边界；包内需要细分 API 时，通过明确的 `exports` 子路径提供。消费方按需要安装包，再从包根或已声明的子路径导入
 
 - 产物使用 ESM JavaScript 和 TypeScript 类型声明，公开入口指向 `dist` 中的实际文件
-- `tsconfig.base.json` 维护检查规则，`tsconfig.build.base.json` 提供产物配置；各包声明自身 `rootDir`、`outDir` 与源码范围
+- `tsconfig.base.json` 维护检查规则，`tsconfig.build.base.json` 提供声明配置；公共 `tsdown.config.mjs` 保留包内模块目录并生成 JavaScript、类型与映射，各包声明自身源码范围
 - 各包使用 `files` 白名单交付 `dist` 与映射所需的 `src`，不包含测试、开发配置或本地环境文件；公开入口始终指向编译产物
+- TypeScript 源码的相对导入省略文件后缀；构建器为 JavaScript 和声明中的相对路径补齐 `.js`，发布包可直接被 Node.js ESM 消费
 - workspace 依赖在打包时转换为发布版本范围，产物不依赖仓库别名、源码目录或本地路径
 - 模型适配器按 SDK 依赖独立交付，安装 OpenAI 适配器时无需安装 Anthropic SDK
 - 数据库存储独立交付，安装 `store` 不安装 Drizzle、dayjs 或模型 SDK；基础入口不引入本地文件实现

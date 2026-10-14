@@ -2,8 +2,8 @@ import type { ToolCallPart } from '@elmino/llm'
 import type { ThreadLocation } from '@elmino/runtime'
 import type { ExcludeStrict, SetRequired, UnknownRecord } from '@elmino/shared'
 import type { ThreadMessage, ThreadPart, ThreadPartStatus, ThreadTokenUsage } from '@elmino/store'
-import type { ThreadRuntimeState } from '../runtime/state.js'
-import type { ThreadChildState, ThreadState, ThreadTurnState } from './state.js'
+import type { ThreadRuntimeState } from '../runtime/state'
+import type { ThreadChildState, ThreadState, ThreadTurnState } from './state'
 
 /** -------------------- 快照类型 -------------------- */
 /** 从 Canonical 历史重建 Provider Context 所需的最小状态 */

@@ -1,9 +1,9 @@
 import type { Message, ModelTurnConfig } from '@elmino/llm'
 import type { ThreadContextBudget, ThreadSnapshotRecord } from '@elmino/thread'
-import type { PromptContextSection } from '../../hooks/index.js'
-import type { RecoveryStatus } from '../../recovery/index.js'
-import { createEmptyContextBudget } from '../../budget/index.js'
-import { createRecoveryStatus } from '../../recovery/index.js'
+import type { PromptContextSection } from '../../hooks/index'
+import type { RecoveryStatus } from '../../recovery/index'
+import { createEmptyContextBudget } from '../../budget/index'
+import { createRecoveryStatus } from '../../recovery/index'
 
 /** -------------------- 类型 -------------------- */
 /** Loop 跨 Step 保留的可变状态 */

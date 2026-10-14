@@ -1,8 +1,8 @@
 import type { z } from 'zod'
-import type { CacheCapability } from '../cache/index.js'
-import type { ObjectResult } from '../object/index.js'
-import type { Request, Result } from '../request/index.js'
-import type { EventHandler } from '../stream/index.js'
+import type { CacheCapability } from '../cache/index'
+import type { ObjectResult } from '../object/index'
+import type { Request, Result } from '../request/index'
+import type { EventHandler } from '../stream/index'
 
 /** -------------------- 类型 -------------------- */
 /** Provider 能力声明 */

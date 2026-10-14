@@ -1,5 +1,5 @@
 import type { Message, TextPart } from '@elmino/llm'
-import type { ActiveTurn } from '../turn/active.js'
+import type { ActiveTurn } from '../turn/active'
 
 /** -------------------- 类型 -------------------- */
 /** 单次 Provider sampling 的冻结上下文 */
