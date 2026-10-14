@@ -67,7 +67,7 @@ export async function updateThreadSnapshot(
 }
 
 /**
- * 更新单个扩展命名空间并保留事务开始时的其他插件状态
+ * 更新单个扩展命名空间并保留事务开始时的其他扩展状态
  */
 export async function updateThreadExtensionState(
   store: RuntimeStore,

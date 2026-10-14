@@ -29,7 +29,7 @@ export function defineThread(options: {
       )
         ? threadSnapshot.turnId
         : undefined
-      // extensionState 是内部恢复事实，只有经过状态定义读取的插件状态才能进入公开协议
+      // extensionState 是内部恢复事实，只有经过宿主状态定义读取的扩展状态才能进入公开数据
       const runtime: ThreadRuntimeState = {
         ...objectPick(
           threadSnapshot,

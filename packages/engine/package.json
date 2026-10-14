@@ -1,0 +1,55 @@
+{
+  "name": "@elmino/engine",
+  "type": "module",
+  "version": "0.0.0",
+  "description": "Agent 调度、Turn 与 Step 生命周期和子智能体协调",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./job": {
+      "types": "./dist/job/index.d.ts",
+      "import": "./dist/job/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=24.18.1"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node --input-type=module -e \"import { cp } from 'node:fs/promises'; await cp('src/prompts/template', 'dist/prompts/template', { recursive: true })\"",
+    "typecheck": "tsc -p tsconfig.json",
+    "prepack": "pnpm build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@elmino/agent": "workspace:^",
+    "@elmino/llm": "workspace:^",
+    "@elmino/loop": "workspace:^",
+    "@elmino/runtime": "workspace:^",
+    "@elmino/shared": "workspace:^",
+    "@elmino/store": "workspace:^",
+    "@elmino/thread": "workspace:^",
+    "@elmino/tool": "workspace:^",
+    "p-queue": "catalog:",
+    "dayjs": "catalog:",
+    "zod": "catalog:",
+    "yaml": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "@elmino/store-sqlite": "workspace:^",
+    "@elmino/sandbox-local": "workspace:^"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

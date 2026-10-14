@@ -22,8 +22,8 @@ export interface ThreadInterrupt<
   kind: ThreadInterruptKind
   /** Interaction 在所属命名空间内的稳定名称 */
   interaction?: string
-  /** 插件 Interaction 的稳定插件 ID；Loop 内置 Interaction 不提供 */
-  pluginId?: string
+  /** 宿主 Interaction 的稳定归属键；Loop 内置 Interaction 不提供 */
+  ownerId?: string
   /** 中断状态 */
   status: ThreadInterruptStatus
   /** 所属 Turn ID */
@@ -127,10 +127,10 @@ function isThreadInterrupt(
       || typeof value.interaction === 'string'
     )
     && (
-      value.pluginId === undefined
+      value.ownerId === undefined
       || (
-        typeof value.pluginId === 'string'
-        && value.pluginId.length > 0
+        typeof value.ownerId === 'string'
+        && value.ownerId.length > 0
       )
     )
     && (

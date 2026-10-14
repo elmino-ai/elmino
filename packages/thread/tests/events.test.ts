@@ -58,6 +58,7 @@ test('中断恢复和 Mention 保留可持久 JSON，输入排序保持文本与
     id: createId('interrupt'),
     kind: 'interaction',
     interaction: 'confirm',
+    ownerId: 'host.confirm',
     status: 'pending',
     turnId,
     reason: 'confirm',
@@ -67,6 +68,8 @@ test('中断恢复和 Mention 保留可持久 JSON，输入排序保持文本与
   }
 
   expect(readThreadInteraction(readThreadInterrupt(interrupt))).toEqual(interrupt)
+  expect(readThreadInterrupt({ ...interrupt, ownerId: '' })).toBeUndefined()
+  expect(readThreadInterrupt({ ...interrupt, ownerId: 1 })).toBeUndefined()
   expect(readThreadInterrupt({ ...interrupt, payload: { fn: () => undefined } })).toBeUndefined()
   const mention = { type: 'mention' as const, pluginId: 'host', resourceId: 'file', trigger: '@', label: 'file' }
   const text = { type: 'text' as const, text: 'read ' }
