@@ -24,6 +24,9 @@ catalogs:
     openai:
       specifier: 7.4.0
       version: 7.4.0
+    type-fest:
+      specifier: 5.8.0
+      version: 5.8.0
     typescript:
       specifier: 6.0.3
       version: 6.0.3
@@ -56,6 +59,9 @@ importers:
 
   packages/llm:
     dependencies:
+      '@elmino/shared':
+        specifier: workspace:^
+        version: link:../shared
       zod:
         specifier: 'catalog:'
         version: 4.4.3
@@ -91,12 +97,28 @@ importers:
       '@elmino/llm':
         specifier: workspace:^
         version: link:../llm
+      '@elmino/shared':
+        specifier: workspace:^
+        version: link:../shared
       openai:
         specifier: 'catalog:'
         version: 7.4.0(zod@4.4.3)
       zod:
         specifier: 'catalog:'
         version: 4.4.3
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@24.13.3)(vite@8.3.4(@types/node@24.13.3)(jiti@2.7.0)(yaml@2.9.1))
+
+  packages/shared:
+    dependencies:
+      type-fest:
+        specifier: 'catalog:'
+        version: 5.8.0
     devDependencies:
       typescript:
         specifier: 'catalog:'
@@ -1938,6 +1960,10 @@ packages:
     resolution: {integrity: sha512-eNRKgb3z66Yp3D2CixVujOUvXLFUTij/zVnV8KRyvFdQwpz7I5DS8UfRkTeLzb64u+dkzDSdelE24izu+zSSUg==}
     engines: {node: ^14.18.0 || >=16.0.0}
 
+  tagged-tag@1.0.0:
+    resolution: {integrity: sha512-yEFYrVhod+hdNyx7g5Bnkkb0G6si8HJurOoOEgC8B/O0uXLHlaey/65KRv6cuWBNhBgHKAROVpc7QyYqE5gFng==}
+    engines: {node: '>=20'}
+
   tailwind-csstree@0.3.3:
     resolution: {integrity: sha512-je9J5UYRsTJqAjYrIBMMlge8T/rreRd44pJxgG5Zx/zeo4kAC/liUKqzztRZrGlYRJLvIf2Cb1DVJMTXSzEShA==}
     engines: {node: '>=18.18'}
@@ -2005,6 +2031,10 @@ packages:
   type-fest@4.41.0:
     resolution: {integrity: sha512-TeTSQ6H5YHvpqVwBRcnLDCBnDOHWYu7IvGbHT6N8AOymcr9PJGjc1GTtiWZTYg0NCgYwvnYWEkVChQAr9bjfwA==}
     engines: {node: '>=16'}
+
+  type-fest@5.8.0:
+    resolution: {integrity: sha512-YGYEVz3Fm5iy/AybuA0oyNFq7H4CgQNfRp/qfe8nurE1kuCeNm3/vfm9X4Mtl+qLyaKJUh5xrFZwogr41SMjYA==}
+    engines: {node: '>=20'}
 
   typescript@6.0.3:
     resolution: {integrity: sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==}
@@ -4295,6 +4325,8 @@ snapshots:
     dependencies:
       '@pkgr/core': 0.3.6
 
+  tagged-tag@1.0.0: {}
+
   tailwind-csstree@0.3.3: {}
 
   tailwindcss@4.3.3: {}
@@ -4349,6 +4381,10 @@ snapshots:
       prelude-ls: 1.2.1
 
   type-fest@4.41.0: {}
+
+  type-fest@5.8.0:
+    dependencies:
+      tagged-tag: 1.0.0
 
   typescript@6.0.3: {}
 

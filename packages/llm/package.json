@@ -58,6 +58,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@elmino/shared": "workspace:^",
     "zod": "catalog:"
   },
   "devDependencies": {

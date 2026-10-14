@@ -20,3 +20,4 @@ catalog:
   openai: 7.4.0
   zod: 4.4.3
   vitest: 4.1.10
+  type-fest: 5.8.0

@@ -1,10 +1,10 @@
+import type { UnknownRecord } from 'type-fest'
+
 /** -------------------- 核心函数 -------------------- */
 /**
  * 判断未知值是否为普通对象
  */
-export function isPlainRecord(
-  value: unknown,
-): value is Record<PropertyKey, unknown> {
+export function isPlainRecord(value: unknown): value is UnknownRecord {
   if (!value || typeof value !== 'object' || Array.isArray(value))
     return false
 

@@ -1,3 +1,4 @@
+import type { Promisable } from '@elmino/shared'
 import type { Part } from '../message/index.js'
 import type { Usage } from '../usage/index.js'
 
@@ -16,4 +17,4 @@ export type Event
     | { type: 'usage', usage: Usage }
 
 /** 非权威流事件处理器 */
-export type EventHandler = (event: Event) => void | PromiseLike<void>
+export type EventHandler = (event: Event) => Promisable<void>

@@ -35,6 +35,7 @@
   },
   "dependencies": {
     "@elmino/llm": "workspace:^",
+    "@elmino/shared": "workspace:^",
     "openai": "catalog:",
     "zod": "catalog:"
   },

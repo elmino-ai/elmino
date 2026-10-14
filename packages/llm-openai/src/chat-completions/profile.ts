@@ -1,4 +1,4 @@
-import { isPlainRecord } from '@elmino/llm/adapter'
+import { isPlainRecord } from '@elmino/shared'
 
 /** -------------------- 类型 -------------------- */
 /** Chat Completions Provider 与模型的私有协议差异 */

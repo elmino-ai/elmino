@@ -1,5 +1,6 @@
+import type { UnknownRecord } from '@elmino/shared'
 import type { FinishReason, Message, Part, ToolCallPart } from '../message/index.js'
-import { isPlainRecord } from './record.js'
+import { isPlainRecord } from '@elmino/shared'
 
 /** -------------------- 核心函数 -------------------- */
 /**
@@ -14,7 +15,7 @@ export function tokenCount(value: unknown) {
 /**
  * 保留 Provider 原始对象供诊断
  */
-export function rawRecord(value: unknown): Record<string, unknown> | undefined {
+export function rawRecord(value: unknown): UnknownRecord | undefined {
   return isPlainRecord(value) ? value : undefined
 }
 

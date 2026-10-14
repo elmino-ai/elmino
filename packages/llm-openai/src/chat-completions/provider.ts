@@ -23,15 +23,9 @@ import type { CompletionUsage } from 'openai/resources/completions'
 import type { ProviderReuseStrategy } from '../policy/reuse.js'
 import type { ChatCompletionsProfile } from './profile.js'
 import { parseObject } from '@elmino/llm'
-import {
-  createAssistantMessage,
-  createToolCall,
-  createToolCallStart,
-  isPlainRecord,
-  rawRecord,
-  tokenCount,
-} from '@elmino/llm/adapter'
+import { createAssistantMessage, createToolCall, createToolCallStart, rawRecord, tokenCount } from '@elmino/llm/adapter'
 import { resolveProviderAuth } from '@elmino/llm/provider'
+import { isPlainRecord } from '@elmino/shared'
 import OpenAI from 'openai'
 import { z } from 'zod'
 import { resolveReuse } from '../policy/reuse.js'

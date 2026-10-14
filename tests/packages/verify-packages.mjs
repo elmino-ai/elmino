@@ -1,3 +1,4 @@
+/* eslint antfu/no-top-level-await: off -- 独立 Node.js 交付测试直接顺序执行异步验收 */
 import assert from 'node:assert/strict'
 import { execFile } from 'node:child_process'
 import { mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises'
@@ -8,8 +9,8 @@ import { promisify } from 'node:util'
 
 /** 在仓库外检查真实 tarball 的运行、类型和依赖隔离 */
 const run = promisify(execFile)
-const root = fileURLToPath(new URL('../', import.meta.url))
-const packageNames = ['llm', 'llm-openai', 'llm-anthropic']
+const root = fileURLToPath(new URL('../../', import.meta.url))
+const packageNames = ['shared', 'llm', 'llm-openai', 'llm-anthropic']
 const archives = new Map()
 
 for (const name of packageNames) {
@@ -39,7 +40,7 @@ for (const name of packageNames) {
     for (const source of map.sources)
       assert.ok(files.has(path.posix.join(path.posix.dirname(file), source)), source)
   }
-  for (const [dependency, version] of Object.entries(manifest.dependencies)) {
+  for (const [dependency, version] of Object.entries(manifest.dependencies ?? {})) {
     assert.ok(!/^(?:workspace:|catalog:|file:|link:)/u.test(version), `${dependency}: ${version}`)
     assert.ok(!dependency.startsWith('@qygent/'), dependency)
   }
@@ -48,12 +49,13 @@ for (const name of packageNames) {
 
 for (const name of packageNames) {
   const dir = await mkdtemp(path.join(tmpdir(), `elmino-${name}-consumer-`))
-  const dependencies = { '@elmino/llm': `file:${archives.get('llm')}` }
+  const dependencies = { [`@elmino/${name}`]: `file:${archives.get(name)}` }
+  const isAdapter = name === 'llm-openai' || name === 'llm-anthropic'
   const sdk = name === 'llm-openai' ? 'openai' : '@anthropic-ai/sdk'
   const Adapter = name === 'llm-openai' ? 'ResponsesProvider' : 'AnthropicMessagesProvider'
 
-  if (name !== 'llm')
-    dependencies[`@elmino/${name}`] = `file:${archives.get(name)}`
+  if (name !== 'shared')
+    dependencies['@elmino/llm'] = `file:${archives.get('llm')}`
   await writeFile(path.join(dir, 'package.json'), JSON.stringify({
     private: true,
     type: 'module',
@@ -63,7 +65,8 @@ for (const name of packageNames) {
   // 尚未发布的内部依赖用同批 tarball 解析，保持真实打包后的版本声明不变
   await writeFile(
     path.join(dir, 'pnpm-workspace.yaml'),
-    `overrides:\n  '@elmino/llm': ${JSON.stringify(`file:${archives.get('llm')}`)}\n`,
+    `overrides:\n  '@elmino/shared': ${JSON.stringify(`file:${archives.get('shared')}`)}\n`
+    + `  '@elmino/llm': ${JSON.stringify(`file:${archives.get('llm')}`)}\n`,
   )
   console.log(`验证 @elmino/${name}：${dir}`)
   await run('pnpm', ['install', '--ignore-scripts', '--config.verifyDepsBeforeRun=false'], {
@@ -78,10 +81,28 @@ for (const name of packageNames) {
     assert.ok(!store.some(entry => entry.startsWith('@anthropic-ai+sdk@')))
   if (name !== 'llm-openai')
     assert.ok(!store.some(entry => entry.startsWith('openai@')))
-  if (name !== 'llm')
+  if (name === 'shared') {
+    assert.ok(!store.some(entry => entry.startsWith('zod@')))
+    assert.ok(!store.some(entry => entry.startsWith('p-queue@')))
+    assert.ok(!store.some(entry => entry.startsWith('@elmino+llm@')))
+  }
+  if (isAdapter)
     assert.ok(store.some(entry => entry.startsWith(`${sdk.replace('/', '+')}@`)))
 
-  const fixture = `
+  const fixture = name === 'shared'
+    ? `
+import { deepEqual, isPlainRecord } from '@elmino/shared'
+import type { Promisable, UnknownRecord } from '@elmino/shared'
+const record: UnknownRecord = { nested: { value: 1 }, items: ['ok'] }
+const pending: Promisable<UnknownRecord> = Promise.resolve(record)
+const resolved = await pending
+if (!isPlainRecord(resolved) || isPlainRecord([])) throw new Error('对象判定无法消费')
+if (!deepEqual(resolved, { nested: { value: 1 }, items: ['ok'] }))
+  throw new Error('嵌套比较无法消费')
+if (deepEqual(resolved, { nested: { value: 2 }, items: ['ok'] }))
+  throw new Error('对象差异无法判定')
+`
+    : `
 import { extractText } from '@elmino/llm'
 import type { Message, Provider, Request } from '@elmino/llm'
 import { createToolCall } from '@elmino/llm/adapter'
@@ -148,4 +169,4 @@ ChatCompletionsProvider.create({ model: 'local', apiKeyRequired: false })`
   await run(process.execPath, ['consumer.js'], { cwd: dir })
 }
 
-console.log('三个包的 tarball 内容、仓库外运行、类型和依赖隔离均通过')
+console.log(`${packageNames.length} 个包的 tarball 内容、仓库外运行、类型和依赖隔离均通过`)

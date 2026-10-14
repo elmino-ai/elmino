@@ -22,7 +22,8 @@
 - `llm` 只持有模型协议、公共消息处理与通用请求约束，不依赖 Agent、存储、UI、厂商 SDK 或产品配置
 - `llm-openai` 与 `llm-anthropic` 分别持有对应消息协议的适配器和厂商差异
 - Provider 原生字段只留在适配器边界，内部工具调用统一使用 `args`
-- `core` 持有 Agent 执行生命周期，执行实体按 `Thread -> Turn -> Step -> ToolInvocation` 组织
+- `shared` 持有实际跨包复用的纯工具和通用类型，领域类型留在实际拥有该能力的包，不整包复制产品共用代码
+- 下一批 `engine` 持有 Agent 调度与执行生命周期，执行实体按 `Thread -> Turn -> Step -> ToolInvocation` 组织；单轮执行、工具与插件通过执行器接入
 - 模型解析、持久化、运行环境与事件处理通过实际能力契约注入，避免内核依赖具体应用
 - 产品预设、品牌、账号、市场、遥测上报和 UI 不进入内核
 - 框架实现不反向依赖 qygent；迁移完成后由 qygent 消费框架包并删除旧实现
@@ -32,7 +33,7 @@
 ## npm 包与发布
 
 - 每个对外能力包必须能独立安装、构建、打包和发布；仓库根保持 `private: true`，发布包声明自身名称、版本与公开发布配置
-- 模型公共协议归 `llm`，厂商 SDK 与适配实现归独立 Provider 包；`llm` 和 `core` 不依赖具体 Provider 包
+- 模型公共协议归 `llm`，厂商 SDK 与适配实现归独立模型适配器包；`llm` 和 `engine` 不依赖具体适配器包
 - 独立包用于隔离安装依赖和发布边界，包内子路径用于细分公开 API；不按源码文件数量机械拆包
 - `exports`、`types` 和运行入口指向构建产物，不让消费者依赖 TypeScript 源码、仓库路径别名或 qygent 目录
 - 公共检查配置使用 `tsconfig.base.json`，公共产物配置使用 `tsconfig.build.base.json`；各包自行声明源码范围和输出目录

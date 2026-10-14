@@ -1,4 +1,4 @@
-import { isPlainRecord } from '@elmino/llm/adapter'
+import { isPlainRecord } from './record.js'
 
 /** -------------------- 核心函数 -------------------- */
 /**
