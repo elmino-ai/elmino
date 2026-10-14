@@ -12,7 +12,11 @@
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist", "src", "drizzle/runtime/migrations"],
+  "files": [
+    "dist",
+    "src",
+    "drizzle/runtime/migrations"
+  ],
   "engines": {
     "node": ">=24.18.1"
   },
@@ -20,7 +24,9 @@
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json",
     "prepack": "pnpm build",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:check": "node --import=tsx scripts/migrations.ts check",
+    "db:generate": "node --import=tsx scripts/migrations.ts generate"
   },
   "dependencies": {
     "@elmino/shared": "workspace:*",
@@ -30,7 +36,9 @@
   },
   "devDependencies": {
     "typescript": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "drizzle-kit": "catalog:",
+    "tsx": "catalog:"
   },
   "publishConfig": {
     "access": "public"
