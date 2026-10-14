@@ -1,32 +1,64 @@
 /* eslint antfu/no-top-level-await: off -- 独立 Node.js 交付测试直接顺序执行异步验收 */
 import assert from 'node:assert/strict'
 import { execFile } from 'node:child_process'
-import { mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises'
+import { copyFile, mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
+import { modelFixture } from './fixtures/models.mjs'
+import { blobFixture, sqliteFixture } from './fixtures/storage.mjs'
 
-/** 在仓库外检查真实 tarball 的运行、类型和依赖隔离 */
+/** 在仓库外检查真实 tarball 的运行、类型和依赖隔离，可按名称分批验收 */
 const run = promisify(execFile)
 const root = fileURLToPath(new URL('../../', import.meta.url))
-const packageNames = ['shared', 'llm', 'llm-openai', 'llm-anthropic', 'store', 'store-sqlite']
-const archives = new Map()
-const nodeTypes = JSON.parse(await readFile(path.join(root, 'node_modules/@types/node/package.json'), 'utf8'))
+const manifests = new Map()
+for (const entry of await readdir(path.join(root, 'packages'), { withFileTypes: true })) {
+  if (!entry.isDirectory())
+    continue
+  const manifest = JSON.parse(await readFile(path.join(root, 'packages', entry.name, 'package.json'), 'utf8'))
+  if (!manifest.private)
+    manifests.set(entry.name, manifest)
+}
+const requested = process.argv.slice(2).flatMap(value => value.split(','))
+const packageNames = requested.length
+  ? [...new Set(requested.map(name => name.replace(/^@elmino\//u, '')))]
+  : [...manifests.keys()]
+for (const name of packageNames) assert.ok(manifests.has(name), `未知包: ${name}`)
 
-for (const name of packageNames) {
-  const source = JSON.parse(await readFile(path.join(root, 'packages', name, 'package.json'), 'utf8'))
+/** 将实际内部依赖闭包全部解析到同批 tarball，保留发布 manifest 的版本声明 */
+function dependencyClosure(name, result = new Set()) {
+  if (result.has(name))
+    return result
+  result.add(name)
+  for (const dependency of Object.keys(manifests.get(name).dependencies ?? {})) {
+    if (dependency.startsWith('@elmino/'))
+      dependencyClosure(dependency.slice('@elmino/'.length), result)
+  }
+  return result
+}
+// 真实集成夹具的数据库适配器只作为消费者开发依赖，Engine 的发布依赖仍保持可替换
+const fixturePackages = new Map([['engine', ['store-sqlite']]])
+const packedNames = new Set(packageNames.flatMap(name => [
+  ...dependencyClosure(name),
+  ...(fixturePackages.get(name) ?? []).flatMap(item => [...dependencyClosure(item)]),
+]))
+const archives = new Map()
+const packedManifests = new Map()
+for (const name of packedNames) {
+  const source = manifests.get(name)
   const archive = path.join(root, 'dist/packs', `elmino-${name}-${source.version}.tgz`)
   const { stdout: content } = await run('tar', ['-tzf', archive])
   const { stdout: metadata } = await run('tar', ['-xOf', archive, 'package/package.json'])
   const manifest = JSON.parse(metadata)
   const files = new Set(content.trim().split('\n'))
-
-  assert.equal(manifest.name, `@elmino/${name}`)
+  assert.equal(manifest.name, source.name)
+  assert.equal(manifest.version, source.version)
+  assert.deepEqual(Object.keys(manifest.dependencies ?? {}).sort(), Object.keys(source.dependencies ?? {}).sort())
+  assert.deepEqual(Object.keys(manifest.exports).sort(), Object.keys(source.exports).sort())
   assert.ok(!manifest.private)
   for (const file of files) {
-    assert.ok(file === 'package/package.json'
-      || file.startsWith('package/dist/') || file.startsWith('package/src/')
+    assert.ok(file === 'package/package.json' || file.startsWith('package/dist/') || file.startsWith('package/src/')
       || (name === 'store-sqlite' && file.startsWith('package/drizzle/runtime/migrations/')), file)
   }
   for (const entry of Object.values(manifest.exports)) {
@@ -37,211 +69,141 @@ for (const name of packageNames) {
     if (!file.endsWith('.map'))
       continue
     const { stdout } = await run('tar', ['-xOf', archive, file])
-    const map = JSON.parse(stdout)
-
-    for (const source of map.sources)
+    for (const source of JSON.parse(stdout).sources)
       assert.ok(files.has(path.posix.join(path.posix.dirname(file), source)), source)
   }
   for (const [dependency, version] of Object.entries(manifest.dependencies ?? {})) {
     assert.ok(!/^(?:workspace:|catalog:|file:|link:)/u.test(version), `${dependency}: ${version}`)
     assert.ok(!dependency.startsWith('@qygent/'), dependency)
   }
-  archives.set(name, archive)
-}
-
-/** 本地 BlobStore 的真实公开入口消费，不依赖产品 Sandbox */
-const blobFixture = `
-import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
-import path from 'node:path'
-import type { BlobStore } from '@elmino/store'
-import { LocalBlobStore } from '@elmino/store/local'
-const blobs: BlobStore = LocalBlobStore.create({
-  rootDir: path.resolve('blobs'),
-  files: {
-    async exists(file: string) {
-      try { await access(file); return true }
-      catch (error) {
-        if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false
-        throw error
-      }
-    },
-    async readBytes(file: string) { return new Uint8Array(await readFile(file)) },
-    async writeBytes(file: string, bytes: Uint8Array) {
-      await mkdir(path.dirname(file), { recursive: true })
-      await writeFile(file, bytes)
-      return {}
-    },
-  },
-})
-const content = new TextEncoder().encode('published artifact content')
-const blob = await blobs.write(content)
-if (!await blobs.exists(blob.blobKey)) throw new Error('文件内容没有落盘')
-if (new TextDecoder().decode(await blobs.read(blob.blobKey)) !== 'published artifact content')
-  throw new Error('文件内容无法回读')
-if ((await blobs.write(content)).blobKey !== blob.blobKey) throw new Error('相同内容未复用')
-`
-
-/** 仓库外消费 SQLite 包，确认版本化迁移、事务和重开 */
-const sqliteFixture = `
-${blobFixture}
-import type { RuntimeStore } from '@elmino/store'
-import { SqliteStore } from '@elmino/store-sqlite'
-const options = { dataDir: path.resolve('database'), blobStore: blobs }
-let store: RuntimeStore = await SqliteStore.create(options)
-try {
-  const thread = await store.threads.upsert({
-    id: 'thread_package', agentId: 'agent_package', dir: '.',
-  })
-  const artifact = await store.artifacts.write({
-    threadId: thread.id, contentKind: 'text', contentText: 'installed database',
-  })
-  const binary = await store.artifacts.write({
-    threadId: thread.id, contentKind: 'bytes', contentBytes: content,
-  })
-  if (binary.storage !== 'blob' || !binary.blobKey || !await blobs.exists(binary.blobKey))
-    throw new Error('数据库未引用注入的内容存储')
-  const failure = new Error('expected rollback')
-  try {
-    await store.transaction(async (tx) => {
-      await tx.threads.upsert({ id: thread.id, pinned: true })
-      throw failure
-    })
-    throw new Error('失败事务未拒绝')
+  if (name === 'loop' || name === 'engine') {
+    const prompts = [...files].filter(file => file.startsWith('package/dist/prompts/template/') && file.endsWith('.md'))
+    assert.equal(prompts.length, name === 'loop' ? 4 : 3, `${name} 提示词资源缺失`)
+    for (const file of prompts) {
+      const { stdout } = await run('tar', ['-xOf', archive, file])
+      const source = path.join(root, 'packages', name, file.replace('package/dist/', 'src/'))
+      assert.equal(stdout, await readFile(source, 'utf8'))
+    }
   }
-  catch (error) { if (error !== failure) throw error }
-  if ((await store.threads.read(thread.id))?.pinned) throw new Error('失败事务未回滚')
-  await store.close()
-  store = await SqliteStore.create(options)
-  if ((await store.artifacts.readText(artifact.id))?.content !== 'installed database')
-    throw new Error('数据库重开后未保留正文')
-  if ((await store.artifacts.read(binary.id))?.blobKey !== binary.blobKey)
-    throw new Error('数据库重开后未保留内容引用')
+  if (name === 'store-sqlite') {
+    const migrations = [...files].filter(file =>
+      file.startsWith('package/drizzle/runtime/migrations/') && file.endsWith('.sql'),
+    )
+    assert.ok(migrations.length, 'SQLite 迁移资源缺失')
+    for (const file of migrations) {
+      const { stdout } = await run('tar', ['-xOf', archive, file])
+      const source = path.join(root, 'packages/store-sqlite', file.slice('package/'.length))
+      assert.equal(stdout, await readFile(source, 'utf8'))
+    }
+  }
+  archives.set(name, archive)
+  packedManifests.set(name, manifest)
 }
-finally { await store.close() }
-`
+
+/** 仅根据真实包依赖决定哪些 SDK、原生实现和引擎能力允许随安装进入 */
+const isolatedDependencies = [
+  'openai',
+  '@anthropic-ai/sdk',
+  'zod',
+  'p-queue',
+  'drizzle-orm',
+  'dayjs',
+  '@lydell/node-pty',
+  '@vscode/ripgrep',
+]
+const nodeTypes = JSON.parse(await readFile(path.join(root, 'node_modules/@types/node/package.json'), 'utf8'))
+/** 检查正式包安装和带明确夹具依赖的集成安装，各自只能含其实际依赖闭包 */
+async function assertInstalledClosure(dir, name, closure) {
+  const allowed = new Set([...closure].flatMap(item => Object.keys(packedManifests.get(item).dependencies ?? {})))
+  const installed = await readdir(path.join(dir, 'node_modules/.pnpm'))
+  assert.ok(!installed.some(entry => entry.startsWith('@qygent+')))
+  for (const dependency of isolatedDependencies) {
+    const prefix = `${dependency.replace('/', '+')}@`
+    assert.equal(installed.some(entry => entry.startsWith(prefix)), allowed.has(dependency), `${name}: ${dependency}`)
+  }
+  for (const item of manifests.keys()) {
+    const present = installed.some(entry => entry.startsWith(`@elmino+${item}@`))
+    assert.equal(present, closure.has(item), `${name}: @elmino/${item}`)
+  }
+}
 
 for (const name of packageNames) {
-  const dir = await mkdtemp(path.join(tmpdir(), `elmino-${name}-consumer-`))
-  const dependencies = { [`@elmino/${name}`]: `file:${archives.get(name)}` }
-  const isAdapter = name === 'llm-openai' || name === 'llm-anthropic'
-  const isModel = name === 'llm' || isAdapter
-  const isStorage = name === 'store' || name === 'store-sqlite'
-  const sdk = name === 'llm-openai' ? 'openai' : '@anthropic-ai/sdk'
-  const Adapter = name === 'llm-openai' ? 'ResponsesProvider' : 'AnthropicMessagesProvider'
+  let fixture
+  if (name === 'store')
+    fixture = blobFixture
+  else if (name === 'store-sqlite')
+    fixture = sqliteFixture
+  else if (['llm', 'llm-openai', 'llm-anthropic'].includes(name))
+    fixture = modelFixture(name)
+  else
+    fixture = await readFile(new URL(`./fixtures/${name}.ts`, import.meta.url), 'utf8')
 
-  if (isAdapter)
-    dependencies['@elmino/llm'] = `file:${archives.get('llm')}`
-  if (name === 'store-sqlite')
-    dependencies['@elmino/store'] = `file:${archives.get('store')}`
+  const productionClosure = dependencyClosure(name)
+  const extraPackages = fixturePackages.get(name) ?? []
+  const closure = new Set([
+    ...productionClosure,
+    ...extraPackages.flatMap(item => [...dependencyClosure(item)]),
+  ])
+  const allowed = new Set([...closure].flatMap(item => Object.keys(packedManifests.get(item).dependencies ?? {})))
+  const dependencies = { [`@elmino/${name}`]: `file:${archives.get(name)}` }
+  const devDependencies = { '@types/node': nodeTypes.version }
+  for (const item of extraPackages)
+    devDependencies[`@elmino/${item}`] = `file:${archives.get(item)}`
+  // 夹具直接消费的公开类型和构造入口也必须是其能力包已有的依赖
+  for (const match of fixture.matchAll(/from ['"](@elmino\/[^'"]+|zod)['"]/gu)) {
+    const imported = match[1].startsWith('@elmino/') ? match[1].split('/').slice(0, 2).join('/') : match[1]
+    if (imported === `@elmino/${name}` || imported in devDependencies)
+      continue
+    assert.ok(allowed.has(imported), `${name} 消费了依赖闭包之外的入口: ${imported}`)
+    dependencies[imported] = imported.startsWith('@elmino/')
+      ? `file:${archives.get(imported.slice('@elmino/'.length))}`
+      : [...closure].map(item => packedManifests.get(item).dependencies?.[imported]).find(Boolean)
+  }
+  if (name === 'runtime' || name === 'tool' || name === 'agent' || name === 'engine')
+    dependencies['@elmino/sandbox'] = `file:${archives.get('sandbox')}`
+  const dir = await mkdtemp(path.join(tmpdir(), `elmino-${name}-consumer-`))
+  const overrides = [...archives].map(([item, archive]) =>
+    `  '@elmino/${item}': ${JSON.stringify(`file:${archive}`)}\n`,
+  ).join('')
+  await writeFile(path.join(dir, 'pnpm-workspace.yaml'), `overrides:\n${overrides}`)
+  console.log(`验证 @elmino/${name}：${dir}`)
+  if (extraPackages.length) {
+    assert.ok(!productionClosure.has('store-sqlite'), `${name} 正式依赖绑定了数据库实现`)
+    assert.ok(!productionClosure.has('sandbox-local'), `${name} 正式依赖绑定了本机执行实现`)
+    await writeFile(path.join(dir, 'package.json'), JSON.stringify({
+      private: true,
+      type: 'module',
+      packageManager: 'pnpm@11.18.0',
+      dependencies: { [`@elmino/${name}`]: `file:${archives.get(name)}` },
+      devDependencies: { '@types/node': nodeTypes.version },
+    }, null, 2))
+    await run('pnpm', ['install', '--ignore-scripts'], { cwd: dir, maxBuffer: 5 * 1024 * 1024 })
+    await assertInstalledClosure(dir, name, productionClosure)
+  }
   await writeFile(path.join(dir, 'package.json'), JSON.stringify({
     private: true,
     type: 'module',
     packageManager: 'pnpm@11.18.0',
     dependencies,
-    ...(isStorage ? { devDependencies: { '@types/node': nodeTypes.version } } : {}),
+    devDependencies,
   }, null, 2))
-  // 尚未发布的内部依赖用同批 tarball 解析，保持真实打包后的版本声明不变
-  await writeFile(
-    path.join(dir, 'pnpm-workspace.yaml'),
-    `overrides:\n${packageNames.map(packageName =>
-      `  '@elmino/${packageName}': ${JSON.stringify(`file:${archives.get(packageName)}`)}\n`,
-    ).join('')}`,
-  )
-  console.log(`验证 @elmino/${name}：${dir}`)
-  await run('pnpm', ['install', '--ignore-scripts', '--config.verifyDepsBeforeRun=false'], {
-    cwd: dir,
-    maxBuffer: 5 * 1024 * 1024,
-  })
-
-  const store = await readdir(path.join(dir, 'node_modules/.pnpm'))
-
-  assert.ok(!store.some(entry => entry.startsWith('@qygent+')))
-  if (name !== 'llm-anthropic')
-    assert.ok(!store.some(entry => entry.startsWith('@anthropic-ai+sdk@')))
-  if (name !== 'llm-openai')
-    assert.ok(!store.some(entry => entry.startsWith('openai@')))
-  if (!isModel) {
-    assert.ok(!store.some(entry => entry.startsWith('zod@')))
-    assert.ok(!store.some(entry => entry.startsWith('@elmino+llm@')))
+  await run('pnpm', ['install', '--ignore-scripts'], { cwd: dir, maxBuffer: 5 * 1024 * 1024 })
+  await assertInstalledClosure(dir, name, closure)
+  if (name === 'runtime' || name === 'tool' || name === 'agent' || name === 'engine') {
+    // 复用能力测试的强类型 Sandbox 夹具，生产包不依赖测试源码
+    await copyFile(path.join(root, 'packages/loop/tests/support/sandbox.ts'), path.join(dir, 'sandbox-support.ts'))
   }
-  assert.ok(!store.some(entry => entry.startsWith('p-queue@')))
-  if (name !== 'store-sqlite') {
-    assert.ok(!store.some(entry => entry.startsWith('drizzle-orm@')))
-    assert.ok(!store.some(entry => entry.startsWith('dayjs@')))
+  if (name === 'engine') {
+    await copyFile(path.join(root, 'packages/engine/tests/support/model.ts'), path.join(dir, 'model-support.ts'))
+    await copyFile(path.join(root, 'packages/engine/tests/support/files.ts'), path.join(dir, 'files-support.ts'))
   }
-  if (isAdapter)
-    assert.ok(store.some(entry => entry.startsWith(`${sdk.replace('/', '+')}@`)))
-
-  const fixture = isStorage
-    ? name === 'store' ? blobFixture : sqliteFixture
-    : name === 'shared'
-      ? `
-import { deepEqual, isPlainRecord } from '@elmino/shared'
-import type { Promisable, UnknownRecord } from '@elmino/shared'
-const record: UnknownRecord = { nested: { value: 1 }, items: ['ok'] }
-const pending: Promisable<UnknownRecord> = Promise.resolve(record)
-const resolved = await pending
-if (!isPlainRecord(resolved) || isPlainRecord([])) throw new Error('对象判定无法消费')
-if (!deepEqual(resolved, { nested: { value: 1 }, items: ['ok'] }))
-  throw new Error('嵌套比较无法消费')
-if (deepEqual(resolved, { nested: { value: 2 }, items: ['ok'] }))
-  throw new Error('对象差异无法判定')
-`
-      : `
-import { extractText } from '@elmino/llm'
-import type { Message, Provider, Request } from '@elmino/llm'
-import { createToolCall } from '@elmino/llm/adapter'
-import { RequestCache } from '@elmino/llm/cache'
-import { ObjectParseError } from '@elmino/llm/object'
-import { resolveProviderAuth } from '@elmino/llm/provider'
-import type { Result } from '@elmino/llm/request'
-import type { Event } from '@elmino/llm/stream'
-import { EMPTY_USAGE } from '@elmino/llm/usage'
-${name === 'llm' ? '' : `import { ${Adapter} } from '@elmino/${name}'`}
-${name === 'llm-openai'
-  ? `import { ChatCompletionsProvider } from '@elmino/llm-openai/chat-completions'
-import { ResponsesProvider as Responses } from '@elmino/llm-openai/responses'`
-  : ''}
-const message: Message = { role: 'assistant', parts: [{ type: 'text', text: 'ok' }] }
-const result: Result = { message, usage: EMPTY_USAGE }
-const event: Event = { type: 'usage', usage: result.usage }
-const request: Request = { system: [], messages: [], maxOutputTokens: 10 }
-if (extractText(message) !== 'ok' || event.usage.input !== 0) throw new Error('公共协议无法消费')
-if (createToolCall('native-call', 'tool', '{}').invalidArgs) throw new Error('工具参数无法解析')
-if (resolveProviderAuth({ model: 'local', apiKeyRequired: false }, 'bearer', 'local').type !== 'none')
-  throw new Error('认证策略无法消费')
-RequestCache.create({ cache: { modes: ['disabled'] }, defaultCache: { mode: 'disabled' } }).resolve(request)
-new ObjectParseError(result, new Error('expected'))
-${name === 'llm'
-  ? `const adapter: Provider | undefined = undefined
-if (adapter) throw new Error('协议包不应包含适配器')`
-  : `const adapter: Provider = ${Adapter}.create({ model: 'local', apiKeyRequired: false })
-if (adapter.model !== 'local') throw new Error('适配器无法装配')
-const client = Reflect.get(adapter, '_client') as { fetch: typeof fetch }
-const response = ${name === 'llm-openai'
-  ? `{ id: 'resp-local', status: 'completed',
-output: [{ type: 'message', content: [{ type: 'output_text', text: 'ok' }] }],
-usage: { input_tokens: 1, output_tokens: 1,
-input_tokens_details: { cached_tokens: 0 }, output_tokens_details: { reasoning_tokens: 0 } } }`
-  : `{ id: 'msg-local', stop_reason: 'end_turn', content: [{ type: 'text', text: 'ok' }],
-usage: { input_tokens: 1, output_tokens: 1 } }`}
-client.fetch = () => Promise.resolve(new Response(JSON.stringify(response), {
-  status: 200, headers: { 'content-type': 'application/json' },
-}))
-const generated = await adapter.generate(request)
-if (extractText(generated.message) !== 'ok' || generated.usage.input !== 1)
-  throw new Error('打包后的适配器无法通过 SDK 返回公共结果')`}
-${name === 'llm-openai'
-  ? `if (Responses !== ResponsesProvider) throw new Error('子路径与根出口不一致')
-ChatCompletionsProvider.create({ model: 'local', apiKeyRequired: false })`
-  : ''}
-`
-
   await writeFile(path.join(dir, 'consumer.ts'), fixture)
   await run(process.execPath, [
     path.join(root, 'node_modules/typescript/bin/tsc'),
     '--target',
     'ES2023',
+    '--lib',
+    'ES2023,ES2024.Promise,DOM,DOM.Iterable',
     '--module',
     'NodeNext',
     '--moduleResolution',
@@ -249,10 +211,10 @@ ChatCompletionsProvider.create({ model: 'local', apiKeyRequired: false })`
     '--strict',
     '--skipLibCheck',
     'false',
-    ...(isStorage ? ['--types', 'node'] : []),
+    '--types',
+    'node',
     'consumer.ts',
   ], { cwd: dir })
-  await run(process.execPath, ['consumer.js'], { cwd: dir })
+  await run(process.execPath, ['consumer.js'], { cwd: dir, timeout: 30_000 })
 }
-
-console.log(`${packageNames.length} 个包的 tarball 内容、仓库外运行、类型和依赖隔离均通过`)
+console.log(`${packageNames.length} 个选定包的 tarball 内容、仓库外运行、类型和依赖隔离均通过`)

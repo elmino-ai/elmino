@@ -2,7 +2,7 @@
 
 elmino 是面向应用开发的可复用 Agent 框架，首阶段聚焦模型适配与 Agent 内核
 
-当前已落地通用工具、模型适配、可插拔存储、线程事实、工具执行契约与运行环境；单轮执行与 Agent 引擎继续迁移，qygent 暂时使用原实现
+模型适配和完整 Agent 运行层已迁入，14 个能力包可以独立构建和打包。qygent 暂时使用原实现，应用接入及旧代码删除另行推进
 
 ## 首阶段边界
 
@@ -19,15 +19,17 @@ elmino 是面向应用开发的可复用 Agent 框架，首阶段聚焦模型适
 | `@elmino/runtime` | [packages/runtime](packages/runtime) | 线程执行位置与 Runtime 生命周期；`/local` 通过注入 Sandbox 装配 |
 | `@elmino/tool` | [packages/tool](packages/tool) | 工具定义、参数校验、作用域、审批、HostServices 与子智能体控制契约 |
 | `@elmino/thread` | [packages/thread](packages/thread) | Canonical 上下文、恢复快照、消息投影、工具事实提交和运行事件 |
-| `@elmino/engine` | 待迁入 | Agent 调度、Thread 执行互斥、Turn 接纳与结算、中断恢复及资源释放；单轮执行器由宿主注入 |
+| `@elmino/loop` | [packages/loop](packages/loop) | 单轮执行、上下文投影、采样恢复、工具并行、审批与执行 Hooks |
+| `@elmino/agent` | [packages/agent](packages/agent) | 装配工具、Hooks、Loop、Thread 和 Runtime，默认提供完整执行器 |
+| `@elmino/engine` | [packages/engine](packages/engine) | Agent 调度、Turn 接纳与互斥、Step 记账、中断恢复、子智能体和资源释放；`/job` 提供辅助任务队列 |
 
 模型适配层独立于执行内核。模型适配器包依赖 `llm` 契约和各自 SDK，`llm` 与 `engine` 不依赖具体适配器包。执行内核通过宿主注入模型、存储、运行环境和事件处理能力
 
-产品身份、账号、模型目录管理、内置产品插件、HTTP 服务、客户端 SDK 与 UI 由应用或后续阶段承载
+产品身份、账号、模型目录管理、内置产品工具、插件体系、HTTP 服务、客户端 SDK 与 UI 由应用或后续阶段承载
 
 只为实际能力创建包目录；本地沙箱实现单独安装，基础契约、Runtime 和工具包不引入 PTY、ripgrep 等本机依赖
 
-`shared` 提供对象判断、比较、字段提取、ID、JSON 与实际使用的通用类型，模型包和存储包通过公开入口复用。异步调度和 Node 工具随后续迁入模块的实际依赖继续提取；模型消息处理和 Provider 差异继续归模型包，产品配置和 UI 实现归应用
+`shared` 提供对象、JSON、ID、异步、Prompt 和实际跨包使用的通用类型；Node 路径和模板读取从 `@elmino/shared/node` 引入。任务调度由 `engine/job` 持有，基础工具不会带入队列或本机依赖
 
 ## npm 包组织与交付
 
@@ -43,7 +45,7 @@ elmino 是面向应用开发的可复用 Agent 框架，首阶段聚焦模型适
 - 数据库存储独立交付，安装 `store` 不安装 Drizzle、dayjs 或模型 SDK；基础入口不引入本地文件实现
 - 已接入 Changesets，模型包与共享基础的 minor 变更记录在 `.changeset`；当前开发版本为 `0.0.0`，尚未发布到 npm
 
-`pnpm verify:packages` 为各能力包生成 tarball，检查公开入口、类型声明、映射源码和依赖版本，再分别安装到仓库外临时目录，执行公共工具、类型检查、SDK 请求投影、文件内容读写、数据库建库、事务回滚、关闭重开和依赖隔离检查。尚未发布的内部依赖由消费项目的 pnpm overrides 指向同批 tarball，打包文件中的正常版本声明保持不变。临时目录保留供失败诊断，不读取用户模型配置，不调用真实模型服务
+`pnpm verify:packages` 为 14 个能力包生成 tarball，检查公开入口、类型声明、映射源码和依赖版本，再分别安装到仓库外临时目录，执行公共工具、类型检查、SDK 请求投影、文件与 Shell 执行、数据库事务与关闭重开、默认 Agent 执行、审批恢复、文本和二进制产物持久化及依赖隔离检查。尚未发布的内部依赖由消费项目的 pnpm overrides 指向同批 tarball，打包文件中的正常版本声明保持不变。临时目录保留供失败诊断，不读取用户模型配置，不调用真实模型服务
 
 交付集成测试位于 [tests/packages/verify-packages.mjs](tests/packages/verify-packages.mjs)，由 `pnpm verify:packages` 单独执行。tarball 输出到 `dist/packs`，根项目不参与打包。qygent 的接入与旧实现删除作为后续独立批次执行
 
@@ -72,7 +74,7 @@ pnpm test
 pnpm verify:packages
 ```
 
-测试从公开入口消费构建产物；定向运行包级测试前先执行 `pnpm build`。日常只检查修改文件，完整检查用于交付前或用户明确要求的场景
+测试从公开入口消费构建产物；根 Turbo 命令按依赖安排构建，直接运行包级测试前先构建受影响的公开入口。日常只检查修改文件，完整检查用于交付前或用户明确要求的场景
 
 使用 `pnpm changeset` 记录后续变更，`pnpm version:packages` 生成正式版本与变更日志并更新内部依赖，之后执行 `pnpm install` 更新锁文件。发布动作单独授权
 
@@ -92,6 +94,7 @@ const result = await provider.generate({
   messages: [{ role: 'user', parts: [{ type: 'text', text: '你好' }] }],
   maxOutputTokens: 1024,
 })
+console.log(result)
 ```
 
 Chat Completions 使用 `@elmino/llm-openai/chat-completions` 的 `ChatCompletionsProvider`；Anthropic 使用 `@elmino/llm-anthropic` 的 `AnthropicMessagesProvider`，三者共用 `Request`、`Result` 和 `Event` 契约
@@ -104,8 +107,8 @@ Chat Completions 使用 `@elmino/llm-openai/chat-completions` 的 `ChatCompletio
 
 ```ts
 import type { RuntimeStore } from '@elmino/store'
-import { LocalBlobStore } from '@elmino/store/local'
 import { SqliteStore } from '@elmino/store-sqlite'
+import { LocalBlobStore } from '@elmino/store/local'
 
 const blobStore = LocalBlobStore.create({
   files: persistenceFiles,
@@ -118,7 +121,7 @@ const store: RuntimeStore = await SqliteStore.create({
 
 try {
   await store.transaction(async (tx) => {
-    await tx.threads.upsert({ id: threadId, agentId, dir: workspaceDir })
+    await tx.threads.upsert({ id: threadId, agentId, dir: '.' })
     await tx.artifacts.write({
       threadId,
       contentKind: 'text',
@@ -139,18 +142,102 @@ finally {
 
 SQLite 原始版本化迁移包含在发布包的 `drizzle/runtime/migrations` 中，仓库外安装后可直接建库和重开；迁移失败拒绝打开并保留原数据，不执行自动清库
 
-## 迁移顺序
+## Agent 调用
 
-1. **P0 仓库初始化**：建立本地仓库、开发工具和职责边界
-2. **P1 模型适配**：从 qygent 提取 `llm` 契约和独立 Provider 包，消除产品依赖，验证构建、打包、仓库外安装与类型消费
-3. **P2 共享基础**：按跨包实际消费迁入纯工具和通用类型，消除模型包中的重复实现，验证共享包独立消费
-4. **P3 引擎与持久化**：先明确 Thread、Turn、消息记录及设置的契约归属，再并行迁入运行事实存储、具体存储适配器和调度引擎。沿用 `RuntimeStore`、`BlobStore`、`SqliteStore`、`LocalBlobStore` 的现有名称，验证事务、重启、中断和恢复
-5. **P4 完整 Agent 执行**：保留现有单轮执行语义，按实际能力迁入 Loop、工具与运行环境，执行扩展由宿主直接注入，验证审批、子智能体与完整 Agent 调用
+模型和存储由宿主注入，下面的函数使用默认 Loop 执行真实工具。宿主提供 `TurnModel<ModelTurnConfig>` 时，`config` 只包含可持久化的非敏感配置，凭据留在 `adapter` 的装配边界
 
-持久化拆分区分运行记录、artifact 内容与工作区文件。数据库实现通过 `BlobStore` 注入内容存储，`LocalBlobStore` 通过文件能力注入本地读写；长期产品资产 `control.db` 和品牌目录装配留在 qygent。现有 Store 还消费产品协议中的线程消息与设置，迁入前先明确这些数据的领域所有权，避免把整个产品协议或临时占位类型带入框架
+```ts
+import type { ModelTurnConfig, TurnModel } from '@elmino/llm'
+import type { RuntimeStore } from '@elmino/store'
+import { defineAgent } from '@elmino/agent'
+import { AgentEngine } from '@elmino/engine'
+import { defineRuntime } from '@elmino/runtime/local'
+import { LocalSandbox } from '@elmino/sandbox-local'
+import { createId } from '@elmino/shared'
+import { defineTools } from '@elmino/tool'
+import * as z from 'zod'
 
-并行迁移按目录划定责任范围，共用类型和出口先统一，再分别实现并由主任务整合。构建、锁文件更新与 tarball 安装验收统一执行，避免多个任务同时修改共享文件或覆盖构建产物
+export async function runAgent(model: TurnModel<ModelTurnConfig>, store: RuntimeStore, cwd: string) {
+  const env = Object.fromEntries(Object.entries(process.env)
+    .filter((entry): entry is [string, string] => typeof entry[1] === 'string'))
+  const agent = defineAgent({
+    id: 'assistant',
+    systemPrompt: '使用工具完成用户任务',
+    tools: defineTools({
+      read_file: {
+        description: '读取当前工作目录中的文本文件',
+        schema: z.object({ path: z.string() }),
+        scope: 'inspect',
+        execute: async ({ path }, { sandbox }) => {
+          const result = await sandbox.files.read(path)
+          if (result.error)
+            throw new Error(result.error)
+          return result.content ?? ''
+        },
+      },
+    }),
+    runtime: defineRuntime(({ location }) => LocalSandbox.create({
+      cwd: location.cwd,
+      env,
+      shell: { kind: 'sh', path: '/bin/sh' },
+    })),
+  })
+  const engine = AgentEngine.create({ assistant: agent })
+  try {
+    const execution = engine.run({
+      agentId: agent.id,
+      threadId: createId('thread'),
+      turnId: createId('turn'),
+      model,
+      location: {
+        workspaceId: 'workspace_project',
+        workspaceKind: 'project',
+        workspaceRoot: cwd,
+        dir: '.',
+        cwd,
+      },
+      approvalMode: 'fullAccess',
+      input: [{ type: 'text', text: '读取 README.md 并概括项目用途' }],
+    }, store)
+    await execution.accepted
+    return await execution.completed
+  }
+  finally {
+    await engine.close()
+  }
+}
+```
 
-每个批次完成后分别验证；qygent 在对应能力可独立消费后切换依赖并删除旧实现
+`accepted` 在启动事务提交后完成，`completed` 等待模型、工具、扩展释放和终态持久化。Engine 拥有线程 Runtime 和任务队列的关闭权；宿主拥有注入 Store 的关闭权，在全部 Engine 关闭后调用 `store.close()`
+
+`run` 创建新 Turn，已有 Turn 不能重复启动。`resume` 使用原 `threadId`、`turnId`、冻结模型配置和 `{ interruptId, response }`，审批响应按 Provider 原始 `callId` 配对；过期响应不会重复执行工具。`interrupt` 与 `steer` 在活跃控制面同步取得接纳权，终态等待和事件通知随后完成
+
+同一 Thread 固定所属 Agent、工作区和相对执行目录；Runtime 的实际位置在当前 Engine 内保持一致。错误归属和错误位置请求在事实写入或资源创建前拒绝。需要改变这些稳定事实时，由宿主单独完成资源释放与存储变更，不能借新 Turn 静默换目录
+
+`recoverWorkspace` 校准当前 Agent 丢失的执行，保留孤立运行的中断事实；宿主注入 `restoreModel` 和线程位置解析后，可以重新提交 queued 子线程。内置 `default`、`explorer`、`worker` 角色来自随包交付的完整 Markdown，`LocalSubagentRoles.create({ dir })` 接收显式用户角色目录，不读取产品数据路径
+
+自定义子智能体工具通过 `context.services.require(subagentHostService)` 使用当前根 Turn 的控制器，再调用 `spawn`、`list`、`wait`、`interrupt`。框架持久化父工具调用、父子线程与子 Turn 的关系，重复派生请求按 `parentToolCallId` 关联；子线程不会继续派生下一层控制器
+
+## 可替换与可扩展边界
+
+| 能力 | 注入边界 |
+| --- | --- |
+| 模型 | `TurnModel` / `Provider`，具体 SDK 由独立适配器包承载 |
+| 运行事实 | `RuntimeStore`，SQLite 是独立实现 |
+| 内容存储 | `BlobStore`，本地实现从 `store/local` 引入 |
+| 文件与执行环境 | `Sandbox` / `RuntimeDefinition`，本机实现由 `sandbox-local` 单独安装 |
+| 工具 | `defineTool` / `defineTools`，输入约束、执行器、作用域、审批和并行声明直接配置 |
+| 执行扩展 | `AgentHooks`，系统上下文、消息投影、生命周期、工具授权和交互拦截直接注入 |
+| 自定义交互与状态 | `resolveInteraction` / `settleState`，命名空间恢复状态与 Turn 转换在同一事务提交 |
+| 单轮执行器与线程投影 | `Loop` / `Thread`，默认使用框架真实实现 |
+| 事件、模型恢复与角色目录 | `onRuntimeEvent` / `restoreModel` / `resolveSubagentRoles`，由宿主提供 |
+
+扩展没有注册中心或插件宿主。`onStarted` 返回当前 Turn 的资源释放函数；等待交互时保存扩展状态，恢复或取消时由纯 reducer 与事实转换一同提交。内置审批不属于自定义扩展命名空间，自定义交互使用 `ownerId` 表达稳定归属
+
+## 工程与迁移状态
+
+已迁入提交 Hook、commitlint、统一 catalog 与严格类型检查、CSpell、Turbo 构建缓存、包级测试、SQLite 迁移生成与一致性校验、Changesets 和仓库外 tarball 验收。Ubuntu/macOS CI 是为独立框架新增的验证入口，尚未在远程运行，不执行发布
+
+模型、共享基础、持久化、线程、执行环境、工具、Loop、Agent 和 Engine 分批提交并独立验收。qygent 源码保持原样；插件体系、客户端 SDK、UI 和产品应用接入留待后续明确任务
 
 开发命令与工程基建见 [开发指南](docs/contributing.md)，约定见 [AGENTS.md](AGENTS.md)
