@@ -35,9 +35,9 @@
     "trash": "catalog:"
   },
   "devDependencies": {
+    "@types/cross-spawn": "catalog:",
     "typescript": "catalog:",
-    "vitest": "catalog:",
-    "@types/cross-spawn": "catalog:"
+    "vitest": "catalog:"
   },
   "publishConfig": {
     "access": "public"

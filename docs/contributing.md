@@ -12,6 +12,8 @@ pnpm install
 
 新增或调整依赖后执行 `pnpm install` 更新锁文件，不手工编辑解析结果。CI 使用 `pnpm install --frozen-lockfile`，发现声明与锁文件不一致时直接失败
 
+依赖采用 `trustPolicy: no-downgrade`。ESLint 的 Babel 链仍要求 `semver@6.3.1`；该版本发布于 2023 年，registry 完整性与锁文件一致，仅对这个精确版本记录例外。未来依赖链移除该版本时一并删除例外，不扩大到整个包或关闭策略。配置语义见 [pnpm 依赖信任策略](https://pnpm.io/settings/dependency-resolution#trustpolicy)
+
 `prepare` 配置 Husky Git Hooks。本地环境文件和运行数据不进入 Git，测试使用参数注入的临时目录，不修改 `HOME`
 
 ## 提交检查

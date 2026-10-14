@@ -22,9 +22,9 @@
     "prepare": "husky"
   },
   "devDependencies": {
+    "@changesets/cli": "catalog:",
     "@commitlint/cli": "catalog:",
     "@commitlint/config-conventional": "catalog:",
-    "@changesets/cli": "catalog:",
     "@types/node": "catalog:",
     "@violetflux/eslint-config-harness": "catalog:",
     "cspell": "catalog:",

@@ -34,9 +34,9 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@elmino/store-sqlite": "workspace:^",
     "typescript": "catalog:",
-    "vitest": "catalog:",
-    "@elmino/store-sqlite": "workspace:^"
+    "vitest": "catalog:"
   },
   "publishConfig": {
     "access": "public"

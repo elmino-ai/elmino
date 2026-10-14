@@ -1,3 +1,5 @@
 import harness from '@violetflux/eslint-config-harness'
 
-export default harness()
+export default harness({
+  ignores: ['.vscode/**'],
+})

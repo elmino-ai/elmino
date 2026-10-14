@@ -14,8 +14,8 @@
   "types": "./dist/index.d.ts",
   "files": [
     "dist",
-    "src",
-    "drizzle/runtime/migrations"
+    "drizzle/runtime/migrations",
+    "src"
   ],
   "engines": {
     "node": ">=24.18.1"
@@ -35,10 +35,10 @@
     "drizzle-orm": "catalog:"
   },
   "devDependencies": {
-    "typescript": "catalog:",
-    "vitest": "catalog:",
     "drizzle-kit": "catalog:",
-    "tsx": "catalog:"
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "publishConfig": {
     "access": "public"

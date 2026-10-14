@@ -38,16 +38,16 @@
     "@elmino/store": "workspace:^",
     "@elmino/thread": "workspace:^",
     "@elmino/tool": "workspace:^",
-    "p-queue": "catalog:",
     "dayjs": "catalog:",
-    "zod": "catalog:",
-    "yaml": "catalog:"
+    "p-queue": "catalog:",
+    "yaml": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
-    "typescript": "catalog:",
-    "vitest": "catalog:",
+    "@elmino/sandbox-local": "workspace:^",
     "@elmino/store-sqlite": "workspace:^",
-    "@elmino/sandbox-local": "workspace:^"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "publishConfig": {
     "access": "public"

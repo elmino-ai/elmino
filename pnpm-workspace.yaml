@@ -1,44 +1,51 @@
-packages:
-  - packages/*
-
-engineStrict: true
-strictPeerDependencies: true
-strictDepBuilds: true
-verifyDepsBeforeRun: error
-nodeVersion: 24.18.1
-
+minimumReleaseAgeExcludePrune: true
 minimumReleaseAgeExclude:
   - '@violetflux/eslint-config-harness@0.1.12'
 
-catalog:
-  '@types/node': 24.13.3
-  '@violetflux/eslint-config-harness': 0.1.12
-  eslint: 10.8.0
-  typescript: 6.0.3
-  '@changesets/cli': 3.0.3
-  '@anthropic-ai/sdk': 0.115.0
-  openai: 7.4.0
-  zod: 4.4.3
-  vitest: 4.1.10
-  type-fest: 5.8.0
-  dayjs: 1.11.21
-  drizzle-orm: 1.0.0-rc.4
-  '@lydell/node-pty': 1.2.0-beta.12
-  '@vscode/ripgrep': 1.18.0
-  cross-spawn: 7.0.6
-  '@types/cross-spawn': 6.0.6
-  shell-quote: 1.10.0
-  trash: 10.1.1
-  p-queue: 9.3.3
-  yaml: 2.9.0
-  '@commitlint/cli': 21.2.1
-  '@commitlint/config-conventional': 21.2.0
-  husky: 9.1.7
-  lint-staged: 17.2.0
-  cspell: 10.0.1
-  turbo: 2.10.7
-  drizzle-kit: 1.0.0-rc.4
-  tsx: 4.23.1
+trustPolicy: no-downgrade
+trustPolicyExclude:
+  # Babel 的旧版本约束；2023-07-10 发布，锁定完整性与 registry 元数据一致
+  - semver@6.3.1
+
+strictPeerDependencies: true
+shellEmulator: true
+strictDepBuilds: true
+verifyDepsBeforeRun: error
+nodeVersion: 24.18.1
+engineStrict: true
+
+packages:
+  - packages/*
 
 allowBuilds:
   esbuild: true
+
+catalog:
+  '@anthropic-ai/sdk': 0.115.0
+  '@changesets/cli': 3.0.3
+  '@commitlint/cli': 21.2.1
+  '@commitlint/config-conventional': 21.2.0
+  '@lydell/node-pty': 1.2.0-beta.12
+  '@types/cross-spawn': 6.0.6
+  '@types/node': 24.13.3
+  '@violetflux/eslint-config-harness': 0.1.12
+  '@vscode/ripgrep': 1.18.0
+  cross-spawn: 7.0.6
+  cspell: 10.0.1
+  dayjs: 1.11.21
+  drizzle-kit: 1.0.0-rc.4
+  drizzle-orm: 1.0.0-rc.4
+  eslint: 10.8.0
+  husky: 9.1.7
+  lint-staged: 17.2.0
+  openai: 7.4.0
+  p-queue: 9.3.3
+  shell-quote: 1.10.0
+  trash: 10.1.1
+  tsx: 4.23.1
+  turbo: 2.10.7
+  type-fest: 5.8.0
+  typescript: 6.0.3
+  vitest: 4.1.10
+  yaml: 2.9.0
+  zod: 4.4.3

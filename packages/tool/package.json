@@ -29,8 +29,8 @@
     "@elmino/llm": "workspace:^",
     "@elmino/sandbox": "workspace:^",
     "@elmino/shared": "workspace:^",
-    "zod": "catalog:",
-    "@elmino/store": "workspace:^"
+    "@elmino/store": "workspace:^",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "typescript": "catalog:",
