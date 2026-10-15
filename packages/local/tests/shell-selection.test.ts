@@ -1,8 +1,6 @@
 import type * as NodeFs from 'node:fs'
+import { createEnv, findEnvExecutable, findEnvExecutableSync, listLocalShells, resolveLocalShell } from '@elmino/local'
 import { beforeEach, expect, test, vi } from 'vitest'
-import { createEnv } from '../src/env/env'
-import { findEnvExecutable, findEnvExecutableSync } from '../src/process/process'
-import { listLocalShells, resolveLocalShell } from '../src/shell/resolve'
 
 /** -------------------- 测试替身 -------------------- */
 const filesystem = vi.hoisted(() => ({

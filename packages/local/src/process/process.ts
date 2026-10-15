@@ -226,24 +226,59 @@ async function terminateProcessTree(
     return
   }
 
-  const killer = spawnProcess('taskkill.exe', ['/pid', String(child.pid), '/t', '/f'], {
-    env,
-    shell: false,
-    stdio: 'ignore',
-    windowsHide: true,
-  })
-  const killerClosed = new Promise<void>((resolve) => {
-    killer.once('error', () => resolve())
-    killer.once('close', () => resolve())
-  })
+  const cleanupErrors: unknown[] = []
 
-  if (!await waitForProcessClose(killerClosed, 2_000))
-    killer.kill()
-  if (killer.exitCode !== 0)
-    child.kill()
+  try {
+    const killer = spawnProcess('taskkill.exe', ['/pid', String(child.pid), '/t', '/f'], {
+      env,
+      shell: false,
+      stdio: 'ignore',
+      windowsHide: true,
+    })
+    let spawnError: Error | undefined
+    const killerClosed = new Promise<void>((resolve) => {
+      killer.once('error', (cause) => {
+        spawnError = cause
+      })
+      killer.once('close', () => resolve())
+    })
 
+    if (!await waitForProcessClose(killerClosed, 2_000)) {
+      cleanupErrors.push(new Error('终止助手超时，无法确认命令进程树已清理'))
+      try {
+        killer.kill()
+      }
+      catch (cause) {
+        cleanupErrors.push(cause)
+      }
+      if (!await waitForProcessClose(killerClosed, 2_000))
+        cleanupErrors.push(new Error('无法确认终止助手进程已关闭：taskkill.exe'))
+    }
+    else if (spawnError) {
+      cleanupErrors.push(spawnError)
+    }
+    else if (killer.exitCode !== 0) {
+      cleanupErrors.push(new Error(`终止助手执行失败，退出码 ${killer.exitCode ?? 'unknown'}`))
+    }
+  }
+  catch (cause) {
+    cleanupErrors.push(cause)
+  }
+
+  if (cleanupErrors.length > 0) {
+    try {
+      child.kill()
+    }
+    catch (cause) {
+      cleanupErrors.push(cause)
+    }
+  }
   if (!await waitForProcessClose(closed, 2_000))
-    throw new Error(`无法终止环境命令进程：${child.pid}`)
+    cleanupErrors.push(new Error(`无法终止环境命令进程：${child.pid}`))
+  if (cleanupErrors.length === 1)
+    throw cleanupErrors[0]
+  if (cleanupErrors.length > 1)
+    throw new AggregateError(cleanupErrors, '无法完成 Windows 命令进程树清理')
 }
 
 /**

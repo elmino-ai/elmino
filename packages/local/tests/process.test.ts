@@ -5,8 +5,8 @@ import { chmod, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:f
 import os from 'node:os'
 import path from 'node:path'
 import { PassThrough } from 'node:stream'
+import { findEnvExecutable, findEnvExecutableSync, runEnvCommand } from '@elmino/local'
 import { afterEach, expect, test, vi } from 'vitest'
-import { findEnvExecutable, findEnvExecutableSync, runEnvCommand } from '../src/process/process'
 
 /** 测试拥有的临时目录 */
 const roots: string[] = []
@@ -166,26 +166,22 @@ test.skipIf(process.platform === 'win32')('父进程先退出时仍回收忽略 
   }
 })
 
-test('Windows 终止助手挂起时按时回收助手和主进程，等待 close 后才报告取消', async () => {
+test('Windows 终止助手成功且主进程与助手都关闭后才报告取消', async () => {
   vi.useFakeTimers()
   const child = Object.assign(new EventEmitter(), {
     pid: 123,
     stdout: new PassThrough(),
     stderr: new PassThrough(),
-    exitCode: null,
     kill: vi.fn(() => true),
   })
-  const killer = Object.assign(new EventEmitter(), {
-    exitCode: null,
-    kill: vi.fn(() => true),
-  })
+  const killer = Object.assign(new EventEmitter(), { exitCode: 0, kill: vi.fn(() => true) })
   const spawnProcess = vi.fn((command: string) => command === 'taskkill.exe' ? killer : child)
   const controller = new AbortController()
   let settled = false
 
   try {
     const command = runEnvCommand('command.exe', [], {
-      env: { Path: 'C:\\Windows' },
+      env: {},
       platform: 'win32',
       signal: controller.signal,
       spawn: spawnProcess as unknown as typeof spawn,
@@ -193,17 +189,119 @@ test('Windows 终止助手挂起时按时回收助手和主进程，等待 close
     const cancelled = expect(command).rejects.toMatchObject({ name: 'AbortError' })
     command.then(() => settled = true, () => settled = true)
     controller.abort()
-    await vi.advanceTimersByTimeAsync(2_000)
-
+    child.emit('close', null)
+    await vi.advanceTimersByTimeAsync(0)
+    expect(settled).toBe(false)
+    killer.emit('close', 0)
+    await cancelled
+    expect(killer.kill).not.toHaveBeenCalled()
+    expect(child.kill).not.toHaveBeenCalled()
     expect(spawnProcess).toHaveBeenNthCalledWith(2, 'taskkill.exe', ['/pid', '123', '/t', '/f'], expect.objectContaining({ shell: false }))
+  }
+  finally {
+    child.stdout.destroy()
+    child.stderr.destroy()
+    vi.useRealTimers()
+  }
+})
+
+test.each([true, false])('Windows 终止助手挂起后关闭状态为 %s 时均保留进程树清理失败', async (helperCloses) => {
+  vi.useFakeTimers()
+  const child = Object.assign(new EventEmitter(), {
+    pid: 123,
+    stdout: new PassThrough(),
+    stderr: new PassThrough(),
+    kill: vi.fn(() => true),
+  })
+  const killer = Object.assign(new EventEmitter(), { exitCode: null, kill: vi.fn(() => true) })
+  const spawnProcess = vi.fn((command: string) => command === 'taskkill.exe' ? killer : child)
+  const controller = new AbortController()
+  let settled = false
+
+  try {
+    const command = runEnvCommand('command.exe', [], {
+      env: {},
+      platform: 'win32',
+      signal: controller.signal,
+      spawn: spawnProcess as unknown as typeof spawn,
+    })
+    const rejected = expect(command).rejects.toBeInstanceOf(AggregateError)
+    command.then(() => settled = true, () => settled = true)
+    controller.abort()
+    child.emit('close', null)
+    await vi.advanceTimersByTimeAsync(2_000)
     expect(killer.kill).toHaveBeenCalledOnce()
+    expect(settled).toBe(false)
+    if (helperCloses)
+      killer.emit('close', null)
+    else
+      await vi.advanceTimersByTimeAsync(2_000)
+    await rejected
+    expect(child.kill).toHaveBeenCalledOnce()
+    const failure = await command.catch((cause: unknown) => cause)
+    expect(failure).toMatchObject({ errors: [{ name: 'AbortError' }, expect.any(Error)] })
+    expect((failure as AggregateError).errors[1]).toMatchObject({
+      message: helperCloses ? '终止助手超时，无法确认命令进程树已清理' : '无法完成 Windows 命令进程树清理',
+    })
+  }
+  finally {
+    killer.emit('close', null)
+    child.stdout.destroy()
+    child.stderr.destroy()
+    vi.useRealTimers()
+  }
+})
+
+test.each(['spawn', 'error', 'exit'] as const)('Windows 终止助手 %s 失败时等待主进程关闭并报告清理失败', async (mode) => {
+  vi.useFakeTimers()
+  const child = Object.assign(new EventEmitter(), {
+    pid: 123,
+    stdout: new PassThrough(),
+    stderr: new PassThrough(),
+    kill: vi.fn(() => true),
+  })
+  const killer = Object.assign(new EventEmitter(), { exitCode: 1 })
+  const spawnProcess = vi.fn((command: string) => {
+    if (command !== 'taskkill.exe')
+      return child
+    if (mode === 'spawn')
+      throw new Error('cannot spawn taskkill')
+    queueMicrotask(() => {
+      if (mode === 'error')
+        killer.emit('error', new Error('taskkill error'))
+      else
+        killer.emit('close', 1)
+    })
+    return killer
+  })
+  const controller = new AbortController()
+  let settled = false
+
+  try {
+    const command = runEnvCommand('command.exe', [], {
+      env: {},
+      platform: 'win32',
+      signal: controller.signal,
+      spawn: spawnProcess as unknown as typeof spawn,
+    })
+    const rejected = expect(command).rejects.toBeInstanceOf(AggregateError)
+    command.then(() => settled = true, () => settled = true)
+    controller.abort()
+    await vi.advanceTimersByTimeAsync(0)
+    if (mode === 'error') {
+      expect(child.kill).not.toHaveBeenCalled()
+      expect(settled).toBe(false)
+      killer.emit('close', 1)
+      await vi.advanceTimersByTimeAsync(0)
+    }
     expect(child.kill).toHaveBeenCalledOnce()
     expect(settled).toBe(false)
     child.emit('close', null)
-    await cancelled
-    expect(settled).toBe(true)
+    await rejected
+    await expect(command).rejects.toMatchObject({ errors: [{ name: 'AbortError' }, expect.any(Error)] })
   }
   finally {
+    child.emit('close', null)
     child.stdout.destroy()
     child.stderr.destroy()
     vi.useRealTimers()
