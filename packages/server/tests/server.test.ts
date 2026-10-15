@@ -202,13 +202,13 @@ test('中断必须命中活跃 Turn，错误 Turn ID 不会打断同一线程的
 })
 
 test.each(['constructor', 'toString', '__proto__'])('未注册的原型键 %s 返回 NOT_FOUND，不能打开宿主工作区', async (agentId) => {
-  const resolveWorkspace = vi.fn(() => {
+  const workspace = vi.fn(() => {
     throw new Error('不应解析工作区')
   })
   const server = AgentServer.create({
     agents: {},
-    resolveWorkspace,
-    resolveModel: () => { throw new Error('不应解析模型') },
+    workspace,
+    model: () => { throw new Error('不应解析模型') },
   })
   onTestFinished(() => server.close())
   const client = Client.create({
@@ -217,11 +217,11 @@ test.each(['constructor', 'toString', '__proto__'])('未注册的原型键 %s �
   })
 
   await expect(client.rpc.thread.list({ agentId, workspaceId: 'primary' })).rejects.toMatchObject({ code: 'NOT_FOUND' })
-  expect(resolveWorkspace).not.toHaveBeenCalled()
+  expect(workspace).not.toHaveBeenCalled()
 })
 
 test('注册键与 Agent 定义身份不一致时在创建 Server 时拒绝', () => {
-  const resolveWorkspace = vi.fn(() => {
+  const workspace = vi.fn(() => {
     throw new Error('不应解析工作区')
   })
   const agent = defineAgent({
@@ -232,10 +232,10 @@ test('注册键与 Agent 定义身份不一致时在创建 Server 时拒绝', ()
 
   expect(() => AgentServer.create({
     agents: { alias: agent },
-    resolveWorkspace,
-    resolveModel: () => { throw new Error('不应解析模型') },
+    workspace,
+    model: () => { throw new Error('不应解析模型') },
   })).toThrow(TypeError)
-  expect(resolveWorkspace).not.toHaveBeenCalled()
+  expect(workspace).not.toHaveBeenCalled()
 })
 
 test('异步输入预处理持有接纳预留，重复 Turn 不会重复执行附件副作用', async () => {

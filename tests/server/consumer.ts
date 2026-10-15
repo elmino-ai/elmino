@@ -28,8 +28,8 @@ const server = AgentServer.create({
   agents: {},
   apiReference: { title: 'Packaged Agent API', version: '1.2.3' },
   authorize: ({ request }) => request.headers.get('authorization') === 'Bearer fake-consumer-key',
-  resolveWorkspace: () => { throw new Error('健康检查不应打开工作区') },
-  resolveModel: () => { throw new Error('健康检查不应装配模型') },
+  workspace: () => { throw new Error('健康检查不应打开工作区') },
+  model: () => { throw new Error('健康检查不应装配模型') },
 })
 const listener = await listen({ server })
 try {

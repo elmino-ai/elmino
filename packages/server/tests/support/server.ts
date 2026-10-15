@@ -46,7 +46,7 @@ export async function createServerHarness(options: HarnessOptions = {}) {
     agents,
     authorize: options.authorize,
     prepareInput: options.prepareInput,
-    resolveWorkspace: ({ workspaceId }) => {
+    workspace: ({ workspaceId }) => {
       const resource = workspaceId === 'secondary' ? secondary : primary
       return {
         store: resource.store,
@@ -59,7 +59,7 @@ export async function createServerHarness(options: HarnessOptions = {}) {
         }),
       }
     },
-    resolveModel: (input) => {
+    model: (input) => {
       modelRequests.push({
         ...input,
         frozenConfig: input.frozenConfig ? structuredClone(input.frozenConfig) : undefined,

@@ -252,7 +252,7 @@ export class AgentServer {
     const agent = Object.hasOwn(this._options.agents, target.agentId) ? this._options.agents[target.agentId] : undefined
     if (!agent)
       throw new ORPCError('NOT_FOUND', { message: 'Agent 不存在' })
-    const workspace = await this._options.resolveWorkspace({ ...target, signal: this._lifetime.signal })
+    const workspace = await this._options.workspace({ ...target, signal: this._lifetime.signal })
     if (this._closed)
       throw new ORPCError('SERVICE_UNAVAILABLE')
     const owner = this._storeWorkspaces.get(workspace.store)
@@ -272,7 +272,7 @@ export class AgentServer {
     }
     const engine = AgentEngine.create({ [agent.id]: agent }, {
       ...this._options.engine,
-      restoreModel: config => Promise.resolve(this._options.resolveModel({ ...target, frozenConfig: config, signal: this._lifetime.signal })),
+      restoreModel: config => Promise.resolve(this._options.model({ ...target, frozenConfig: config, signal: this._lifetime.signal })),
       onRuntimeEvent: (_agentId, event) => emit(event),
     })
     try {
@@ -352,7 +352,7 @@ export class AgentServer {
   private async _create(scope: Scope, input: ApiTurnCreateInput) {
     const record = await this._thread(scope, input.threadId, true)
     const location = await this._location(scope, input.threadId, record)
-    const model = await this._options.resolveModel({ ...scope.target, modelId: input.modelId ?? record?.settings.modelId, signal: this._lifetime.signal })
+    const model = await this._options.model({ ...scope.target, modelId: input.modelId ?? record?.settings.modelId, signal: this._lifetime.signal })
     return this._accept(scope, input, scope.engine.run({
       agentId: input.agentId,
       threadId: input.threadId,
@@ -380,7 +380,7 @@ export class AgentServer {
     if (turn.status !== 'interrupted' || turn.interrupt?.id !== input.interruptId)
       throw new ORPCError('CONFLICT', { message: '当前中断已失效或不可恢复' })
     const location = await this._location(scope, input.threadId, record)
-    const model = await this._options.resolveModel({ ...scope.target, frozenConfig: turn.modelConfig, signal: this._lifetime.signal })
+    const model = await this._options.model({ ...scope.target, frozenConfig: turn.modelConfig, signal: this._lifetime.signal })
     return this._accept(scope, input, scope.engine.resume({
       agentId: input.agentId,
       threadId: input.threadId,

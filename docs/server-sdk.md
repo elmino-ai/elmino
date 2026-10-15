@@ -12,11 +12,11 @@ import { listen } from '@elmino/server/node'
 
 const server = AgentServer.create({
   agents: { writer: agent },
-  resolveWorkspace: async ({ agentId, workspaceId, signal }) => ({
+  workspace: async ({ agentId, workspaceId, signal }) => ({
     store: await getStore(agentId, workspaceId, signal),
     resolveLocation: ({ threadId, dir }) => getThreadLocation(workspaceId, threadId, dir),
   }),
-  resolveModel: ({ modelId, frozenConfig, signal }) => frozenConfig
+  model: ({ modelId, frozenConfig, signal }) => frozenConfig
     ? restoreModel(frozenConfig, signal)
     : getModel(modelId, signal),
   authorize: ({ request, input, path }) => authorizeRequest(request, path, input),

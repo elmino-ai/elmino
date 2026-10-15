@@ -40,13 +40,13 @@ export interface ServerAuthorization {
 export interface ServerOptions {
   /** 已装配好工具、Hooks 与 Runtime 的 Agent 定义 */
   agents: Record<string, Agent>
-  /** 解析工作区资源；不会从 HTTP 接收数据库或文件系统句柄 */
-  resolveWorkspace: (target: AgentWorkspaceTarget & {
+  /** 按 Agent / 工作区首次加载并缓存资源；宿主持有 Store 的关闭权 */
+  workspace: (target: AgentWorkspaceTarget & {
     /** Server 关闭时取消尚未完成的工作区打开 */
     signal?: AbortSignal
   }) => Promisable<ServerWorkspace>
-  /** 凭据由宿主提供；恢复时使用 frozenConfig，而非当前默认模型 */
-  resolveModel: (input: ServerModelRequest) => Promisable<TurnModel<ModelTurnConfig>>
+  /** 为新 Turn 动态选择模型，恢复时使用 frozenConfig；凭据由宿主提供 */
+  model: (input: ServerModelRequest) => Promisable<TurnModel<ModelTurnConfig>>
   /** 可选 Engine 扩展；模型恢复与事件出口由 Server 统一装配 */
   engine?: Omit<AgentEngineOptions, 'restoreModel' | 'onRuntimeEvent'>
   /** 默认为宿主已完成授权，可在这里检查凭据和输入资源范围 */

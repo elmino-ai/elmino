@@ -139,8 +139,8 @@ test('公开 Scalar 与完整 OpenAPI 文档不进入鉴权，不包含宿主凭
 test('文档标题与版本可配置，关闭文档入口仍保留受鉴权的 REST', async () => {
   const baseOptions = {
     agents: {},
-    resolveWorkspace: () => { throw new Error('文档和健康检查不应解析工作区') },
-    resolveModel: () => { throw new Error('文档和健康检查不应解析模型') },
+    workspace: () => { throw new Error('文档和健康检查不应解析工作区') },
+    model: () => { throw new Error('文档和健康检查不应解析模型') },
     authorize: ({ request }: ServerAuthorization) => request.headers.get('authorization') === 'Bearer fake-docs-key',
   }
   const customized = AgentServer.create({ ...baseOptions, apiReference: { title: 'Example API', version: '2.3.4' } })

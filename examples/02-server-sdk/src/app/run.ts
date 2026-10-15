@@ -12,7 +12,7 @@ import { readConfig } from './config'
 /** 示例宿主拥有的启动配置，允许测试注入确定性模型 */
 interface ExampleServerOptions {
   /** 模型解析与冻结配置恢复 */
-  model: ServerOptions['resolveModel']
+  model: ServerOptions['model']
   /** Server 与客户端共享的开发凭据 */
   key: string
   /** 重启复用的独立数据目录 */
