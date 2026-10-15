@@ -1,0 +1,29 @@
+{
+  "name": "@example/full-agent",
+  "type": "module",
+  "private": true,
+  "description": "runAgent 完整配置，展示实时输出、超时和结果处理",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env --import tsx src/index.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@elmino/agent": "workspace:^",
+    "@elmino/engine": "workspace:^",
+    "@elmino/llm": "workspace:^",
+    "@elmino/llm-anthropic": "workspace:^",
+    "@elmino/local": "workspace:^",
+    "@elmino/runtime": "workspace:^",
+    "@elmino/sandbox-local": "workspace:^",
+    "@elmino/shared": "workspace:^",
+    "@elmino/store-sqlite": "workspace:^",
+    "@elmino/thread": "workspace:^",
+    "@elmino/tool": "workspace:^",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

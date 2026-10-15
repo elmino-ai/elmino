@@ -16,7 +16,7 @@ engineStrict: true
 
 packages:
   - packages/*
-  - examples/*
+  - examples/*/*
   - tests
 
 allowBuilds:

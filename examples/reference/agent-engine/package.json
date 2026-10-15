@@ -1,0 +1,32 @@
+{
+  "name": "@example/agent-engine",
+  "type": "module",
+  "private": true,
+  "description": "AgentEngine API 参考，展示多轮对话、审批恢复和资源所有权",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env --import tsx src/index.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@elmino/agent": "workspace:^",
+    "@elmino/engine": "workspace:^",
+    "@elmino/llm": "workspace:^",
+    "@elmino/llm-anthropic": "workspace:^",
+    "@elmino/local": "workspace:^",
+    "@elmino/runtime": "workspace:^",
+    "@elmino/sandbox-local": "workspace:^",
+    "@elmino/shared": "workspace:^",
+    "@elmino/store": "workspace:^",
+    "@elmino/store-sqlite": "workspace:^",
+    "@elmino/thread": "workspace:^",
+    "@elmino/tool": "workspace:^",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

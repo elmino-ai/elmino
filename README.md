@@ -52,10 +52,10 @@ pnpm install --frozen-lockfile
 第一个示例使用真实 DeepSeek 模型，通过 Anthropic Messages 协议调用
 
 ```sh
-cp examples/01-basic-agent/.env.example examples/01-basic-agent/.env
+cp examples/tutorial/01-basic-agent/.env.example examples/tutorial/01-basic-agent/.env
 ```
 
-打开刚创建的 `examples/01-basic-agent/.env`，填写自己的密钥：
+打开刚创建的 `examples/tutorial/01-basic-agent/.env`，填写自己的密钥：
 
 ```dotenv
 DEEPSEEK_API_KEY=your-api-key
@@ -63,12 +63,12 @@ DEEPSEEK_MODEL=deepseek-flash
 DEEPSEEK_BASE_URL=https://api.deepseek.com/anthropic
 ```
 
-每个 example 使用自身目录下的 `.env`，由启动命令自动加载；真实文件已被 Git 忽略，仓库只保存不含密钥的 [.env.example](examples/01-basic-agent/.env.example)
+每个 example 使用自身目录下的 `.env`，由启动命令自动加载；真实文件已被 Git 忽略，仓库只保存不含密钥的 [.env.example](examples/tutorial/01-basic-agent/.env.example)
 
 ### 3. 运行 Agent
 
 ```sh
-pnpm example:01-basic-agent
+pnpm example:basic-agent
 ```
 
 命令会先构建所需的框架包，再启动示例。Agent 接收写文件任务，调用 `write_note`，将 `Hello from elmino` 写入新建临时工作区的 `result.txt`
@@ -82,25 +82,25 @@ pnpm example:01-basic-agent
 
 示例使用 SQLite 与本地文件内容存储保存运行数据，调用结束后自动释放。临时工作区会保留，可在其中查看 `workspace/result.txt`
 
-需要查看完整配置、实时思考与回复、超时和结果检查时，运行 [02-full-agent](examples/02-full-agent)。先在它自己的 `.env` 中填写模型密钥：
+需要查看完整配置、实时思考与回复、超时和结果检查时，运行 [02-full-agent](examples/tutorial/02-full-agent)。先在它自己的 `.env` 中填写模型密钥：
 
 ```sh
-cp examples/02-full-agent/.env.example examples/02-full-agent/.env
-pnpm example:02-full-agent
+cp examples/tutorial/02-full-agent/.env.example examples/tutorial/02-full-agent/.env
+pnpm example:full-agent
 ```
 
 完整版会实时打印可见思考与回复，并展示最终状态、线程 ID、Turn ID 和文件内容。两种用法的对照见 [Basic Agent 示例指南](docs/basic-agent.md)
 
-需要通过 HTTP 调用 Agent 时，使用第三个 [Server / SDK 示例](docs/server-sdk-example.md)：在 `examples/03-server-sdk/.env` 中填写模型凭据与 `SERVER_KEY`，然后在两个终端分别运行：
+需要通过 HTTP 调用 Agent 时，使用第三个 [Server / SDK 示例](docs/server-sdk-example.md)：在 `examples/tutorial/03-server-sdk/.env` 中填写模型凭据与 `SERVER_KEY`，然后在两个终端分别运行：
 
 ```sh
 # 终端一：启动常驻 Server，默认 http://127.0.0.1:3000
-pnpm example:03-server-sdk
+pnpm example:server-sdk
 ```
 
 ```sh
 # 终端二：通过 SDK 提交任务并打印思考、工具结果与回复
-pnpm example:03-server-sdk:client
+pnpm example:server-sdk:client
 ```
 
 客户端完成后退出，Server 继续运行；在 Server 终端按 `Ctrl+C` 关闭服务。运行数据默认保存在示例目录下的 `.elmino`，重启时复用
@@ -109,20 +109,29 @@ Server 启动后，可打开 [http://127.0.0.1:3000/api/docs](http://127.0.0.1:3
 
 ## 如何使用
 
+示例按用途组织，Tutorial 按顺序学习，Reference 按能力查阅；第三方接入示例后续归 `integration`
+
+| 分类 | 示例 | 内容 | 启动命令 |
+| --- | --- | --- | --- |
+| Tutorial | [01-basic-agent](examples/tutorial/01-basic-agent) | 最少参数，完成一次任务 | `pnpm example:basic-agent` |
+| Tutorial | [02-full-agent](examples/tutorial/02-full-agent) | 单次运行的可选配置、实时输出与结果处理 | `pnpm example:full-agent` |
+| Tutorial | [03-server-sdk](examples/tutorial/03-server-sdk) | 常驻服务与远程客户端 | `pnpm example:server-sdk` |
+| Reference | [agent-engine](examples/reference/agent-engine) | 多轮、审批恢复与引擎资源管理 | `pnpm example:agent-engine` |
+
 ### 从可运行示例开始修改
 
-[01-basic-agent](examples/01-basic-agent) 是一个独立的私有 workspace，通过 `@elmino/*` 公开入口使用框架。入口只有 [src/index.ts](examples/01-basic-agent/src/index.ts)，其他职责按目录组织：
+[01-basic-agent](examples/tutorial/01-basic-agent) 是一个独立的私有 workspace，通过 `@elmino/*` 公开入口使用框架。入口只有 [src/index.ts](examples/tutorial/01-basic-agent/src/index.ts)，其他职责按目录组织：
 
 | 想改什么 | 从哪里开始 |
 | --- | --- |
-| 系统提示词、工具与运行环境定义 | [agent/agent.ts](examples/01-basic-agent/src/agent/agent.ts) |
-| 单次任务、临时目录与结果展示 | [app/run.ts](examples/01-basic-agent/src/app/run.ts) |
-| 工具名称、参数与执行逻辑 | [tool/write-note.ts](examples/01-basic-agent/src/tool/write-note.ts) |
-| 模型配置与适配器 | [model/deepseek.ts](examples/01-basic-agent/src/model/deepseek.ts) |
-| 文件与 Shell 执行环境 | [runtime/runtime.ts](examples/01-basic-agent/src/runtime/runtime.ts) |
-| 运行数据目录与存储配置 | [app/run.ts](examples/01-basic-agent/src/app/run.ts) |
-| 完整配置、超时与结果处理 | [app/run.ts](examples/02-full-agent/src/app/run.ts) |
-| 思考与正文的终端输出 | [terminal/terminal.ts](examples/02-full-agent/src/terminal/terminal.ts) |
+| 系统提示词、工具与运行环境定义 | [agent/agent.ts](examples/tutorial/01-basic-agent/src/agent/agent.ts) |
+| 单次任务、临时目录与结果展示 | [app/run.ts](examples/tutorial/01-basic-agent/src/app/run.ts) |
+| 工具名称、参数与执行逻辑 | [tool/write-note.ts](examples/tutorial/01-basic-agent/src/tool/write-note.ts) |
+| 模型配置与适配器 | [model/deepseek.ts](examples/tutorial/01-basic-agent/src/model/deepseek.ts) |
+| 文件与 Shell 执行环境 | [runtime/runtime.ts](examples/tutorial/01-basic-agent/src/runtime/runtime.ts) |
+| 运行数据目录与存储配置 | [app/run.ts](examples/tutorial/01-basic-agent/src/app/run.ts) |
+| 完整配置、超时与结果处理 | [app/run.ts](examples/tutorial/02-full-agent/src/app/run.ts) |
+| 思考与正文的终端输出 | [terminal/terminal.ts](examples/tutorial/02-full-agent/src/terminal/terminal.ts) |
 
 ### Agent 的调用方式
 
@@ -158,7 +167,18 @@ console.log(result.status, result.message)
 
 `tools`、`runtime` 与 `model` 来自上表中的示例模块；调用前创建项目目录。`sqliteStore()` 只定义配置，首次运行才打开 SQLite，并自动配置本地文件内容存储。工作区 ID 对应宿主持有的存储作用域；入口自动生成 Thread 和 Turn ID，将字符串转为文本输入，等待执行结算并释放 Engine。返回值包含 `threadId`、`turnId`、`workspaceId`、持久化 `status`、可选的助手 `message` 与失败原因 `errorMessage`。配置方式由入口在 Engine 结束后释放存储；也可以传入自行创建的 `RuntimeStore` 实例，其关闭仍由应用负责
 
-每次 `runAgent()` 都创建独立线程。审批等待会返回 `interrupted`，Loop 已结算的执行失败返回 `failed` 和原因；入口异常、取消和关闭错误继续抛出。需要多轮会话、接纳后立即返回、后台调度或审批恢复时，使用 `AgentEngine`，见 [接入指南](docs/integration.md)
+每次 `runAgent()` 都创建独立线程。审批等待会返回 `interrupted`，Loop 已结算的执行失败返回 `failed` 和原因；入口异常、取消和关闭错误继续抛出。需要多轮会话、接纳后立即返回、后台调度或审批恢复时，使用 `AgentEngine`，见 [高级用法参考](docs/agent-engine.md)
+
+### 高级参考：AgentEngine
+
+[agent-engine](examples/reference/agent-engine) 直接管理 Engine 和 Store，演示同线程两轮对话、工具审批暂停、关闭并重建 Engine、读取持久化中断后恢复原 Turn。先在该示例自己的 `.env` 中填写模型凭据：
+
+```sh
+cp examples/reference/agent-engine/.env.example examples/reference/agent-engine/.env
+pnpm example:agent-engine
+```
+
+终端展示待审工具后，输入 `y` 才执行写入。源码导航、资源所有权和同进程引擎重建的边界见 [高级用法指南](docs/agent-engine.md)
 
 ### 只使用模型适配器
 
@@ -230,7 +250,8 @@ console.log(result.status, result.message)
 
 ### 近期
 
-- [ ] 补齐工具审批与跨进程恢复、子智能体、自定义工具等单一功能示例
+- [x] AgentEngine 用法参考：多轮对话、工具审批与同进程引擎重建恢复
+- [ ] 补齐跨进程恢复、子智能体、自定义工具等单一功能示例
 - [ ] 编写公开 API 参考、持久化接入与 Sandbox 扩展指南
 - [ ] 完成真实应用接入与执行生命周期验收，明确宿主需要承担的职责
 - [ ] 梳理首个公开版本的 API、版本策略与变更记录
@@ -265,5 +286,6 @@ pnpm verify:packages
 - [请求与事件协议](docs/transport.md)：独立请求入口、跨端 Schema 与后续远程调用边界
 - [Server 与 SDK](docs/server-sdk.md)：远程调用、资源注入与重连恢复
 - [Server / SDK 示例](docs/server-sdk-example.md)：常驻 Server、独立 SDK 客户端与环境配置
+- [AgentEngine 高级参考](docs/agent-engine.md)：线程多轮对话、审批恢复与引擎生命周期
 - [已有宿主接入清单](docs/integration.md)：接口差异、资源所有权与数据保留
 - [开发约定](AGENTS.md)：能力边界与代码规则

@@ -159,148 +159,203 @@ importers:
         specifier: 'catalog:'
         version: 6.0.3
 
-  examples/01-basic-agent:
+  examples/reference/agent-engine:
     dependencies:
       '@elmino/agent':
         specifier: workspace:^
-        version: link:../../packages/agent
+        version: link:../../../packages/agent
       '@elmino/engine':
         specifier: workspace:^
-        version: link:../../packages/engine
+        version: link:../../../packages/engine
       '@elmino/llm':
         specifier: workspace:^
-        version: link:../../packages/llm
+        version: link:../../../packages/llm
       '@elmino/llm-anthropic':
         specifier: workspace:^
-        version: link:../../packages/llm-anthropic
+        version: link:../../../packages/llm-anthropic
       '@elmino/local':
         specifier: workspace:^
-        version: link:../../packages/local
+        version: link:../../../packages/local
       '@elmino/runtime':
         specifier: workspace:^
-        version: link:../../packages/runtime
+        version: link:../../../packages/runtime
       '@elmino/sandbox-local':
         specifier: workspace:^
-        version: link:../../packages/sandbox-local
+        version: link:../../../packages/sandbox-local
       '@elmino/shared':
         specifier: workspace:^
-        version: link:../../packages/shared
-      '@elmino/store-sqlite':
-        specifier: workspace:^
-        version: link:../../packages/store-sqlite
-      '@elmino/tool':
-        specifier: workspace:^
-        version: link:../../packages/tool
-      zod:
-        specifier: 'catalog:'
-        version: 4.4.3
-    devDependencies:
-      '@types/node':
-        specifier: 'catalog:'
-        version: 24.13.3
-      tsx:
-        specifier: 'catalog:'
-        version: 4.23.1
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-
-  examples/02-full-agent:
-    dependencies:
-      '@elmino/agent':
-        specifier: workspace:^
-        version: link:../../packages/agent
-      '@elmino/engine':
-        specifier: workspace:^
-        version: link:../../packages/engine
-      '@elmino/llm':
-        specifier: workspace:^
-        version: link:../../packages/llm
-      '@elmino/llm-anthropic':
-        specifier: workspace:^
-        version: link:../../packages/llm-anthropic
-      '@elmino/local':
-        specifier: workspace:^
-        version: link:../../packages/local
-      '@elmino/runtime':
-        specifier: workspace:^
-        version: link:../../packages/runtime
-      '@elmino/sandbox-local':
-        specifier: workspace:^
-        version: link:../../packages/sandbox-local
-      '@elmino/shared':
-        specifier: workspace:^
-        version: link:../../packages/shared
-      '@elmino/store-sqlite':
-        specifier: workspace:^
-        version: link:../../packages/store-sqlite
-      '@elmino/thread':
-        specifier: workspace:^
-        version: link:../../packages/thread
-      '@elmino/tool':
-        specifier: workspace:^
-        version: link:../../packages/tool
-      zod:
-        specifier: 'catalog:'
-        version: 4.4.3
-    devDependencies:
-      '@types/node':
-        specifier: 'catalog:'
-        version: 24.13.3
-      tsx:
-        specifier: 'catalog:'
-        version: 4.23.1
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-
-  examples/03-server-sdk:
-    dependencies:
-      '@elmino/agent':
-        specifier: workspace:^
-        version: link:../../packages/agent
-      '@elmino/api':
-        specifier: workspace:^
-        version: link:../../packages/api
-      '@elmino/llm':
-        specifier: workspace:^
-        version: link:../../packages/llm
-      '@elmino/llm-anthropic':
-        specifier: workspace:^
-        version: link:../../packages/llm-anthropic
-      '@elmino/local':
-        specifier: workspace:^
-        version: link:../../packages/local
-      '@elmino/protocol':
-        specifier: workspace:^
-        version: link:../../packages/protocol
-      '@elmino/runtime':
-        specifier: workspace:^
-        version: link:../../packages/runtime
-      '@elmino/sandbox-local':
-        specifier: workspace:^
-        version: link:../../packages/sandbox-local
-      '@elmino/sdk':
-        specifier: workspace:^
-        version: link:../../packages/sdk
-      '@elmino/server':
-        specifier: workspace:^
-        version: link:../../packages/server
-      '@elmino/shared':
-        specifier: workspace:^
-        version: link:../../packages/shared
+        version: link:../../../packages/shared
       '@elmino/store':
         specifier: workspace:^
-        version: link:../../packages/store
+        version: link:../../../packages/store
       '@elmino/store-sqlite':
         specifier: workspace:^
-        version: link:../../packages/store-sqlite
+        version: link:../../../packages/store-sqlite
       '@elmino/thread':
         specifier: workspace:^
-        version: link:../../packages/thread
+        version: link:../../../packages/thread
       '@elmino/tool':
         specifier: workspace:^
-        version: link:../../packages/tool
+        version: link:../../../packages/tool
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      tsx:
+        specifier: 'catalog:'
+        version: 4.23.1
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@opentelemetry/api@1.9.0)(@types/node@24.13.3)(vite@8.3.4(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.1))
+
+  examples/tutorial/01-basic-agent:
+    dependencies:
+      '@elmino/agent':
+        specifier: workspace:^
+        version: link:../../../packages/agent
+      '@elmino/engine':
+        specifier: workspace:^
+        version: link:../../../packages/engine
+      '@elmino/llm':
+        specifier: workspace:^
+        version: link:../../../packages/llm
+      '@elmino/llm-anthropic':
+        specifier: workspace:^
+        version: link:../../../packages/llm-anthropic
+      '@elmino/local':
+        specifier: workspace:^
+        version: link:../../../packages/local
+      '@elmino/runtime':
+        specifier: workspace:^
+        version: link:../../../packages/runtime
+      '@elmino/sandbox-local':
+        specifier: workspace:^
+        version: link:../../../packages/sandbox-local
+      '@elmino/shared':
+        specifier: workspace:^
+        version: link:../../../packages/shared
+      '@elmino/store-sqlite':
+        specifier: workspace:^
+        version: link:../../../packages/store-sqlite
+      '@elmino/tool':
+        specifier: workspace:^
+        version: link:../../../packages/tool
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      tsx:
+        specifier: 'catalog:'
+        version: 4.23.1
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+
+  examples/tutorial/02-full-agent:
+    dependencies:
+      '@elmino/agent':
+        specifier: workspace:^
+        version: link:../../../packages/agent
+      '@elmino/engine':
+        specifier: workspace:^
+        version: link:../../../packages/engine
+      '@elmino/llm':
+        specifier: workspace:^
+        version: link:../../../packages/llm
+      '@elmino/llm-anthropic':
+        specifier: workspace:^
+        version: link:../../../packages/llm-anthropic
+      '@elmino/local':
+        specifier: workspace:^
+        version: link:../../../packages/local
+      '@elmino/runtime':
+        specifier: workspace:^
+        version: link:../../../packages/runtime
+      '@elmino/sandbox-local':
+        specifier: workspace:^
+        version: link:../../../packages/sandbox-local
+      '@elmino/shared':
+        specifier: workspace:^
+        version: link:../../../packages/shared
+      '@elmino/store-sqlite':
+        specifier: workspace:^
+        version: link:../../../packages/store-sqlite
+      '@elmino/thread':
+        specifier: workspace:^
+        version: link:../../../packages/thread
+      '@elmino/tool':
+        specifier: workspace:^
+        version: link:../../../packages/tool
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      tsx:
+        specifier: 'catalog:'
+        version: 4.23.1
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+
+  examples/tutorial/03-server-sdk:
+    dependencies:
+      '@elmino/agent':
+        specifier: workspace:^
+        version: link:../../../packages/agent
+      '@elmino/api':
+        specifier: workspace:^
+        version: link:../../../packages/api
+      '@elmino/llm':
+        specifier: workspace:^
+        version: link:../../../packages/llm
+      '@elmino/llm-anthropic':
+        specifier: workspace:^
+        version: link:../../../packages/llm-anthropic
+      '@elmino/local':
+        specifier: workspace:^
+        version: link:../../../packages/local
+      '@elmino/protocol':
+        specifier: workspace:^
+        version: link:../../../packages/protocol
+      '@elmino/runtime':
+        specifier: workspace:^
+        version: link:../../../packages/runtime
+      '@elmino/sandbox-local':
+        specifier: workspace:^
+        version: link:../../../packages/sandbox-local
+      '@elmino/sdk':
+        specifier: workspace:^
+        version: link:../../../packages/sdk
+      '@elmino/server':
+        specifier: workspace:^
+        version: link:../../../packages/server
+      '@elmino/shared':
+        specifier: workspace:^
+        version: link:../../../packages/shared
+      '@elmino/store':
+        specifier: workspace:^
+        version: link:../../../packages/store
+      '@elmino/store-sqlite':
+        specifier: workspace:^
+        version: link:../../../packages/store-sqlite
+      '@elmino/thread':
+        specifier: workspace:^
+        version: link:../../../packages/thread
+      '@elmino/tool':
+        specifier: workspace:^
+        version: link:../../../packages/tool
       zod:
         specifier: 'catalog:'
         version: 4.4.3

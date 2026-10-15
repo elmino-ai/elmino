@@ -6,6 +6,8 @@
 
 框架保持 [15 个能力包](../README.md#包与扩展)。插件体系、HTTP 服务、客户端 SDK 与 UI 不属于本轮迁移范围。公开入口以各包 `package.json` 的 `exports` 为准，消费方不从 `src` 或仓库相对路径引入生产实现。
 
+直接使用当前框架的可运行代码见 [AgentEngine 高级参考](agent-engine.md)，覆盖多轮对话、审批恢复和资源清理。
+
 ## 旧宿主的真实调用链
 
 以下源码路径均相对于 **qygent 仓库根目录**，用于定位来源，不依赖两个仓库在本机的相邻布局。
@@ -77,7 +79,7 @@ await execution.accepted
 await execution.completed
 ```
 
-上面的变量由宿主装配，完整运行示例见 [01-basic-agent](../examples/01-basic-agent)。`accepted` 表示输入和启动事实已经持久化，`completed` 表示本次执行与结算结束；HTTP 宿主可在接纳后返回，继续通过事件观察执行。`resume(request, store)` 恢复原 interrupted Turn，`submit(request, store)` 提交已经持久化的后台任务。
+上面的变量由宿主装配，完整运行示例见 [01-basic-agent](../examples/tutorial/01-basic-agent)。`accepted` 表示输入和启动事实已经持久化，`completed` 表示本次执行与结算结束；HTTP 宿主可在接纳后返回，继续通过事件观察执行。`resume(request, store)` 恢复原 interrupted Turn，`submit(request, store)` 提交已经持久化的后台任务。
 
 `AgentEngineOptions` 的实际名称仍为 **`onRuntimeEvent`**，不是此前讨论草案中的 `onEvent`。全局回调签名是 `(agentId, event)`；请求也可提供 `(event)` 回调。宿主应按实际入口接线，避免同一个事件被两路重复发布。框架不会创建 SSE Hub、重放缓冲或 HTTP 路由。
 
@@ -159,4 +161,4 @@ await execution.completed
 3. **P2：切换 Thread 与传输边界。** 同步线程快照、事件 payload、标题兜底、交互 `ownerId` 与新扩展字段，验证旧客户端需要的边界转换，再切换新建、恢复和控制入口。图片压缩、文档解析与上传校验仍在 Server。
 4. **P3：验收完整生命周期后清理重复实现。** 覆盖接纳失败、正常结束、工具失败、审批暂停与跨进程恢复、取消/引导、排队 Child 恢复、删除协调和关闭清理，再移除旧 Agent/Loop/Thread/Store/Runtime 中已被框架替代的实现。插件宿主、SDK、UI 和长期资产仍归产品，不因执行内核替换而删除。
 
-[01-basic-agent 示例](../examples/01-basic-agent) 用于验证公开包的显式装配与真实工具执行，不能替代旧宿主的审批恢复、插件、HTTP/SSE、附件和用户资产接入验收。工程检查与 tarball 验收方式见 [开发指南](contributing.md)。
+[01-basic-agent 示例](../examples/tutorial/01-basic-agent) 用于验证公开包的显式装配与真实工具执行，不能替代旧宿主的审批恢复、插件、HTTP/SSE、附件和用户资产接入验收。工程检查与 tarball 验收方式见 [开发指南](contributing.md)。

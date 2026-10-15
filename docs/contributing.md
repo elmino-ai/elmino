@@ -88,11 +88,19 @@ pnpm --filter @elmino/store-sqlite db:generate
 
 根项目保持私有，每个公开能力包独立声明版本、运行依赖、`exports`、产物白名单和公开发布配置。基础契约包不依赖具体模型、数据库或本地沙箱实现
 
-可运行消费示例归 `examples/<序号>-<场景>`，使用 `@example/*` 私有工作区名称，独立声明实际依赖，不参与 `@elmino/*` 的打包与发布。目录按功能学习顺序与难易程度使用 `01-`、`02-` 等两位序号排序，简单用法在前，复杂场景在后，每个示例只展示一个功能，`src/index.ts` 负责启动，实现放在所属子目录。[Basic Agent 示例](basic-agent.md) 分成 `01-basic-agent` 最简单调用与 `02-full-agent` 完整配置，两者独立运行且各自维护模型环境变量；类型检查会通过 Turbo 的依赖图先构建所需能力包
+可运行消费示例归 `examples/<分类>/<场景>`，使用 `@example/<场景>` 私有工作区名称，独立声明实际依赖，不参与 `@elmino/*` 的打包与发布。分类规则如下：
+
+- `tutorial` 放上手教程，场景目录按学习顺序使用 `01-`、`02-` 等两位序号，从简单到复杂
+- `reference` 按框架能力命名，例如 `agent-engine`，每个示例可独立查阅，不使用顺序编号
+- `integration` 用于第三方框架、平台或服务接入，有实际示例时再创建目录
+
+包名与根启动命令按场景命名，不携带目录序号。例如 `@example/basic-agent` 对应 `pnpm example:basic-agent`，调整教程排序不改变调用方式。`src/index.ts` 只负责启动，实现放在所属子目录。[Basic Agent 示例](basic-agent.md) 分成最少参数的 Basic 和展示单次运行可选配置的 Full，两者独立运行且各自维护模型环境变量；类型检查通过 Turbo 的依赖图先构建所需能力包
 
 示例需要本地配置时，在自身根目录放置 `.env` 与不含密钥的 `.env.example`，通过自己的启动命令加载 `.env`。真实 `.env` 由根 `.gitignore` 忽略，不在源码中写入密钥，也不跨示例共享环境文件
 
-[03-server-sdk](server-sdk-example.md) 通过常驻 Server 与独立 SDK 客户端演示远程 Agent 调用。示例的 `.env` 必须填写 `DEEPSEEK_API_KEY` 和 `SERVER_KEY`。在两个终端分别执行根命令 `pnpm example:03-server-sdk` 与 `pnpm example:03-server-sdk:client`；也可以在示例目录分别执行 `pnpm start` 与 `pnpm client`。Server 默认监听 `127.0.0.1:3000`，启动不会调用模型；客户端完成后退出，Server 继续运行。默认数据目录为示例自己的 `.elmino`，重启复用；按 `Ctrl+C` 优雅关闭 Server、HTTP 服务与 Store。详细配置和入口导航见示例指南
+[03-server-sdk](server-sdk-example.md) 通过常驻 Server 与独立 SDK 客户端演示远程 Agent 调用。示例的 `.env` 必须填写 `DEEPSEEK_API_KEY` 和 `SERVER_KEY`。在两个终端分别执行根命令 `pnpm example:server-sdk` 与 `pnpm example:server-sdk:client`；也可以在示例目录分别执行 `pnpm start` 与 `pnpm client`。Server 默认监听 `127.0.0.1:3000`，启动不会调用模型；客户端完成后退出，Server 继续运行。默认数据目录为示例自己的 `.elmino`，重启复用；按 `Ctrl+C` 优雅关闭 Server、HTTP 服务与 Store。详细配置和入口导航见示例指南
+
+[AgentEngine](agent-engine.md) 归 `reference`，展示生命周期 API：同线程多轮、显式管理 Engine 和 Store、工具审批与同进程引擎重建后的恢复。运行命令为 `pnpm example:agent-engine`，模型配置来自自己的 `.env`。
 
 示例的测试只注入确定性模型，验证工具调用、持久化、断网回放与 Server 重建恢复，不读取 `.env`、不调用外部模型服务
 
