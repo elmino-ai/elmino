@@ -1,3 +1,7 @@
+/**
+ * 验收模型配置恢复：修改环境默认值后，原 Turn 仍使用冻结的模型配置
+ * 这里只构造适配器，不发送真实请求；使用测试凭据，不加载本地 .env
+ */
 import { afterEach, expect, test, vi } from 'vitest'
 import { createModel } from '../src/model/deepseek'
 

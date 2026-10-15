@@ -133,6 +133,8 @@ const thread = await client.rpc.turn.create({
 | `rpc.turn.steer({ ...target, threadId, turnId, text })` | 给指定活跃任务追加引导 |
 | `client.subscribe({ ...target, threadId? }, handlers)` | 订阅事实，返回取消订阅函数 |
 
+远程调用沿用引擎的运行控制语义：`turn.steer()` 只接纳到指定活跃 Turn，补充要求在 Step 边界消费；`turn.interrupt()` 中断准确的 `turnId`，不等同于取消事件订阅。目标已结束或正在结算时，引导可能被拒绝。直接操作引擎的可运行示例见 [运行控制](agent-control.md)
+
 列表沿用 RuntimeStore 的稳定前缀语义：需要更多条目时增大 `limit`，不使用虚构的列表游标。返回的轻量列表不携带完整消息；查看线程时再调用 `thread.get()`
 
 ## 重连与回放

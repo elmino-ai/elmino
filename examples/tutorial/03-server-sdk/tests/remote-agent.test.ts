@@ -1,3 +1,7 @@
+/**
+ * 验收说明：使用确定性模型验证本例的真实工具、运行状态与资源退出行为
+ * 不加载 .env，也不调用真实模型；可用这些断言对照 src 中说明的成功和失败路径
+ */
 import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'

@@ -32,6 +32,9 @@ pnpm example:agent-engine
 | `accepted` / `completed` | 分别等待接纳和执行结算 |
 | `engine.recoverWorkspace()` | 新 Engine 从持久化事实恢复工作区 |
 | `engine.resume()` | 使用原线程、Turn 和中断身份提交审批结果 |
+| `engine.steer()` / `engine.interrupt()` | 对活跃 Turn 提交补充要求或中断，见 [运行控制](agent-control.md) |
+| `engine.submit()` | 提交已有持久化事实的后台 Turn，由宿主保留 Engine 生命周期 |
+| `subagentRoles` / `restoreModel` | 自定义角色与 queued 子任务的模型恢复，见 [子智能体](subagents.md) |
 | `engine.close()` / `lease.release()` | 按所有权先关闭引擎，再释放存储 |
 
 ## 核心调用
@@ -85,5 +88,7 @@ Engine 负责线程 Runtime，宿主负责 Store 租约。清理时先等待 `en
 ```sh
 pnpm exec turbo run typecheck test --filter=@example/agent-engine
 ```
+
+完整能力导航见 [Agent 使用指南](agent.md)。工具扩展示例见 [agent-hooks](../examples/reference/agent-hooks)，运行控制见 [turn-control](../examples/reference/turn-control)，委派示例见 [subagents](../examples/reference/subagents)
 
 从简单用法开始见 [Basic Agent](basic-agent.md)，远程接入见 [Server / SDK](server-sdk.md)，旧宿主迁入差异见 [接入清单](integration.md)

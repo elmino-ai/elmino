@@ -24,6 +24,9 @@
     "example:server-sdk": "turbo run build --filter=@example/server-sdk... && pnpm --filter @example/server-sdk start",
     "example:server-sdk:client": "turbo run build --filter=@example/server-sdk... && pnpm --filter @example/server-sdk client",
     "example:agent-engine": "turbo run build --filter=@example/agent-engine... && pnpm --filter @example/agent-engine start",
+    "example:agent-hooks": "turbo run build --filter=@example/agent-hooks... && pnpm --filter @example/agent-hooks start",
+    "example:turn-control": "turbo run build --filter=@example/turn-control... && pnpm --filter @example/turn-control start",
+    "example:subagents": "turbo run build --filter=@example/subagents... && pnpm --filter @example/subagents start",
     "prepare": "husky"
   },
   "devDependencies": {

@@ -102,6 +102,10 @@ pnpm --filter @elmino/store-sqlite db:generate
 
 [AgentEngine](agent-engine.md) 归 `reference`，展示生命周期 API：同线程多轮、显式管理 Engine 和 Store、工具审批与同进程引擎重建后的恢复。运行命令为 `pnpm example:agent-engine`，模型配置来自自己的 `.env`。
 
+其他 Reference 各自只展示一类能力：`agent-hooks` 展示上下文与工具策略，`turn-control` 展示运行中引导和中断，`subagents` 展示显式派生与等待。根命令分别为 `pnpm example:agent-hooks`、`pnpm example:turn-control` 和 `pnpm example:subagents`。完整入口导航见 [Agent 使用指南](agent.md)
+
+示例源码需要能直接用于教学。每个启动入口和主流程文件先写清学习目标、启动命令、预期现象与阅读顺序；关键流程按真实执行步骤解释，参数旁说明默认值、选择原因和影响。涉及模型快照、任务身份、审批、事件去重或资源关闭时，就近说明输入来源、成功与失败分支以及资源所有权。测试应明确指出它验证哪条可观察路径，注释与实际断言保持一致
+
 示例的测试只注入确定性模型，验证工具调用、持久化、断网回放与 Server 重建恢复，不读取 `.env`、不调用外部模型服务
 
 使用 Changesets 记录公开行为与类型变化：

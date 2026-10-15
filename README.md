@@ -117,6 +117,9 @@ Server 启动后，可打开 [http://127.0.0.1:3000/api/docs](http://127.0.0.1:3
 | Tutorial | [02-full-agent](examples/tutorial/02-full-agent) | 单次运行的可选配置、实时输出与结果处理 | `pnpm example:full-agent` |
 | Tutorial | [03-server-sdk](examples/tutorial/03-server-sdk) | 常驻服务与远程客户端 | `pnpm example:server-sdk` |
 | Reference | [agent-engine](examples/reference/agent-engine) | 多轮、审批恢复与引擎资源管理 | `pnpm example:agent-engine` |
+| Reference | [agent-hooks](examples/reference/agent-hooks) | 上下文、工具策略与 Turn 清理 | `pnpm example:agent-hooks` |
+| Reference | [turn-control](examples/reference/turn-control) | 运行中引导与中断 | `pnpm example:turn-control` |
+| Reference | [subagents](examples/reference/subagents) | 显式派生与等待子任务 | `pnpm example:subagents` |
 
 ### 从可运行示例开始修改
 
@@ -134,6 +137,8 @@ Server 启动后，可打开 [http://127.0.0.1:3000/api/docs](http://127.0.0.1:3
 | 思考与正文的终端输出 | [terminal/terminal.ts](examples/tutorial/02-full-agent/src/terminal/terminal.ts) |
 
 ### Agent 的调用方式
+
+完整配置边界、工具 Schema、Hooks、运行环境和存储所有权见 [Agent 使用指南](docs/agent.md)
 
 `defineAgent()` 只描述 Agent 的行为，最基础的定义只需提示词、工具和运行环境：
 
@@ -251,8 +256,10 @@ pnpm example:agent-engine
 ### 近期
 
 - [x] AgentEngine 用法参考：多轮对话、工具审批与同进程引擎重建恢复
-- [ ] 补齐跨进程恢复、子智能体、自定义工具等单一功能示例
-- [ ] 编写公开 API 参考、持久化接入与 Sandbox 扩展指南
+- [x] Hooks、自定义工具、运行中引导/中断和显式子任务参考示例
+- [ ] 补齐跨进程恢复等单一功能示例
+- [x] Agent 使用指南、生命周期与子智能体调用参考
+- [ ] 补齐持久化接入与 Sandbox 扩展指南
 - [ ] 完成真实应用接入与执行生命周期验收，明确宿主需要承担的职责
 - [ ] 梳理首个公开版本的 API、版本策略与变更记录
 - [ ] 确定许可证并补齐 `LICENSE` 文件
@@ -282,6 +289,9 @@ pnpm verify:packages
 包级测试归所属包的 `tests`，交付验收位于根 `tests`。`verify:packages` 会打包全部公开能力包，在仓库外安装并验证运行、类型与依赖隔离，不会发布 npm 包
 
 - [开发指南](docs/contributing.md)：环境、常用命令、测试、迁移、提交与包交付
+- [Agent 使用指南](docs/agent.md)：入口选择、工具、Hooks、模型与存储所有权
+- [运行控制](docs/agent-control.md)：引导接纳、Step 边界、中断与取消
+- [子智能体](docs/subagents.md)：宿主服务、角色、派生与等待
 - [Basic Agent 示例](docs/basic-agent.md)：真实模型配置、源码导航与运行说明
 - [请求与事件协议](docs/transport.md)：独立请求入口、跨端 Schema 与后续远程调用边界
 - [Server 与 SDK](docs/server-sdk.md)：远程调用、资源注入与重连恢复

@@ -2,9 +2,9 @@
 
 <!-- cspell:words qygent -->
 
-本文核对 qygent 的实际宿主调用链与 elmino 当前公开 API，作为后续接入清单。**qygent 尚未接入 elmino**；本轮只迁出通用能力，未修改旧宿主、用户配置或运行数据。
+本文保留 qygent 宿主的迁移基线与 elmino 公开 API 的差异，作为宿主接入清单，不表示已经完成实际应用接入验收。当前框架用法以 [Agent 使用指南](agent.md) 与可运行示例为入口
 
-框架保持 [15 个能力包](../README.md#包与扩展)。插件体系、HTTP 服务、客户端 SDK 与 UI 不属于本轮迁移范围。公开入口以各包 `package.json` 的 `exports` 为准，消费方不从 `src` 或仓库相对路径引入生产实现。
+框架公开能力包见 [包与扩展](../README.md#包与扩展)。当前已提供 API 契约、可注入 Server 与纯客户端 SDK；插件体系和 UI 仍留在宿主。公开入口以各包 `package.json` 的 `exports` 为准，消费方不从 `src` 或仓库相对路径引入生产实现。
 
 直接使用当前框架的可运行代码见 [AgentEngine 高级参考](agent-engine.md)，覆盖多轮对话、审批恢复和资源清理。
 
@@ -140,13 +140,13 @@ await execution.completed
 | 默认标题 | 展示投影提供缺省文案，旧解析要求字符串 | `ThreadState.title` 和列表标题可缺省，宿主展示时补文案 |
 | 自定义 Interaction 归属 | `pluginId` | `ownerId`；Loop 内置审批不需要该字段 |
 | 文档类型 | 产品扩展名枚举与解析清单 | 保存扩展名字符串；支持格式、图片预处理与文档解析留在宿主 |
-| 流控制与校验 | `stream.connected/reset`、序列化、完整 payload 校验 | 不提供 SSE 控制消息与旧传输解析器，宿主维护自己的边界校验与连接生命周期 |
+| 流控制与校验 | `stream.connected/reset`、序列化、完整 payload 校验 | `@elmino/protocol` 提供跨端 Schema、控制消息、JSON 与游标校验，Server / SDK 管理回放、连接与重连 |
 
 旧 `payload.ts` 会检查 `ThreadState.plugins`、必填字符串 `title` 及产品文档白名单，直接把新事件交给它会被拒绝，或得到错误投影。需要在宿主传输边界明确采用新契约；若必须继续服务旧客户端，转换只放旧 API 边界，不在 Engine 内同时维护两套状态。
 
 持久化 `ThreadPluginPart`、Mention 的 `pluginId` 和 `ThreadSettings.pluginSettings` 仍作为已有数据契约保留。它们不表示框架已经提供插件注册、资源管理或 UI。接入时按实际字段区分，不能把所有包含 `plugin` 的历史数据机械重命名成扩展字段。
 
-模型 `Event` 是采样过程的即时投影，运行 `RuntimeEvent` 用于 Thread/Turn/消息事实变化；宿主不能把原生 SDK chunk 直接广播成运行事实。断线重连应从持久化 Thread/消息事实校准，SSE Hub 的缓冲、连接代次和客户端缓存继续由宿主维护。
+模型 `Event` 是采样过程的即时投影，运行 `RuntimeEvent` 用于 Thread/Turn/消息事实变化；宿主不能把原生 SDK chunk 直接广播成运行事实。断线重连应从持久化 Thread/消息事实校准；使用框架 Server / SDK 时，由它们维护回放缓冲、连接和游标，宿主维护自身的应用状态与重新读取快照的行为。
 
 ## 数据保留与接入顺序
 

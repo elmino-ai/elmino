@@ -1,6 +1,6 @@
 # Basic Agent：简单用法与完整配置
 
-两个示例都使用真实 DeepSeek 模型调用 `write_note`，在独立临时工作区写入 `result.txt`。它们是两个可单独运行的私有 workspace，通过 `@elmino/*` 公开入口使用框架
+入口选择与扩展能力见 [Agent 使用指南](agent.md)。两个示例都使用真实 DeepSeek 模型调用 `write_note`，在独立临时工作区写入 `result.txt`。它们是两个可单独运行的私有 workspace，通过 `@elmino/*` 公开入口使用框架
 
 | 示例 | 学习内容 | 运行入口 |
 | --- | --- | --- |
