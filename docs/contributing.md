@@ -78,6 +78,8 @@ pnpm --filter @elmino/store-sqlite db:generate
 
 示例需要本地配置时，在自身根目录放置 `.env` 与不含密钥的 `.env.example`，通过自己的启动命令加载 `.env`。真实 `.env` 由根 `.gitignore` 忽略，不在源码中写入密钥，也不跨示例共享环境文件
 
+[02-server-sdk](server-sdk-example.md) 在真实 HTTP 端口上演示远程 Agent 调用。示例的测试只注入确定性模型，验证工具调用与持久化，不读取 `.env`、不调用外部模型服务
+
 使用 Changesets 记录公开行为与类型变化：
 
 ```sh

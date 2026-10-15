@@ -88,6 +88,8 @@ pnpm example:01-basic-agent
 
 本例在新建临时工作区内使用 `fullAccess` 执行固定的文件写入，并设置 60 秒执行期限。更多配置见 [Basic Agent 示例指南](docs/basic-agent.md)
 
+需要通过 HTTP 调用 Agent 时，使用第二个 [Server / SDK 示例](docs/server-sdk-example.md)：配置 `examples/02-server-sdk/.env` 后运行 `pnpm example:02-server-sdk`，即可观察远程事件并查询持久化结果
+
 ## 如何使用
 
 ### 从可运行示例开始修改
@@ -240,11 +242,11 @@ export async function runAgent() {
 - [x] 首个真实模型示例，支持独立环境配置、思考与正文输出
 - [x] 通用请求层与跨端事件协议，支持独立入口及浏览器构建验收
 - [x] API 契约、可注入 Server 和纯客户端 SDK，支持事件回放与审批恢复
+- [x] `02-server-sdk` 真实模型示例，以及真实 TCP 断网回放与 Server 重建恢复测试
 - [x] Ubuntu / macOS CI，覆盖构建、类型、测试、迁移与公开包的仓库外交付验收
 
 ### 近期
 
-- [ ] 完成 `02-server-sdk` 示例，验收审批恢复、断线重连与 Server 重启
 - [ ] 补齐工具审批与跨进程恢复、子智能体、自定义工具等单一功能示例
 - [ ] 编写公开 API 参考、持久化接入与 Sandbox 扩展指南
 - [ ] 完成真实应用接入与执行生命周期验收，明确宿主需要承担的职责
@@ -279,5 +281,6 @@ pnpm verify:packages
 - [Basic Agent 示例](docs/basic-agent.md)：真实模型配置、源码导航与运行说明
 - [请求与事件协议](docs/transport.md)：独立请求入口、跨端 Schema 与后续远程调用边界
 - [Server 与 SDK](docs/server-sdk.md)：远程调用、资源注入与重连恢复
+- [Server / SDK 示例](docs/server-sdk-example.md)：真实 DeepSeek 远程调用与独立环境配置
 - [已有宿主接入清单](docs/integration.md)：接口差异、资源所有权与数据保留
 - [开发约定](AGENTS.md)：能力边界与代码规则

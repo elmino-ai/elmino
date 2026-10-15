@@ -2,6 +2,8 @@
 
 `@elmino/api` 定义远程调用契约，`@elmino/server` 提供标准 Fetch 服务，`@elmino/sdk` 提供 Node.js 与浏览器均可使用的客户端。它们复用现有 AgentEngine、RuntimeStore 和 Thread，不另起执行器
 
+可运行代码见 [02-server-sdk 示例](server-sdk-example.md)，通过真实 DeepSeek 演示订阅、工具执行与持久化查询
+
 ## 装配 Server
 
 ```ts
