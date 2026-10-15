@@ -1,7 +1,7 @@
 {
   "name": "@example/01-basic-agent",
-  "private": true,
   "type": "module",
+  "private": true,
   "scripts": {
     "start": "node --env-file=.env --import tsx src/index.ts",
     "typecheck": "tsc -p tsconfig.json"

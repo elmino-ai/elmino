@@ -1,7 +1,7 @@
 {
   "name": "@tests/delivery",
-  "private": true,
   "type": "module",
+  "private": true,
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"
   },
