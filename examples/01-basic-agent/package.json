@@ -1,31 +1,28 @@
 {
-  "name": "@example/basic-agent",
+  "name": "@example/01-basic-agent",
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "tsx src/cli/cli.ts",
-    "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run"
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
     "@elmino/agent": "workspace:^",
     "@elmino/engine": "workspace:^",
     "@elmino/llm": "workspace:^",
-    "@elmino/llm-openai": "workspace:^",
+    "@elmino/llm-anthropic": "workspace:^",
     "@elmino/local": "workspace:^",
     "@elmino/runtime": "workspace:^",
     "@elmino/sandbox-local": "workspace:^",
     "@elmino/shared": "workspace:^",
     "@elmino/store": "workspace:^",
     "@elmino/store-sqlite": "workspace:^",
-    "@elmino/thread": "workspace:^",
     "@elmino/tool": "workspace:^",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "tsx": "catalog:",
-    "typescript": "catalog:",
-    "vitest": "catalog:"
+    "typescript": "catalog:"
   }
 }

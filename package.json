@@ -19,7 +19,7 @@
     "version:packages": "changeset version",
     "pack:packages": "pnpm --filter '@elmino/*' -r pack --pack-destination ./dist/packs",
     "verify:packages": "pnpm pack:packages && node tests/runner/run.mjs",
-    "example:basic-agent": "turbo run build --filter=@example/basic-agent... && pnpm --filter @example/basic-agent start",
+    "example:01-basic-agent": "turbo run build --filter=@example/01-basic-agent... && pnpm --filter @example/01-basic-agent start",
     "prepare": "husky"
   },
   "devDependencies": {

@@ -75,7 +75,7 @@ await execution.accepted
 await execution.completed
 ```
 
-上面的变量由宿主装配，完整运行示例见 [basic-agent](../examples/basic-agent)。`accepted` 表示输入和启动事实已经持久化，`completed` 表示本次执行与结算结束；HTTP 宿主可在接纳后返回，继续通过事件观察执行。`resume(request, store)` 恢复原 interrupted Turn，`submit(request, store)` 提交已经持久化的后台任务。
+上面的变量由宿主装配，完整运行示例见 [01-basic-agent](../examples/01-basic-agent)。`accepted` 表示输入和启动事实已经持久化，`completed` 表示本次执行与结算结束；HTTP 宿主可在接纳后返回，继续通过事件观察执行。`resume(request, store)` 恢复原 interrupted Turn，`submit(request, store)` 提交已经持久化的后台任务。
 
 `AgentEngineOptions` 的实际名称仍为 **`onRuntimeEvent`**，不是此前讨论草案中的 `onEvent`。全局回调签名是 `(agentId, event)`；请求也可提供 `(event)` 回调。宿主应按实际入口接线，避免同一个事件被两路重复发布。框架不会创建 SSE Hub、重放缓冲或 HTTP 路由。
 
@@ -155,4 +155,4 @@ await execution.completed
 3. **P2：切换 Thread 与传输边界。** 同步线程快照、事件 payload、标题兜底、交互 `ownerId` 与新扩展字段，验证旧客户端需要的边界转换，再切换新建、恢复和控制入口。图片压缩、文档解析与上传校验仍在 Server。
 4. **P3：验收完整生命周期后清理重复实现。** 覆盖接纳失败、正常结束、工具失败、审批暂停与跨进程恢复、取消/引导、排队 Child 恢复、删除协调和关闭清理，再移除旧 Agent/Loop/Thread/Store/Runtime 中已被框架替代的实现。插件宿主、SDK、UI 和长期资产仍归产品，不因执行内核替换而删除。
 
-[basic-agent 示例](../examples/basic-agent) 用于验证公开包的显式装配与持久恢复，不能替代旧宿主的插件、HTTP/SSE、附件和用户资产接入验收。工程检查与 tarball 验收方式见 [开发指南](contributing.md)。
+[01-basic-agent 示例](../examples/01-basic-agent) 用于验证公开包的显式装配与真实工具执行，不能替代旧宿主的审批恢复、插件、HTTP/SSE、附件和用户资产接入验收。工程检查与 tarball 验收方式见 [开发指南](contributing.md)。

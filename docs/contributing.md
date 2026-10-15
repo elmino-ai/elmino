@@ -74,7 +74,7 @@ pnpm --filter @elmino/store-sqlite db:generate
 
 根项目保持私有，每个公开能力包独立声明版本、运行依赖、`exports`、产物白名单和公开发布配置。基础契约包不依赖具体模型、数据库或本地沙箱实现
 
-可运行消费示例归 `examples/<场景>`，使用 `@example/*` 私有工作区名称，独立声明实际依赖，不参与 `@elmino/*` 的打包与发布。[Basic Agent 示例](basic-agent.md) 提供公开入口装配与跨进程审批恢复；包级测试与类型检查会通过 Turbo 的依赖图先构建所需能力包
+可运行消费示例归 `examples/<序号>-<场景>`，使用 `@example/*` 私有工作区名称，独立声明实际依赖，不参与 `@elmino/*` 的打包与发布。目录使用 `01-`、`02-` 等两位序号排序，每个示例只展示一个功能，`src/index.ts` 负责启动，实现放在所属子目录。[Basic Agent 示例](basic-agent.md) 演示真实模型调用写文件工具；类型检查会通过 Turbo 的依赖图先构建所需能力包
 
 使用 Changesets 记录公开行为与类型变化：
 
