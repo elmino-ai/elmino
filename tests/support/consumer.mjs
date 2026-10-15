@@ -113,7 +113,8 @@ export async function verifyConsumer({ root, name, manifests, archives, packedMa
       dependencies: { [`@elmino/${name}`]: `file:${archives.get(name)}` },
       devDependencies: { '@types/node': nodeTypes.version },
     }, null, 2))
-    await run('pnpm', ['install', '--ignore-scripts'], { cwd: dir, maxBuffer: 5 * 1024 * 1024 })
+    // 验收生成的临时清单随后还会添加集成依赖，不继承 CI 默认的冻结锁文件策略
+    await run('pnpm', ['install', '--ignore-scripts', '--no-frozen-lockfile'], { cwd: dir, maxBuffer: 5 * 1024 * 1024 })
     await assertInstalledClosure(dir, name, productionClosure, manifests, packedManifests)
   }
   await writeFile(path.join(dir, 'package.json'), JSON.stringify({
@@ -123,7 +124,7 @@ export async function verifyConsumer({ root, name, manifests, archives, packedMa
     dependencies,
     devDependencies,
   }, null, 2))
-  await run('pnpm', ['install', '--ignore-scripts'], { cwd: dir, maxBuffer: 5 * 1024 * 1024 })
+  await run('pnpm', ['install', '--ignore-scripts', '--no-frozen-lockfile'], { cwd: dir, maxBuffer: 5 * 1024 * 1024 })
   await assertInstalledClosure(dir, name, closure, manifests, packedManifests)
   for (const [file, source] of consumer.files) {
     const target = path.join(dir, file)

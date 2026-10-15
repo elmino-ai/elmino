@@ -1,5 +1,6 @@
+import type { SandboxShell, SandboxShellResult } from '@elmino/sandbox'
 import { Buffer } from 'node:buffer'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { LocalSandboxShell } from '@elmino/sandbox-local'
@@ -32,6 +33,25 @@ async function createTestSandbox(name: string) {
     root,
     sandbox: createSandboxWithEnv(root),
   }
+}
+
+/** 等待子进程实际输出就绪标记，保留每次轮询返回的增量 */
+async function waitForOutput(shell: SandboxShell, session: SandboxShellResult, expected: string) {
+  expect(session.status).toBe('running')
+  expect(session.sessionId).toEqual(expect.any(String))
+  let output = session.output
+
+  await expect.poll(async () => {
+    if (!output.includes(expected)) {
+      const next = await shell.write(session.sessionId!, { yield: 0.25 })
+
+      expect(next.status).toBe('running')
+      output += next.output
+    }
+    return output
+  }, { timeout: 3_000 }).toContain(expected)
+
+  return output
 }
 
 /** -------------------- 测试 -------------------- */
@@ -106,12 +126,15 @@ test('pipe session yields and later polls only new output', async () => {
 
   try {
     const first = await sandbox.shell.run(
-      'node -e "process.stdout.write(\'first\'); setTimeout(() => { process.stdout.write(\'second\') }, 400)"',
+      'node -e "setTimeout(() => { process.stdout.write(\'first\'); const timer = setInterval(() => { if (require(\'node:fs\').existsSync(\'continue\')) { clearInterval(timer); process.stdout.write(\'second\') } }, 10) }, 400)"',
       { yield: 0.25 },
     )
 
-    expect(first.status).toBe('running')
-    expect(first.output).toBe('first')
+    expect(await waitForOutput(sandbox.shell, first, 'first')).toBe('first')
+    const empty = await sandbox.shell.write(first.sessionId!, { yield: 0.25 })
+
+    expect(empty).toMatchObject({ status: 'running', output: '' })
+    await writeFile(path.join(root, 'continue'), '')
 
     const second = await sandbox.shell.write(first.sessionId!, { yield: 2 })
 
@@ -172,9 +195,11 @@ posixTest('pipe converts Ctrl-C input into a process-group interrupt', async () 
 
   try {
     const running = await sandbox.shell.run(
-      'node -e "process.on(\'SIGINT\', () => { console.log(\'interrupted\'); process.exit(0) }); setInterval(() => {}, 1000)"',
+      'node -e "setTimeout(() => { process.on(\'SIGINT\', () => { console.log(\'interrupted\'); process.exit(0) }); console.log(\'ready\'); setInterval(() => {}, 1000) }, 400)"',
       { yield: 0.25 },
     )
+
+    await waitForOutput(sandbox.shell, running, 'ready')
     const result = await sandbox.shell.write(running.sessionId!, {
       input: '\u0003',
       yield: 2,
@@ -226,13 +251,24 @@ test('authorized Sandbox clones share the same shell sessions', async () => {
 
 test('unconsumed session output is capped with an omission marker', async () => {
   const { root, sandbox } = await createTestSandbox('limit')
+  const controller = new AbortController()
+  let receivedBytes = 0
 
   try {
     const result = await sandbox.shell.run(
-      'node -e "process.stdout.write(\'x\'.repeat(1200000)); setTimeout(() => {}, 1000)"',
-      { yield: 0.25 },
+      'node -e "process.stdout.write(\'x\'.repeat(1200000)); setInterval(() => {}, 1000)"',
+      {
+        signal: controller.signal,
+        yield: 3,
+        onOutput: (delta) => {
+          receivedBytes += Buffer.byteLength(delta)
+          if (receivedBytes === 1_200_000)
+            controller.abort()
+        },
+      },
     )
 
+    expect(receivedBytes).toBe(1_200_000)
     expect(result.status).toBe('running')
     expect(result.output).toContain('已省略')
     expect(Buffer.byteLength(result.output)).toBeLessThan(1024 * 1024 + 100)
@@ -272,9 +308,11 @@ posixPtyTest('PTY session forwards Ctrl-C to the foreground process', async () =
 
   try {
     const running = await sandbox.shell.run(
-      'node -e "process.on(\'SIGINT\', () => { console.log(\'pty-interrupted\'); process.exit(0) }); setInterval(() => {}, 1000)"',
+      'node -e "setTimeout(() => { process.on(\'SIGINT\', () => { console.log(\'pty-interrupted\'); process.exit(0) }); console.log(\'ready\'); setInterval(() => {}, 1000) }, 400)"',
       { tty: true, yield: 0.25 },
     )
+
+    await waitForOutput(sandbox.shell, running, 'ready')
     const result = await sandbox.shell.write(running.sessionId!, {
       input: '\u0003',
       yield: 2,

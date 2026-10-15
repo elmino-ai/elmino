@@ -97,6 +97,8 @@ pnpm verify:packages
 
 尚未发布的同批内部依赖通过验收项目的 pnpm overrides 指向对应 tarball；发布内容本身必须保存正常版本声明，不能依赖 workspace 协议、仓库路径或宿主应用源码。验收临时目录保留供诊断，测试不读取用户模型配置、不调用真实模型服务
 
+交付验收会在临时消费项目中生成并更新依赖清单，所以该项目使用 `pnpm install --ignore-scripts --no-frozen-lockfile`，允许同步生成锁文件。仓库自身在 CI 中仍使用 `pnpm install --frozen-lockfile`，两者的安装策略按各自的锁文件来源区分
+
 发布 npm 需要独立授权。CI 执行交付验证，不上传或发布包
 
 ## 持续集成
