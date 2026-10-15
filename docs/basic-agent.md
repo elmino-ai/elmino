@@ -25,7 +25,7 @@ pnpm example:01-basic-agent
 | [src/tool](../examples/01-basic-agent/src/tool) | 定义写入当前工作区 `result.txt` 的工具 |
 | [src/storage](../examples/01-basic-agent/src/storage) | 装配 SqliteStore 与文件 BlobStore，宿主决定数据目录 |
 
-每个示例独立维护 `.env`，启动命令通过 Node.js 的 `--env-file=.env` 加载当前示例目录中的配置，不读取仓库根或其他示例的 `.env`。同名终端环境变量优先于文件中的值。`DEEPSEEK_MODEL` 和 `DEEPSEEK_BASE_URL` 可覆盖默认模型与接口地址，具体变量见 [.env.example](../examples/01-basic-agent/.env.example)
+每个示例独立维护 `.env`，启动命令通过 Node.js 的 `--env-file-if-exists=.env` 加载当前示例目录中的配置，不读取仓库根或其他示例的 `.env`。文件不存在时仍可使用终端注入的环境变量，同名终端环境变量优先于文件中的值。`DEEPSEEK_MODEL` 和 `DEEPSEEK_BASE_URL` 可覆盖默认模型与接口地址，具体变量见 [.env.example](../examples/01-basic-agent/.env.example)
 
 真实 `.env` 由根 `.gitignore` 排除，仓库只提交 `.env.example`。模型元信息与适配器凭据分开装配，密钥不写入 SQLite
 
