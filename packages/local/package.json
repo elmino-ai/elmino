@@ -1,0 +1,40 @@
+{
+  "name": "@elmino/local",
+  "type": "module",
+  "version": "0.0.0",
+  "description": "本机环境快照、登录环境加载、程序探测与 Shell 选择",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=24.18.1"
+  },
+  "scripts": {
+    "build": "tsdown --config ../../tsdown.config.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "prepack": "pnpm build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@elmino/sandbox": "workspace:^",
+    "@elmino/shared": "workspace:^"
+  },
+  "devDependencies": {
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -2,7 +2,7 @@
 
 elmino 是面向应用开发的可复用 Agent 框架，首阶段聚焦模型适配与 Agent 内核
 
-模型适配和完整 Agent 运行层已迁入 elmino，14 个能力包可以独立构建和打包。宿主应用接入及重复实现清理另行推进
+模型适配、完整 Agent 运行层和本机环境装配已迁入 elmino，15 个能力包可以独立构建和打包。宿主应用接入及重复实现清理另行推进
 
 ## 首阶段边界
 
@@ -16,6 +16,7 @@ elmino 是面向应用开发的可复用 Agent 框架，首阶段聚焦模型适
 | `@elmino/store-sqlite` | [packages/store-sqlite](packages/store-sqlite) | SqliteStore、数据库仓储、版本化迁移与事务生命周期 |
 | `@elmino/sandbox` | [packages/sandbox](packages/sandbox) | 文件、Shell、PTY 与执行权限的纯契约 |
 | `@elmino/sandbox-local` | [packages/sandbox-local](packages/sandbox-local) | 本机文件、进程、PTY、命令评审与资源释放 |
+| `@elmino/local` | [packages/local](packages/local) | 不可变环境快照、登录环境加载、程序探测、Shell 选择和受控命令执行 |
 | `@elmino/runtime` | [packages/runtime](packages/runtime) | 线程执行位置与 Runtime 生命周期；`/local` 通过注入 Sandbox 装配 |
 | `@elmino/tool` | [packages/tool](packages/tool) | 工具定义、参数校验、作用域、审批、HostServices 与子智能体控制契约 |
 | `@elmino/thread` | [packages/thread](packages/thread) | Canonical 上下文、恢复快照、消息投影、工具事实提交和运行事件 |
@@ -46,7 +47,7 @@ elmino 是面向应用开发的可复用 Agent 框架，首阶段聚焦模型适
 - 数据库存储独立交付，安装 `store` 不安装 Drizzle、dayjs 或模型 SDK；基础入口不引入本地文件实现
 - 已接入 Changesets，模型包与共享基础的 minor 变更记录在 `.changeset`；当前开发版本为 `0.0.0`，尚未发布到 npm
 
-`pnpm verify:packages` 为 14 个能力包生成 tarball，检查公开入口、类型声明、映射源码和依赖版本，再分别安装到仓库外临时目录，执行公共工具、类型检查、SDK 请求投影、文件与 Shell 执行、数据库事务与关闭重开、默认 Agent 执行、审批恢复、文本和二进制产物持久化及依赖隔离检查。尚未发布的内部依赖由消费项目的 pnpm overrides 指向同批 tarball，打包文件中的正常版本声明保持不变。临时目录保留供失败诊断，不读取用户模型配置，不调用真实模型服务
+`pnpm verify:packages` 为 15 个能力包生成 tarball，检查公开入口、类型声明、映射源码和依赖版本，再分别安装到仓库外临时目录，执行公共工具、类型检查、SDK 请求投影、环境快照与实际 Sandbox 装配、文件与 Shell 执行、数据库事务与关闭重开、默认 Agent 执行、审批恢复、文本和二进制产物持久化及依赖隔离检查。尚未发布的内部依赖由消费项目的 pnpm overrides 指向同批 tarball，打包文件中的正常版本声明保持不变。临时目录保留供失败诊断，不读取用户模型配置，不调用真实模型服务
 
 交付集成测试位于 [tests/packages/verify-packages.mjs](tests/packages/verify-packages.mjs)，由 `pnpm verify:packages` 单独执行。tarball 输出到 `dist/packs`，根项目不参与打包。宿主应用接入与重复实现清理作为后续独立批次执行
 
@@ -143,6 +144,26 @@ finally {
 
 SQLite 原始版本化迁移包含在发布包的 `drizzle/runtime/migrations` 中，仓库外安装后可直接建库和重开；迁移失败拒绝打开并保留原数据，不执行自动清库
 
+## 本机环境装配
+
+`@elmino/local` 组合登录 Shell 环境、应用层和显式启动覆盖，按此顺序生成不可变快照。它只依赖纯契约与共享工具，安装时不带入 PTY、数据库或供应商 SDK
+
+```ts
+import { loadUserEnv, LocalEnv, resolveLocalShell } from '@elmino/local'
+
+export async function createLocalExecution() {
+  const environment = LocalEnv.create({ shell: await loadUserEnv(), loadShell: loadUserEnv })
+  environment.setApplicationLayer({ prependPath: ['/opt/project/bin'] })
+  const env = environment.snapshot()
+  const shell = resolveLocalShell({ env })
+  return { environment, env, shell }
+}
+```
+
+把 `env`、`shell` 传给 Sandbox；显式工具 Shell 通过 `resolveLocalShell({ env, preference: kind })` 解析。`refresh()` 并发调用共用一次加载，失败保留原快照，完成时使用最新应用层；已有 Runtime 继续使用原快照，新建 Runtime 才读取新快照。启动层提供 PATH 时会完整覆盖应用层追加的 PATH
+
+`loadUserEnv` 在 Windows 复制传入环境，在 POSIX 通过登录交互 Shell 加载，以 NUL 分隔记录保留多行值和空白。普通启动失败、非零退出或超时在完成进程清理后返回去除旧激活状态的启动环境；清理失败会拒绝。`runEnvCommand` 支持取消与超时，不提供标准输入；失败时保留命令错误，清理失败包含原失败与清理原因。用户目录、认证、模型配置、工作区数据库和 blob 的路径均由宿主装配
+
 ## Agent 调用
 
 模型和存储由宿主注入，下面的函数使用默认 Loop 执行真实工具。宿主提供 `TurnModel<ModelTurnConfig>` 时，`config` 只包含可持久化的非敏感配置，凭据留在 `adapter` 的装配边界
@@ -152,6 +173,7 @@ import type { ModelTurnConfig, TurnModel } from '@elmino/llm'
 import type { RuntimeStore } from '@elmino/store'
 import { defineAgent } from '@elmino/agent'
 import { AgentEngine } from '@elmino/engine'
+import { loadUserEnv, LocalEnv, resolveLocalShell } from '@elmino/local'
 import { defineRuntime } from '@elmino/runtime/local'
 import { LocalSandbox } from '@elmino/sandbox-local'
 import { createId } from '@elmino/shared'
@@ -159,8 +181,7 @@ import { defineTools } from '@elmino/tool'
 import * as z from 'zod'
 
 export async function runAgent(model: TurnModel<ModelTurnConfig>, store: RuntimeStore, cwd: string) {
-  const env = Object.fromEntries(Object.entries(process.env)
-    .filter((entry): entry is [string, string] => typeof entry[1] === 'string'))
+  const environment = LocalEnv.create({ shell: await loadUserEnv(), loadShell: loadUserEnv })
   const agent = defineAgent({
     id: 'assistant',
     systemPrompt: '使用工具完成用户任务',
@@ -177,11 +198,15 @@ export async function runAgent(model: TurnModel<ModelTurnConfig>, store: Runtime
         },
       },
     }),
-    runtime: defineRuntime(({ location }) => LocalSandbox.create({
-      cwd: location.cwd,
-      env,
-      shell: { kind: 'sh', path: '/bin/sh' },
-    })),
+    runtime: defineRuntime(({ location }) => {
+      const env = environment.snapshot()
+      return LocalSandbox.create({
+        cwd: location.cwd,
+        env,
+        shell: resolveLocalShell({ env }),
+        resolveShell: (kind, env) => resolveLocalShell({ env, preference: kind }),
+      })
+    }),
   })
   const engine = AgentEngine.create({ assistant: agent })
   try {

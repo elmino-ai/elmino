@@ -44,8 +44,11 @@ function dependencyClosure(name, result = new Set()) {
   }
   return result
 }
-// 真实集成夹具的数据库适配器只作为消费者开发依赖，Engine 的发布依赖仍保持可替换
-const fixturePackages = new Map([['engine', ['store-sqlite']]])
+// 真实集成使用的具体实现只作为消费者开发依赖，不改变正式包的可替换边界
+const fixturePackages = new Map([
+  ['engine', ['store-sqlite']],
+  ['local', ['sandbox-local']],
+])
 const packedNames = new Set(packageNames.flatMap(name => [
   ...dependencyClosure(name),
   ...(fixturePackages.get(name) ?? []).flatMap(item => [...dependencyClosure(item)]),

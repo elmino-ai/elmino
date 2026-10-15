@@ -24,6 +24,7 @@
 - `llm-openai` 与 `llm-anthropic` 分别持有对应消息协议的适配器和厂商差异
 - Provider 原生字段只留在适配器边界，内部工具调用统一使用 `args`
 - `shared` 持有实际跨包复用的纯工具和通用类型，领域类型留在实际拥有该能力的包，不整包复制产品共用代码
+- `local` 持有本机环境快照、登录环境加载、程序探测与 Shell 选择，复用 `sandbox` 的环境契约；目录、认证、模型配置和应用控制数据归宿主。命令与环境加载共用进程清理，环境刷新不改变已创建 Runtime 的快照
 - `store` 持有 RuntimeStore、BlobStore、运行记录和持久化线程数据契约；本地 BlobStore 从 `/local` 引入，基础入口不加载 Node 实现
 - `store-sqlite` 持有 SqliteStore、Drizzle 仓储与运行数据库迁移，不持有产品 control.db、工作区目录装配或 UI 默认文案
 - `engine` 持有 Agent 调度与执行生命周期，执行实体按 `Thread -> Turn -> Step -> ToolInvocation` 组织；`loop` 持有单轮执行，`agent` 装配工具、Hooks、Loop、Thread 和 Runtime，插件体系暂不迁入
