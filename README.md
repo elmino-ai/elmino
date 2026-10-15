@@ -229,10 +229,10 @@ export async function runAgent() {
 - [x] RuntimeStore / BlobStore 接口，SQLite 与本地文件实现
 - [x] 模块独立构建、类型声明、Changesets 和仓库外 tarball 验收
 - [x] 首个真实模型示例，支持独立环境配置、思考与正文输出
+- [x] Ubuntu / macOS CI，覆盖构建、类型、测试、迁移与 15 个包的仓库外交付验收
 
 ### 近期
 
-- [ ] 跑通 Ubuntu / macOS CI，修复消费包安装与 macOS Shell / PTY 测试问题
 - [ ] 补齐工具审批与跨进程恢复、子智能体、自定义工具等单一功能示例
 - [ ] 编写公开 API 参考、持久化接入与 Sandbox 扩展指南
 - [ ] 完成真实应用接入与执行生命周期验收，明确宿主需要承担的职责
