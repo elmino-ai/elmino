@@ -43,6 +43,7 @@ function dependencyClosure(name, result = new Set()) {
 const fixturePackages = new Map([
   ['engine', ['store-sqlite']],
   ['local', ['sandbox-local']],
+  ['server', ['sdk']],
 ])
 const packedNames = new Set(packageNames.flatMap(name => [
   ...dependencyClosure(name),

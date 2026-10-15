@@ -165,6 +165,25 @@ test('循环扩展数据拒绝而不递归溢出', () => {
   expect(ThreadStateSchema.safeParse({ ...thread, extensions: { notes: cyclic } }).success).toBe(false)
 })
 
+test('领域原生输出允许省略可选字段，嵌套 JSON 仍不允许有损值', () => {
+  const tool = { ...parts.tool, error: undefined, decision: undefined, durationMs: undefined }
+  const raw = {
+    ...thread,
+    messages: [{
+      ...message,
+      parts: [tool, { ...parts.reasoning, id: createId('part'), seq: 1, metadata: undefined }],
+    }],
+    runtime: { ...thread.runtime, interrupt: { ...interrupt, ownerId: undefined, resolvedAt: undefined } },
+  }
+  expect(ThreadStateSchema.safeParse(raw).success).toBe(true)
+  for (const args of [{ bad: Number.NaN }, { bad: undefined }])
+    expect(ThreadPartWireSchema.safeParse({ ...tool, args }).success).toBe(false)
+  expect(ThreadStateSchema.safeParse({
+    ...raw,
+    runtime: { ...raw.runtime, interrupt: { ...interrupt, payload: { bad: undefined } } },
+  }).success).toBe(false)
+})
+
 test('子线程中断绑定自己的 Turn，允许与外层父 Turn 不同', () => {
   const child: ThreadChildState = {
     ownerId: 'subagent',

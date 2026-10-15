@@ -7,6 +7,7 @@
   },
   "devDependencies": {
     "@elmino/agent": "workspace:^",
+    "@elmino/api": "workspace:^",
     "@elmino/engine": "workspace:^",
     "@elmino/llm": "workspace:^",
     "@elmino/llm-anthropic": "workspace:^",
@@ -18,6 +19,8 @@
     "@elmino/runtime": "workspace:^",
     "@elmino/sandbox": "workspace:^",
     "@elmino/sandbox-local": "workspace:^",
+    "@elmino/sdk": "workspace:^",
+    "@elmino/server": "workspace:^",
     "@elmino/shared": "workspace:^",
     "@elmino/store": "workspace:^",
     "@elmino/store-sqlite": "workspace:^",

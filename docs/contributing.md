@@ -101,7 +101,7 @@ pnpm verify:packages
 
 发布 npm 需要独立授权。CI 执行交付验证，不上传或发布包
 
-`request` 与 `protocol` 的交付程序还会执行无 Node 类型的浏览器模式编译，并用浏览器条件完整打包，检查产物不含外部 Node 模块或隐式 polyfill，再用标准 Web API 执行该产物。这属于构建验收，不启动浏览器。请求、Schema 和恢复游标的边界见 [请求与事件协议](transport.md)
+`request`、`protocol`、`api` 与 `sdk` 的交付程序还会执行无 Node 类型的浏览器模式编译，并用浏览器条件完整打包，检查产物不含外部 Node 模块或隐式 polyfill，再用标准 Web API 执行该产物。这属于构建验收，不启动浏览器。请求、Schema 和恢复游标的边界见 [请求与事件协议](transport.md)
 
 ## 持续集成
 

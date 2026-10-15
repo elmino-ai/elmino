@@ -29,7 +29,8 @@
 - `store-sqlite` 持有 SqliteStore、Drizzle 仓储与运行数据库迁移，不持有产品 control.db、工作区目录装配或 UI 默认文案
 - `engine` 持有 Agent 调度与执行生命周期，执行实体按 `Thread -> Turn -> Step -> ToolInvocation` 组织；`loop` 持有单轮执行，`agent` 装配工具、Hooks、Loop、Thread 和 Runtime，插件体系暂不迁入
 - 模型解析、持久化、运行环境与事件处理通过实际能力契约注入，避免内核依赖具体应用
-- `request` 持有通用 Fetch 与独立 oRPC 子入口；`protocol` 持有跨端 Schema、事件 JSON 和游标语法，复用 `thread` / `store` 的领域类型，事件定义与工厂仍归 `thread/events`；连接、回放队列和重连分别归后续 Server / SDK
+- `request` 持有通用 Fetch 与独立 oRPC 子入口；`protocol` 持有跨端 Schema、事件 JSON 和游标语法，复用 `thread` / `store` 的领域类型，事件定义与工厂仍归 `thread/events`；连接、回放队列和重连分别归 Server / SDK
+- `api` 持有远程调用契约，`server` 装配宿主资源与 Engine、回放及 HTTP 生命周期，`sdk` 持有纯客户端调用与重连；账号、模型目录、工作区管理及 React 状态不迁入。Server 关闭自己的 Engine 与事件流，Store 继续由宿主关闭
 - 产品预设、品牌、账号、市场、遥测上报和 UI 不进入内核
 - elmino 不反向依赖宿主应用；应用通过公开包接入框架，接入后清理自身重复实现
 - 不为目录对称预建空包、空文件、一次性封装、重复状态或薄转发层

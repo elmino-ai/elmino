@@ -1,0 +1,42 @@
+{
+  "name": "@elmino/api",
+  "type": "module",
+  "version": "0.0.0",
+  "description": "Agent 宿主与客户端共享的 oRPC 契约",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./paths": {
+      "types": "./dist/paths/index.d.ts",
+      "import": "./dist/paths/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "src"],
+  "engines": { "node": ">=24.18.1" },
+  "scripts": {
+    "build": "tsdown --config ../../tsdown.config.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "prepack": "pnpm build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@elmino/protocol": "workspace:^",
+    "@elmino/shared": "workspace:^",
+    "@elmino/thread": "workspace:^",
+    "@opentelemetry/api": "catalog:",
+    "@orpc/contract": "catalog:",
+    "type-fest": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "publishConfig": { "access": "public" }
+}

@@ -24,7 +24,7 @@ elmino 把模型调用、工具执行、会话状态和执行调度组合成可�
 
 模型、持久化和执行环境通过接口装配。你可以只用模型适配器，也可以组合完整的 Agent；应用自己决定数据放在哪里、工具允许做什么，以及如何向用户展示执行过程
 
-> **开发预览**：当前包版本为 `0.0.0`，尚未发布到 npm，请先通过仓库内示例体验。API 仍会调整，Agent 运行时已具备基础，正在提取远程调用所需的请求与协议层；Server 和 SDK 随后推进，插件体系与 UI 留待后续
+> **开发预览**：当前包版本为 `0.0.0`，尚未发布到 npm，请先通过仓库内示例体验。Agent 运行时、远程 Server 和纯客户端 SDK 已具备基础，API 仍会调整；插件体系与 UI 留待后续
 
 ## 为什么使用 elmino
 
@@ -184,7 +184,7 @@ export async function runAgent() {
 
 ## 包与扩展
 
-17 个能力包按职责拆分，各自声明依赖和公开入口，不要求应用把所有包都直接引入。使用 Agent 的应用通常直接组合 `agent`、`engine`、模型适配器，以及所需的存储和执行环境
+20 个能力包按职责拆分，各自声明依赖和公开入口，不要求应用把所有包都直接引入。使用 Agent 的应用通常直接组合 `agent`、`engine`、模型适配器，以及所需的存储和执行环境
 
 | 包 | 职责 |
 | --- | --- |
@@ -205,8 +205,13 @@ export async function runAgent() {
 | [`@elmino/shared`](packages/shared) | 跨包复用的通用工具与类型 |
 | [`@elmino/request`](packages/request) | 动态 Header、HTTP 错误与 `/orpc` 请求入口 |
 | [`@elmino/protocol`](packages/protocol) | 跨端事件、线程快照校验、序列化与恢复游标 |
+| [`@elmino/api`](packages/api) | Agent、Thread、Turn 与事件流的类型化接口契约 |
+| [`@elmino/server`](packages/server) | 可注入模型、Store、Runtime 和鉴权的 Fetch 服务 |
+| [`@elmino/sdk`](packages/sdk) | Node.js / 浏览器客户端，支持订阅、重连与取消 |
 
 请求与协议的调用方式、旧包取舍及下一批边界见 [请求与事件协议](docs/transport.md)
+
+远程调用、宿主注入与生命周期见 [Server 与 SDK 指南](docs/server-sdk.md)
 
 需要替换能力时，可以从这些边界接入：
 
@@ -234,11 +239,11 @@ export async function runAgent() {
 - [x] 模块独立构建、类型声明、Changesets 和仓库外 tarball 验收
 - [x] 首个真实模型示例，支持独立环境配置、思考与正文输出
 - [x] 通用请求层与跨端事件协议，支持独立入口及浏览器构建验收
+- [x] API 契约、可注入 Server 和纯客户端 SDK，支持事件回放与审批恢复
 - [x] Ubuntu / macOS CI，覆盖构建、类型、测试、迁移与公开包的仓库外交付验收
 
 ### 近期
 
-- [ ] 提取 `api` 契约、可注入的 `server` 与纯客户端 `sdk`
 - [ ] 完成 `02-server-sdk` 示例，验收审批恢复、断线重连与 Server 重启
 - [ ] 补齐工具审批与跨进程恢复、子智能体、自定义工具等单一功能示例
 - [ ] 编写公开 API 参考、持久化接入与 Sandbox 扩展指南
@@ -273,5 +278,6 @@ pnpm verify:packages
 - [开发指南](docs/contributing.md)：环境、常用命令、测试、迁移、提交与包交付
 - [Basic Agent 示例](docs/basic-agent.md)：真实模型配置、源码导航与运行说明
 - [请求与事件协议](docs/transport.md)：独立请求入口、跨端 Schema 与后续远程调用边界
+- [Server 与 SDK](docs/server-sdk.md)：远程调用、资源注入与重连恢复
 - [已有宿主接入清单](docs/integration.md)：接口差异、资源所有权与数据保留
 - [开发约定](AGENTS.md)：能力边界与代码规则

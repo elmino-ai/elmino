@@ -24,9 +24,18 @@ export function isJsonValue(value: unknown): value is JsonValue {
       return false
 
     ancestors.add(current)
-    const valid = Array.isArray(current)
-      ? current.every(visit)
-      : objectValues(current).every(visit)
+    let valid = true
+    if (Array.isArray(current)) {
+      for (let index = 0; index < current.length; index++) {
+        if (!Object.hasOwn(current, index) || !visit(current[index])) {
+          valid = false
+          break
+        }
+      }
+    }
+    else {
+      valid = objectValues(current).every(visit)
+    }
 
     ancestors.delete(current)
     return valid

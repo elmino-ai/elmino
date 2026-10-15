@@ -63,6 +63,9 @@ async function readConsumer(root, name) {
 /** 正式安装与集成安装分别检查依赖闭包，不能隐含引入供应商、数据库或本机实现 */
 async function assertInstalledClosure(dir, name, closure, manifests, packedManifests) {
   const allowed = new Set([...closure].flatMap(item => Object.keys(packedManifests.get(item).dependencies ?? {})))
+  // oRPC 1.15 的 contract/server 自身依赖 client，属于协议库传递依赖，不表示引入框架 SDK
+  if (allowed.has('@orpc/contract') || allowed.has('@orpc/server'))
+    allowed.add('@orpc/client')
   const installed = await readdir(path.join(dir, 'node_modules/.pnpm'))
   for (const dependency of isolatedDependencies) {
     const prefix = `${dependency.replace('/', '+')}@`
@@ -156,6 +159,6 @@ export async function verifyConsumer({ root, name, manifests, archives, packedMa
     consumer.entry,
   ], { cwd: dir })
   await run(process.execPath, [path.join('dist', consumer.entry.replace(/\.ts$/u, '.js'))], { cwd: dir, timeout: 30_000 })
-  if (name === 'request' || name === 'protocol')
+  if (['request', 'protocol', 'api', 'sdk'].includes(name))
     await verifyBrowserConsumer(root, dir, consumer.entry)
 }

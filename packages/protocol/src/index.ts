@@ -30,6 +30,7 @@ export {
   ThreadChildStateSchema,
   ThreadContextBudgetSchema,
   ThreadInterruptSchema,
+  ThreadListItemSchema,
   ThreadMessageSchema,
   ThreadPartWireSchema,
   ThreadStateSchema,

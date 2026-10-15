@@ -1,0 +1,58 @@
+{
+  "name": "@elmino/server",
+  "type": "module",
+  "version": "0.0.0",
+  "description": "可嵌入宿主的 Agent HTTP 服务",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "import": "./dist/node/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=24.18.1"
+  },
+  "scripts": {
+    "build": "tsdown --config ../../tsdown.config.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "prepack": "pnpm build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@elmino/agent": "workspace:^",
+    "@elmino/api": "workspace:^",
+    "@elmino/engine": "workspace:^",
+    "@elmino/llm": "workspace:^",
+    "@elmino/protocol": "workspace:^",
+    "@elmino/runtime": "workspace:^",
+    "@elmino/shared": "workspace:^",
+    "@elmino/store": "workspace:^",
+    "@elmino/thread": "workspace:^",
+    "@hono/node-server": "catalog:",
+    "@opentelemetry/api": "catalog:",
+    "@orpc/server": "catalog:"
+  },
+  "devDependencies": {
+    "@elmino/sdk": "workspace:^",
+    "@elmino/store-sqlite": "workspace:^",
+    "@elmino/tool": "workspace:^",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

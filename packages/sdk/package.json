@@ -1,0 +1,44 @@
+{
+  "name": "@elmino/sdk",
+  "type": "module",
+  "version": "0.0.0",
+  "description": "浏览器与 Node.js 的类型化 Agent API 客户端和事件订阅",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=24.18.1"
+  },
+  "scripts": {
+    "build": "tsdown --config ../../tsdown.config.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "prepack": "pnpm build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@elmino/api": "workspace:^",
+    "@elmino/protocol": "workspace:^",
+    "@elmino/request": "workspace:^",
+    "@elmino/thread": "workspace:^",
+    "@opentelemetry/api": "catalog:",
+    "@orpc/client": "catalog:"
+  },
+  "devDependencies": {
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

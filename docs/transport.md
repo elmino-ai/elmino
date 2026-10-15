@@ -1,6 +1,6 @@
 # 请求与事件协议
 
-这一批提取旧项目的通用请求和事件传输能力，作为后续 API、Server、SDK 的基础。当前没有可启动的框架 HTTP Server，也没有完整远程 SDK；可以先独立使用下列两个包
+通用请求和事件传输能力可以独立使用，也被 `@elmino/api`、`@elmino/server` 和 `@elmino/sdk` 复用。完整远程装配见 [Server 与 SDK](server-sdk.md)
 
 ## 包的职责
 
@@ -62,7 +62,7 @@ const rpc = createOrpcClient<MyApiClient>(request.withBaseUrl(
 })
 ```
 
-`MyApiClient` 来自应用自己的 oRPC 契约；框架的 `@elmino/api` 将在下一批提供。oRPC 使用 `rawFetch`，保留自己的错误与事件迭代器语义。批处理默认开启，最多每批 10 个调用；事件订阅等长连接必须通过 `exclude` 排除
+`MyApiClient` 来自应用自己的 oRPC 契约；调用框架接口时可用 `@elmino/api` 的 `ApiClient`。oRPC 使用 `rawFetch`，保留自己的错误与事件迭代器语义。批处理默认开启，最多每批 10 个调用；事件订阅等长连接必须通过 `exclude` 排除
 
 基础请求入口不会加载 oRPC 适配代码。包本身声明 `@orpc/client` 运行依赖，因此安装 `request` 仍会安装该依赖；子路径区分代码引入边界
 
@@ -112,8 +112,8 @@ const position = parseRuntimeEventCursor(cursor)
 
 格式为 `<stream UUID>:<非负安全整数>`。每次 Server 创建新事件流时重新生成 `streamId`；Server 持有回放窗口并判断游标是否属于本流、是否落在可回放范围。`protocol` 仅校验语法，不拥有队列、连接或持久化资源
 
-后续 Server 将负责回放与 `reset`，SDK 将在回调处理成功后推进游标，并负责断线重连和取消订阅。本批没有把这些运行生命周期提前塞进协议包
+Server 负责回放与 `reset`，SDK 在回调处理成功后推进游标，并负责断线重连和取消订阅。这些运行生命周期不归协议包
 
-## 下一批
+## 上层调用
 
-继续按 `api → server → sdk` 接通远程运行：契约引用本批 Schema，Server 注入 Engine、模型、Store、Runtime 与鉴权，纯 SDK 复用请求层并处理事件重连。完成后提供 `02-server-sdk` 单功能示例，再验收审批恢复、断线重连与 Server 重启
+`api` 契约引用这些 Schema，Server 注入模型、Store、Runtime 与鉴权，纯 SDK 复用请求层并处理事件重连。审批恢复、断线重连与 Server 重建沿用持久化执行事实，详情见 [Server 与 SDK 指南](server-sdk.md)
