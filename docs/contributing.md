@@ -16,6 +16,20 @@ pnpm install
 
 `prepare` 配置 Husky Git Hooks。本地环境文件和运行数据不进入 Git，测试使用参数注入的临时目录，不修改 `HOME`
 
+## 代码导航
+
+CodeGraph 是可选的本地代码导航工具，不加入框架运行依赖或 CI。安装 CLI 后，在仓库根初始化自己的索引：
+
+```sh
+codegraph init .
+codegraph status
+codegraph explore "AgentServer"
+```
+
+源码更新后可执行 `codegraph sync` 增量同步。需要完整重建时执行 `codegraph index .`。已有索引时，智能体按 [开发约定](../AGENTS.md) 优先查询 CodeGraph，再补充文本搜索
+
+`.codegraph/.gitignore` 跟随仓库保存，其余数据库、日志与后台服务文件只留在本机。新检出环境需要自行建立索引，不复制其他开发者的数据库
+
 ## 提交检查
 
 [pre-commit](../.husky/pre-commit) 通过 lint-staged 对暂存的 JS、TS 文件执行 `eslint --cache --fix`；[commit-msg](../.husky/commit-msg) 通过 commitlint 校验 Conventional Commits

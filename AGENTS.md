@@ -73,3 +73,13 @@
 - 默认保持未提交，用户明确要求后才提交；提交主题使用 conventional commits 和中文描述
 - 提交通过 Husky 运行 lint-staged 与 commitlint；pre-commit 对已暂存 JS/TS 执行 ESLint 自动修复，不手工提前运行 `--fix`，不绕过 Hook
 - 不在未授权时创建远程、推送或改写已有提交
+
+<!-- CODEGRAPH_START -->
+## CodeGraph
+
+- 仓库存在 `.codegraph/` 时，理解或定位代码优先使用 CodeGraph，再按需使用 `rg` 或读取文件
+- 在仓库根执行 `codegraph explore "<符号、文件或问题>"`，获取当前源码、调用链与影响范围；可用时也可使用 MCP 的 `codegraph_explore`
+- 符号或文件查询不完整时再补充搜索；怀疑索引过期时先执行 `codegraph sync`，通过 `codegraph status` 检查状态
+- 本地索引不提交 Git，首次检出后可运行 `codegraph init .`；没有索引时跳过 CodeGraph，不自动初始化
+
+<!-- CODEGRAPH_END -->
