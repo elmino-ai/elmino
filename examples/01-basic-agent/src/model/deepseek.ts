@@ -2,10 +2,15 @@ import type { ModelTurnConfig, TurnModel } from '@elmino/llm'
 import { AnthropicMessagesProvider } from '@elmino/llm-anthropic'
 import { createId } from '@elmino/shared'
 
-/** 当前本地示例固定使用 DeepSeek 的 Anthropic Messages 接口 */
+/** 从示例环境变量装配 DeepSeek 的 Anthropic Messages 接口 */
 export function createModel(): TurnModel<ModelTurnConfig> {
-  const modelName = 'deepseek-flash'
-  const baseURL = 'https://api.deepseek.com/anthropic'
+  const credential = process.env.DEEPSEEK_API_KEY?.trim()
+
+  if (!credential)
+    throw new Error('请在 examples/01-basic-agent/.env 中配置 DEEPSEEK_API_KEY')
+
+  const modelName = process.env.DEEPSEEK_MODEL || 'deepseek-flash'
+  const baseURL = process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/anthropic'
   return {
     config: {
       id: createId('model'),
@@ -16,6 +21,7 @@ export function createModel(): TurnModel<ModelTurnConfig> {
       label: 'DeepSeek',
       baseURL,
       cache: { mode: 'disabled' },
+      reasoning: { level: 'high', options: { thinking: { type: 'enabled' } } },
       limit: { context: 32_768 },
       inputModalities: [],
       jsonSchema: false,
@@ -25,7 +31,7 @@ export function createModel(): TurnModel<ModelTurnConfig> {
       model: modelName,
       baseURL,
       providerName: 'deepseek',
-      credential: 'YOUR_DEEPSEEK_API_KEY',
+      credential,
       cache: { mode: 'disabled' },
       jsonSchema: false,
     }),

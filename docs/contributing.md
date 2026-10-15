@@ -76,6 +76,8 @@ pnpm --filter @elmino/store-sqlite db:generate
 
 可运行消费示例归 `examples/<序号>-<场景>`，使用 `@example/*` 私有工作区名称，独立声明实际依赖，不参与 `@elmino/*` 的打包与发布。目录使用 `01-`、`02-` 等两位序号排序，每个示例只展示一个功能，`src/index.ts` 负责启动，实现放在所属子目录。[Basic Agent 示例](basic-agent.md) 演示真实模型调用写文件工具；类型检查会通过 Turbo 的依赖图先构建所需能力包
 
+示例需要本地配置时，在自身根目录放置 `.env` 与不含密钥的 `.env.example`，通过自己的启动命令加载 `.env`。真实 `.env` 由根 `.gitignore` 忽略，不在源码中写入密钥，也不跨示例共享环境文件
+
 使用 Changesets 记录公开行为与类型变化：
 
 ```sh

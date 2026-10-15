@@ -167,6 +167,9 @@ importers:
       '@elmino/store-sqlite':
         specifier: workspace:^
         version: link:../../packages/store-sqlite
+      '@elmino/thread':
+        specifier: workspace:^
+        version: link:../../packages/thread
       '@elmino/tool':
         specifier: workspace:^
         version: link:../../packages/tool

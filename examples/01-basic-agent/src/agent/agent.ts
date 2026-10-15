@@ -3,11 +3,11 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { defineAgent } from '@elmino/agent'
 import { AgentEngine } from '@elmino/engine'
-import { extractText } from '@elmino/llm'
 import { createId, throwSettledErrors } from '@elmino/shared'
 import { createModel } from '../model/deepseek'
 import { runtime } from '../runtime/runtime'
 import { createStorage } from '../storage/storage'
+import { createTerminalOutput } from '../terminal/terminal'
 import { tools } from '../tool/write-note'
 
 /** 用真实 DeepSeek 模型调用写文件工具，运行记录持久化到独立临时目录 */
@@ -31,6 +31,7 @@ export async function runAgent() {
       threadId: createId('thread'),
       turnId: createId('turn'),
       model,
+      onRuntimeEvent: createTerminalOutput(),
       signal: AbortSignal.timeout(60_000),
       location: {
         workspaceId: createId('workspace'),
@@ -43,8 +44,8 @@ export async function runAgent() {
       approvalMode: 'fullAccess',
       input: [{ type: 'text', text: '请使用 write_note 将 Hello from elmino 写入 result.txt' }],
     }, store)
-    const [, message] = await Promise.all([execution.accepted, execution.completed])
-    console.log('Agent 回复：', message ? extractText(message) : '本次运行没有文本结果')
+    await Promise.all([execution.accepted, execution.completed])
+    process.stdout.write('\n')
     console.log('文件内容：', await readFile(path.join(cwd, 'result.txt'), 'utf8'))
     console.log('示例数据目录：', dataDir)
   }
