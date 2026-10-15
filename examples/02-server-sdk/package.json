@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node --env-file-if-exists=.env --import tsx src/index.ts",
+    "client": "node --env-file-if-exists=.env --import tsx src/client/index.ts",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run"
   },

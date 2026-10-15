@@ -88,7 +88,19 @@ pnpm example:01-basic-agent
 
 本例在新建临时工作区内使用 `fullAccess` 执行固定的文件写入，并设置 60 秒执行期限。更多配置见 [Basic Agent 示例指南](docs/basic-agent.md)
 
-需要通过 HTTP 调用 Agent 时，使用第二个 [Server / SDK 示例](docs/server-sdk-example.md)：配置 `examples/02-server-sdk/.env` 后运行 `pnpm example:02-server-sdk`，即可观察远程事件并查询持久化结果
+需要通过 HTTP 调用 Agent 时，使用第二个 [Server / SDK 示例](docs/server-sdk-example.md)：在 `examples/02-server-sdk/.env` 中填写模型凭据与 `SERVER_KEY`，然后在两个终端分别运行：
+
+```sh
+# 终端一：启动常驻 Server，默认 http://127.0.0.1:3000
+pnpm example:02-server-sdk
+```
+
+```sh
+# 终端二：通过 SDK 提交任务并打印思考、工具结果与回复
+pnpm example:02-server-sdk:client
+```
+
+客户端完成后退出，Server 继续运行；在 Server 终端按 `Ctrl+C` 关闭服务。运行数据默认保存在示例目录下的 `.elmino`，重启时复用
 
 ## 如何使用
 
@@ -281,6 +293,6 @@ pnpm verify:packages
 - [Basic Agent 示例](docs/basic-agent.md)：真实模型配置、源码导航与运行说明
 - [请求与事件协议](docs/transport.md)：独立请求入口、跨端 Schema 与后续远程调用边界
 - [Server 与 SDK](docs/server-sdk.md)：远程调用、资源注入与重连恢复
-- [Server / SDK 示例](docs/server-sdk-example.md)：真实 DeepSeek 远程调用与独立环境配置
+- [Server / SDK 示例](docs/server-sdk-example.md)：常驻 Server、独立 SDK 客户端与环境配置
 - [已有宿主接入清单](docs/integration.md)：接口差异、资源所有权与数据保留
 - [开发约定](AGENTS.md)：能力边界与代码规则

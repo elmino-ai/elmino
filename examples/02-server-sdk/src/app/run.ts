@@ -1,33 +1,88 @@
-import { mkdir, mkdtemp } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import type { ServerOptions } from '@elmino/server'
+import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { listen } from '@elmino/server/node'
-import { createId, throwSettledErrors } from '@elmino/shared'
-import { runRemoteTask } from '../client/run'
+import { throwSettledErrors } from '@elmino/shared'
 import { createModel } from '../model/deepseek'
 import { createServer } from '../server/create'
 import { createStorage } from '../storage/storage'
+import { readConfig } from './config'
 
-/** 一个进程启动真实端口与独立 SDK 客户端，演示完整远程调用 */
-export async function runExample() {
-  const model = createModel()
-  const dataDir = await mkdtemp(path.join(tmpdir(), 'elmino-server-sdk-'))
-  const workspaceRoot = path.join(dataDir, 'workspace')
-  await mkdir(workspaceRoot)
-  const store = await createStorage(dataDir)
-  const key = process.env.SERVER_KEY || createId('example')
-  const server = createServer(model, store, workspaceRoot, key)
+/** 示例宿主拥有的启动配置，允许测试注入确定性模型 */
+interface ExampleServerOptions {
+  /** 模型解析与冻结配置恢复 */
+  model: ServerOptions['resolveModel']
+  /** Server 与客户端共享的开发凭据 */
+  key: string
+  /** 重启复用的独立数据目录 */
+  dataDir: string
+  /** 默认固定端口，测试可用 0 分配临时端口 */
+  port?: number
+  /** 默认只允许本机连接 */
+  hostname?: string
+  /** 允许连接的浏览器来源 */
+  corsOrigins?: readonly string[]
+}
+
+/** 只启动 Server，由调用方决定何时关闭，不自动执行任务 */
+export async function startExampleServer(options: ExampleServerOptions) {
+  const workspaceRoot = path.join(options.dataDir, 'workspace')
+  await mkdir(workspaceRoot, { recursive: true })
+  const store = await createStorage(options.dataDir)
+  const server = createServer(options.model, store, workspaceRoot, options.key, options.corsOrigins)
   let http: Awaited<ReturnType<typeof listen>> | undefined
+  let closing: Promise<void> | undefined
+  const close = () => {
+    closing ??= Promise.resolve().then(async () => {
+      const execution = await Promise.allSettled([server.close()])
+      const transport = await Promise.allSettled([http?.close()])
+      const storage = await Promise.allSettled([store.close()])
+      throwSettledErrors([...execution, ...transport, ...storage], '关闭远程示例失败', true)
+    })
+    return closing
+  }
   try {
-    http = await listen({ server })
-    console.log('Server 地址：', http.url)
-    await runRemoteTask(http.url, key)
-    console.log('示例数据目录：', dataDir)
+    http = await listen({ server, port: options.port ?? 3000, hostname: options.hostname })
+    return { url: http.url, close }
+  }
+  catch (error) {
+    await close()
+    throw error
+  }
+}
+
+/** 常驻服务入口，仅在终止信号到来时结算任务并释放宿主资源 */
+export async function runExample() {
+  const config = readConfig()
+  // 在打开资源前检查模型配置，实际 Turn 再按冻结配置装配适配器
+  createModel()
+  const stopped = Promise.withResolvers<void>()
+  const onSignal = () => stopped.resolve()
+  process.on('SIGINT', onSignal)
+  process.on('SIGTERM', onSignal)
+  let server: Awaited<ReturnType<typeof startExampleServer>> | undefined
+  try {
+    server = await startExampleServer({
+      model: ({ frozenConfig }) => createModel(frozenConfig),
+      key: config.key,
+      dataDir: config.dataDir,
+      port: config.port,
+      hostname: config.hostname,
+      corsOrigins: config.corsOrigins,
+    })
+    console.log('Server 地址：', server.url)
+    console.log('示例数据目录：', config.dataDir)
+    console.log('Agent：clock，工作区：example')
+    console.log('服务已就绪，在另一个终端运行 pnpm client 发起任务，按 Ctrl+C 关闭')
+    await stopped.promise
   }
   finally {
-    const execution = await Promise.allSettled([server.close()])
-    const transport = await Promise.allSettled([http?.close()])
-    const storage = await Promise.allSettled([store.close()])
-    throwSettledErrors([...execution, ...transport, ...storage], '关闭远程示例失败', true)
+    try {
+      await server?.close()
+    }
+    finally {
+      process.off('SIGINT', onSignal)
+      process.off('SIGTERM', onSignal)
+    }
   }
 }

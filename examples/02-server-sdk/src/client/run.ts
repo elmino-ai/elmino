@@ -20,11 +20,14 @@ export async function runRemoteTask(baseUrl: string, key: string) {
     completed.reject(error)
   }, 60_000)
   const printed = new Set<string>()
+  const assistantMessages = new Set<string>()
 
   /** 完整片段在事件与快照恢复路径共用去重输出 */
   const printParts = (parts: ThreadPart[]) => {
     for (const part of parts) {
       if (part.status !== 'completed' || printed.has(part.id))
+        continue
+      if ((part.type === 'reasoning' || part.type === 'text') && !part.text.trim())
         continue
       printed.add(part.id)
       if (part.type === 'reasoning' || part.type === 'text')
@@ -39,7 +42,14 @@ export async function runRemoteTask(baseUrl: string, key: string) {
     if (event.threadId !== target.threadId)
       return
     const updated = readRuntimeEventPartPayload(event)
-    printParts(readRuntimeEventMessagePayload(event)?.parts ?? (updated ? [updated] : []))
+    const message = readRuntimeEventMessagePayload(event)
+    if (message?.role === 'assistant') {
+      assistantMessages.add(message.id)
+      printParts(message.parts)
+    }
+    else if (updated && assistantMessages.has(updated.messageId)) {
+      printParts([updated])
+    }
     if (event.turnId !== turnId || !isOneOf(event.type, TERMINAL_TURN_EVENT_TYPES))
       return
     if (event.type === 'turn.completed')
@@ -54,7 +64,12 @@ export async function runRemoteTask(baseUrl: string, key: string) {
     onReset: async () => {
       try {
         const snapshot = await client.rpc.thread.get(target, { signal: deadline.signal })
-        printParts(snapshot.messages.flatMap(message => message.parts))
+        for (const message of snapshot.messages) {
+          if (message.role !== 'assistant')
+            continue
+          assistantMessages.add(message.id)
+          printParts(message.parts)
+        }
         const turn = snapshot.turns.find(item => item.id === turnId)
         if (turn && ['completed', 'failed', 'cancelled', 'interrupted'].includes(turn.status)) {
           if (turn.status === 'completed')

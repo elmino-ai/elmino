@@ -78,7 +78,9 @@ pnpm --filter @elmino/store-sqlite db:generate
 
 示例需要本地配置时，在自身根目录放置 `.env` 与不含密钥的 `.env.example`，通过自己的启动命令加载 `.env`。真实 `.env` 由根 `.gitignore` 忽略，不在源码中写入密钥，也不跨示例共享环境文件
 
-[02-server-sdk](server-sdk-example.md) 在真实 HTTP 端口上演示远程 Agent 调用。示例的测试只注入确定性模型，验证工具调用与持久化，不读取 `.env`、不调用外部模型服务
+[02-server-sdk](server-sdk-example.md) 通过常驻 Server 与独立 SDK 客户端演示远程 Agent 调用。示例的 `.env` 必须填写 `DEEPSEEK_API_KEY` 和 `SERVER_KEY`。在两个终端分别执行根命令 `pnpm example:02-server-sdk` 与 `pnpm example:02-server-sdk:client`；也可以在示例目录分别执行 `pnpm start` 与 `pnpm client`。Server 默认监听 `127.0.0.1:3000`，启动不会调用模型；客户端完成后退出，Server 继续运行。默认数据目录为示例自己的 `.elmino`，重启复用；按 `Ctrl+C` 优雅关闭 Server、HTTP 服务与 Store。详细配置和入口导航见示例指南
+
+示例的测试只注入确定性模型，验证工具调用、持久化、断网回放与 Server 重建恢复，不读取 `.env`、不调用外部模型服务
 
 使用 Changesets 记录公开行为与类型变化：
 
