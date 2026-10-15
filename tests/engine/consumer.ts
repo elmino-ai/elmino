@@ -3,7 +3,7 @@ import type { TurnRequest } from '@elmino/engine'
 import assert from 'node:assert/strict'
 import path from 'node:path'
 import { defineAgent } from '@elmino/agent'
-import { AgentEngine, getBuiltinSubagentRoles, LocalSubagentRoles } from '@elmino/engine'
+import { AgentEngine, getBuiltinSubagentRoles, LocalSubagentRoles, runAgent } from '@elmino/engine'
 import { JobQueue } from '@elmino/engine/job'
 import { extractText } from '@elmino/llm'
 import { defineRuntime } from '@elmino/runtime/local'
@@ -157,6 +157,18 @@ try {
   assert.equal(new TextDecoder().decode(await storage.blobStore.read(binary.blobKey)), 'approved result')
   assert.equal((await store.turns.read(request.turnId))?.status, 'completed')
   assert.equal((await store.steps.list(request.turnId)).length, 2)
+
+  const single = await runAgent({
+    agent,
+    model: createModel([response([{ type: 'text', text: '单次任务完成' }])]).model,
+    store,
+    workspace: { id: 'workspace_consumer', rootDir: process.cwd() },
+    input: '执行一次独立任务',
+  })
+  assert.equal(single.status, 'completed')
+  assert.equal(extractText(single.message!), '单次任务完成')
+  assert.notEqual(single.threadId, threadId)
+  assert.equal((await store.turns.read(single.turnId))?.status, 'completed')
 }
 finally {
   await engine.close()

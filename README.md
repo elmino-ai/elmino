@@ -112,7 +112,8 @@ Server 启动后，可打开 [http://127.0.0.1:3000/api/docs](http://127.0.0.1:3
 
 | 想改什么 | 从哪里开始 |
 | --- | --- |
-| 任务、系统提示词与 Agent 装配 | [agent/agent.ts](examples/01-basic-agent/src/agent/agent.ts) |
+| 系统提示词、工具与运行环境定义 | [agent/agent.ts](examples/01-basic-agent/src/agent/agent.ts) |
+| 单次任务、临时目录与结果展示 | [app/run.ts](examples/01-basic-agent/src/app/run.ts) |
 | 工具名称、参数与执行逻辑 | [tool/write-note.ts](examples/01-basic-agent/src/tool/write-note.ts) |
 | 模型配置与适配器 | [model/deepseek.ts](examples/01-basic-agent/src/model/deepseek.ts) |
 | 文件与 Shell 执行环境 | [runtime/runtime.ts](examples/01-basic-agent/src/runtime/runtime.ts) |
@@ -121,76 +122,38 @@ Server 启动后，可打开 [http://127.0.0.1:3000/api/docs](http://127.0.0.1:3
 
 ### Agent 的调用方式
 
-`defineAgent()` 定义提示词、工具和运行环境，`AgentEngine` 负责执行调度；模型与 Store 在提交任务时传入。下面是示例的完整装配代码，导入的配置和工具均来自上表中的模块，可在对应源码文件中直接修改
-
-<details>
-<summary>查看 Agent 装配与执行代码</summary>
+`defineAgent()` 只描述 Agent 的行为，最基础的定义只需提示词、工具和运行环境：
 
 ```ts
-import { mkdir, mkdtemp, readFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import path from 'node:path'
 import { defineAgent } from '@elmino/agent'
-import { AgentEngine } from '@elmino/engine'
-import { createId, throwSettledErrors } from '@elmino/shared'
-import { createModel } from '../model/deepseek'
-import { runtime } from '../runtime/runtime'
-import { createStorage } from '../storage/storage'
-import { createTerminalOutput } from '../terminal/terminal'
-import { tools } from '../tool/write-note'
 
-/** 用真实 DeepSeek 模型调用写文件工具，运行记录持久化到独立临时目录 */
-export async function runAgent() {
-  const model = createModel()
-  const dataDir = await mkdtemp(path.join(tmpdir(), 'elmino-basic-agent-'))
-  const cwd = path.join(dataDir, 'workspace')
-  await mkdir(cwd)
-  const agent = defineAgent({
-    id: 'writer',
-    systemPrompt: '调用 write_note 将用户要求的内容写入文件，工具返回后说明结果，不重复写入',
-    runtime,
-    tools,
-  })
-  const store = await createStorage(dataDir)
-  let engine: AgentEngine | undefined
-  try {
-    engine = AgentEngine.create({ writer: agent })
-    const execution = engine.run({
-      agentId: agent.id,
-      threadId: createId('thread'),
-      turnId: createId('turn'),
-      model,
-      onRuntimeEvent: createTerminalOutput(),
-      signal: AbortSignal.timeout(60_000),
-      location: {
-        workspaceId: createId('workspace'),
-        workspaceKind: 'project',
-        workspaceRoot: cwd,
-        cwd,
-        dir: '.',
-      },
-      // 本例只在新建的临时工作区内执行固定文件写入
-      approvalMode: 'fullAccess',
-      input: [{ type: 'text', text: '请使用 write_note 将 Hello from elmino 写入 result.txt' }],
-    }, store)
-    await Promise.all([execution.accepted, execution.completed])
-    process.stdout.write('\n')
-    console.log('文件内容：', await readFile(path.join(cwd, 'result.txt'), 'utf8'))
-    console.log('示例数据目录：', dataDir)
-  }
-  finally {
-    const engineResults = await Promise.allSettled([engine?.close()])
-    const storeResults = await Promise.allSettled([store.close()])
-    throwSettledErrors([...engineResults, ...storeResults], '关闭 Agent 失败', true)
-  }
-}
+const writer = defineAgent({
+  id: 'writer',
+  systemPrompt: '按用户要求调用工具完成写入',
+  tools,
+  runtime,
+})
 ```
 
-</details>
+单次任务使用 `runAgent()`，模型、Store 和工作区由应用选择：
 
-`engine.run()` 返回两个 Promise：`accepted` 表示输入与启动事实已持久化，`completed` 表示本次执行已结束并完成结算。同一会话继续使用原来的 `threadId`，每轮提交新的 `turnId`
+```ts
+import { runAgent } from '@elmino/engine'
 
-执行过程中可以通过 `onRuntimeEvent` 订阅变化。工具审批中断使用 `engine.resume()` 恢复；应用需要保留原 Thread、Turn 与中断信息，普通的新任务继续调用 `engine.run()`。Engine 负责释放线程运行资源，应用在 Engine 关闭后关闭自己创建的 Store
+const result = await runAgent({
+  agent: writer,
+  model,
+  store,
+  workspace: { id: 'example', rootDir: './workspace' },
+  input: '请写入 Hello from elmino',
+  onRuntimeEvent: event => console.log(event.type),
+})
+console.log(result.status, result.message)
+```
+
+`tools`、`runtime`、`model` 与 `store` 来自上表中的示例模块；调用前创建项目目录。工作区 ID 对应宿主持有的存储作用域；入口自动生成 Thread 和 Turn ID，将字符串转为文本输入，等待执行结算并释放 Engine。返回值包含 `threadId`、`turnId`、`workspaceId`、持久化 `status`、可选的助手 `message` 与失败原因 `errorMessage`；应用最后关闭自己创建的 Store
+
+每次 `runAgent()` 都创建独立线程。审批等待会返回 `interrupted`，Loop 已结算的执行失败返回 `failed` 和原因；入口异常、取消和关闭错误继续抛出。需要多轮会话、接纳后立即返回、后台调度或审批恢复时，使用 `AgentEngine`，见 [接入指南](docs/integration.md)
 
 ### 只使用模型适配器
 

@@ -1,6 +1,6 @@
-import { runAgent } from './agent/agent'
+import { runExample } from './app/run'
 
-runAgent().catch((error: unknown) => {
+runExample().catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : 'Agent 执行失败')
   process.exitCode = 1
 })
