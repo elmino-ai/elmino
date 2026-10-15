@@ -7,7 +7,7 @@ import { defineTools } from '@elmino/tool'
 import { expect, onTestFinished, test, vi } from 'vitest'
 import { z } from 'zod'
 import { createModel, response } from '../../engine/tests/support/model'
-import { AgentServer } from '../src/index'
+import { defineServer } from '../src/index'
 import { createGatedModel, createServerHarness, threadTarget } from './support/server'
 
 test('SDK 创建任务只等待接纳，真实模型尚未完成时已经返回线程，关闭不关闭宿主 Store', async () => {
@@ -205,7 +205,7 @@ test.each(['constructor', 'toString', '__proto__'])('未注册的原型键 %s �
   const workspace = vi.fn(() => {
     throw new Error('不应解析工作区')
   })
-  const server = AgentServer.create({
+  const server = defineServer({
     agents: {},
     workspace,
     model: () => { throw new Error('不应解析模型') },
@@ -230,7 +230,7 @@ test('注册键与 Agent 定义身份不一致时在创建 Server 时拒绝', ()
     runtime: { create: () => { throw new Error('不应创建 Runtime') } },
   })
 
-  expect(() => AgentServer.create({
+  expect(() => defineServer({
     agents: { alias: agent },
     workspace,
     model: () => { throw new Error('不应解析模型') },

@@ -8,7 +8,7 @@ export function createModel(frozenConfig?: UnknownRecord): TurnModel<ModelTurnCo
   const credential = process.env.DEEPSEEK_API_KEY?.trim()
 
   if (!credential)
-    throw new Error('请在 examples/02-server-sdk/.env 中配置 DEEPSEEK_API_KEY')
+    throw new Error('请在 examples/03-server-sdk/.env 中配置 DEEPSEEK_API_KEY')
 
   const modelName = process.env.DEEPSEEK_MODEL || 'deepseek-flash'
   const baseURL = process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/anthropic'

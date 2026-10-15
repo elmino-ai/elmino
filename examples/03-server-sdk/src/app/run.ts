@@ -2,11 +2,12 @@ import type { ServerOptions } from '@elmino/server'
 import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { API_DOCS_PATH } from '@elmino/api/paths'
+import { defineServer } from '@elmino/server'
 import { listen } from '@elmino/server/node'
 import { throwSettledErrors } from '@elmino/shared'
+import { sqliteStore } from '@elmino/store-sqlite'
+import { clock } from '../agent/clock'
 import { createModel } from '../model/deepseek'
-import { createServer } from '../server/create'
-import { createStorage } from '../storage/storage'
 import { readConfig } from './config'
 
 /** 示例宿主拥有的启动配置，允许测试注入确定性模型 */
@@ -29,16 +30,21 @@ interface ExampleServerOptions {
 export async function startExampleServer(options: ExampleServerOptions) {
   const workspaceRoot = path.join(options.dataDir, 'workspace')
   await mkdir(workspaceRoot, { recursive: true })
-  const store = await createStorage(options.dataDir)
-  const server = createServer(options.model, store, workspaceRoot, options.key, options.corsOrigins)
+  const server = defineServer({
+    agents: { clock },
+    workspace: { id: 'example', rootDir: workspaceRoot, store: sqliteStore({ dataDir: options.dataDir }) },
+    model: options.model,
+    apiKey: options.key,
+    corsOrigins: options.corsOrigins,
+    onError: error => console.error('服务端执行错误', error),
+  })
   let http: Awaited<ReturnType<typeof listen>> | undefined
   let closing: Promise<void> | undefined
   const close = () => {
     closing ??= Promise.resolve().then(async () => {
       const execution = await Promise.allSettled([server.close()])
       const transport = await Promise.allSettled([http?.close()])
-      const storage = await Promise.allSettled([store.close()])
-      throwSettledErrors([...execution, ...transport, ...storage], '关闭远程示例失败', true)
+      throwSettledErrors([...execution, ...transport], '关闭远程示例失败', true)
     })
     return closing
   }

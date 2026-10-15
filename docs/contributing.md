@@ -23,7 +23,7 @@ CodeGraph 是可选的本地代码导航工具，不加入框架运行依赖或 
 ```sh
 codegraph init .
 codegraph status
-codegraph explore "AgentServer"
+codegraph explore "defineServer"
 ```
 
 源码更新后可执行 `codegraph sync` 增量同步。需要完整重建时执行 `codegraph index .`。已有索引时，智能体按 [开发约定](../AGENTS.md) 优先查询 CodeGraph，再补充文本搜索
@@ -88,11 +88,11 @@ pnpm --filter @elmino/store-sqlite db:generate
 
 根项目保持私有，每个公开能力包独立声明版本、运行依赖、`exports`、产物白名单和公开发布配置。基础契约包不依赖具体模型、数据库或本地沙箱实现
 
-可运行消费示例归 `examples/<序号>-<场景>`，使用 `@example/*` 私有工作区名称，独立声明实际依赖，不参与 `@elmino/*` 的打包与发布。目录使用 `01-`、`02-` 等两位序号排序，每个示例只展示一个功能，`src/index.ts` 负责启动，实现放在所属子目录。[Basic Agent 示例](basic-agent.md) 演示真实模型调用写文件工具；类型检查会通过 Turbo 的依赖图先构建所需能力包
+可运行消费示例归 `examples/<序号>-<场景>`，使用 `@example/*` 私有工作区名称，独立声明实际依赖，不参与 `@elmino/*` 的打包与发布。目录按功能学习顺序与难易程度使用 `01-`、`02-` 等两位序号排序，简单用法在前，复杂场景在后，每个示例只展示一个功能，`src/index.ts` 负责启动，实现放在所属子目录。[Basic Agent 示例](basic-agent.md) 分成 `01-basic-agent` 最简单调用与 `02-full-agent` 完整配置，两者独立运行且各自维护模型环境变量；类型检查会通过 Turbo 的依赖图先构建所需能力包
 
 示例需要本地配置时，在自身根目录放置 `.env` 与不含密钥的 `.env.example`，通过自己的启动命令加载 `.env`。真实 `.env` 由根 `.gitignore` 忽略，不在源码中写入密钥，也不跨示例共享环境文件
 
-[02-server-sdk](server-sdk-example.md) 通过常驻 Server 与独立 SDK 客户端演示远程 Agent 调用。示例的 `.env` 必须填写 `DEEPSEEK_API_KEY` 和 `SERVER_KEY`。在两个终端分别执行根命令 `pnpm example:02-server-sdk` 与 `pnpm example:02-server-sdk:client`；也可以在示例目录分别执行 `pnpm start` 与 `pnpm client`。Server 默认监听 `127.0.0.1:3000`，启动不会调用模型；客户端完成后退出，Server 继续运行。默认数据目录为示例自己的 `.elmino`，重启复用；按 `Ctrl+C` 优雅关闭 Server、HTTP 服务与 Store。详细配置和入口导航见示例指南
+[03-server-sdk](server-sdk-example.md) 通过常驻 Server 与独立 SDK 客户端演示远程 Agent 调用。示例的 `.env` 必须填写 `DEEPSEEK_API_KEY` 和 `SERVER_KEY`。在两个终端分别执行根命令 `pnpm example:03-server-sdk` 与 `pnpm example:03-server-sdk:client`；也可以在示例目录分别执行 `pnpm start` 与 `pnpm client`。Server 默认监听 `127.0.0.1:3000`，启动不会调用模型；客户端完成后退出，Server 继续运行。默认数据目录为示例自己的 `.elmino`，重启复用；按 `Ctrl+C` 优雅关闭 Server、HTTP 服务与 Store。详细配置和入口导航见示例指南
 
 示例的测试只注入确定性模型，验证工具调用、持久化、断网回放与 Server 重建恢复，不读取 `.env`、不调用外部模型服务
 

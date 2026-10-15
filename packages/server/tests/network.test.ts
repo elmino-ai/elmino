@@ -1,13 +1,13 @@
 import type { ServerAuthorization } from '../src/index'
 import { Client } from '@elmino/sdk'
 import { expect, onTestFinished, test, vi } from 'vitest'
-import { AgentServer } from '../src/index'
+import { defineServer } from '../src/index'
 import { listen } from '../src/node/index'
 import { createServerHarness } from './support/server'
 
 /** 健康与鉴权请求不应打开任何工作区或模型资源 */
 function createEmptyServer(authorize?: (context: ServerAuthorization) => boolean | Promise<boolean>) {
-  return AgentServer.create({
+  return defineServer({
     agents: {},
     authorize,
     workspace: () => { throw new Error('健康请求不应打开工作区') },

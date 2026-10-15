@@ -4,7 +4,7 @@ import { parseRuntimeEventCursor } from '@elmino/protocol'
 import { isPlainRecord } from '@elmino/shared'
 import { expect, onTestFinished, test, vi } from 'vitest'
 import { createModel, response } from '../../engine/tests/support/model'
-import { AgentServer } from '../src/index'
+import { defineServer } from '../src/index'
 import { createServerHarness, threadTarget } from './support/server'
 
 /** 沿文档内部引用检查真实领域 Schema，不绑定生成器的组件命名 */
@@ -143,8 +143,8 @@ test('文档标题与版本可配置，关闭文档入口仍保留受鉴权的 R
     model: () => { throw new Error('文档和健康检查不应解析模型') },
     authorize: ({ request }: ServerAuthorization) => request.headers.get('authorization') === 'Bearer fake-docs-key',
   }
-  const customized = AgentServer.create({ ...baseOptions, apiReference: { title: 'Example API', version: '2.3.4' } })
-  const disabled = AgentServer.create({ ...baseOptions, apiReference: false })
+  const customized = defineServer({ ...baseOptions, apiReference: { title: 'Example API', version: '2.3.4' } })
+  const disabled = defineServer({ ...baseOptions, apiReference: false })
   onTestFinished(async () => {
     await customized.close()
     await disabled.close()

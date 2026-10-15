@@ -25,12 +25,12 @@
 - Provider 原生字段只留在适配器边界，内部工具调用统一使用 `args`
 - `shared` 持有实际跨包复用的纯工具和通用类型，领域类型留在实际拥有该能力的包，不整包复制产品共用代码
 - `local` 持有本机环境快照、登录环境加载、程序探测与 Shell 选择，复用 `sandbox` 的环境契约；目录、认证、模型配置和应用控制数据归宿主。命令与环境加载共用进程清理，环境刷新不改变已创建 Runtime 的快照
-- `store` 持有 RuntimeStore、BlobStore、运行记录和持久化线程数据契约；本地 BlobStore 从 `/local` 引入，基础入口不加载 Node 实现
-- `store-sqlite` 持有 SqliteStore、Drizzle 仓储与运行数据库迁移，不持有产品 control.db、工作区目录装配或 UI 默认文案
+- `store` 持有 RuntimeStore、BlobStore、运行记录和持久化线程数据契约；本地 BlobStore 从 `/local` 引入，默认使用 Node 文件系统，也可注入 BlobFiles；基础入口不加载 Node 实现
+- `store-sqlite` 持有 SqliteStore、Drizzle 仓储与运行数据库迁移，提供 `sqliteStore({ dataDir })` 延迟配置，默认在其下使用 database 与 blobs；不持有产品 control.db、工作区控制目录或 UI 默认文案
 - `engine` 持有 Agent 调度与执行生命周期，执行实体按 `Thread -> Turn -> Step -> ToolInvocation` 组织；`loop` 持有单轮执行，`agent` 装配工具、Hooks、Loop、Thread 和 Runtime，插件体系暂不迁入
 - 模型解析、持久化、运行环境与事件处理通过实际能力契约注入，避免内核依赖具体应用
 - `request` 持有通用 Fetch 与独立 oRPC 子入口；`protocol` 持有跨端 Schema、事件 JSON 和游标语法，复用 `thread` / `store` 的领域类型，事件定义与工厂仍归 `thread/events`；连接、回放队列和重连分别归 Server / SDK
-- `api` 持有远程调用契约，`server` 装配宿主资源与 Engine、回放及 HTTP 生命周期，`sdk` 持有纯客户端调用与重连；账号、模型目录、工作区管理及 React 状态不迁入。Server 关闭自己的 Engine 与事件流，Store 继续由宿主关闭
+- `api` 持有远程调用契约，`server` 装配宿主资源与 Engine、回放及 HTTP 生命周期，`sdk` 持有纯客户端调用与重连；账号、模型目录、工作区管理及 React 状态不迁入。Server 关闭自己的 Engine 与事件流，配置提供器借出的 Store 租约在 Engine 与事件流结束后释放；直接传入或工作区回调返回的 Store 仍由宿主关闭
 - 产品预设、品牌、账号、市场、遥测上报和 UI 不进入内核
 - elmino 不反向依赖宿主应用；应用通过公开包接入框架，接入后清理自身重复实现
 - 不为目录对称预建空包、空文件、一次性封装、重复状态或薄转发层
@@ -49,7 +49,7 @@
 - 第一批真实包落地时接入 Changesets 管理版本、变更记录与受影响依赖；发布动作单独授权
 - 包级验收必须覆盖构建、打包内容，以及在仓库外安装 tarball 后通过公开入口运行和检查类型；不能只验证 workspace 源码导入
 - SQLite 版本化迁移随 `store-sqlite` 发布；迁入既有迁移文件保持内容一致，不手改 SQL 或启动时清库，后续 Schema 变化先接入所属包的迁移生成和一致性检查
-- 同一数据目录共享 SqliteStore 的调用方必须共享同一个 BlobStore 实例，关闭后才允许更换装配；创建方拥有关闭权，事务回滚不回滚外部 blob 写入
+- 同一数据目录共享 SqliteStore 的调用方必须共享同一个 BlobStore 实例，关闭后才允许更换装配；同一 sqliteStore 配置通过引用计数管理并发租约，最后释放时关闭；直接传入的实例由创建方关闭，事务回滚不回滚外部 blob 写入
 
 ## 源码与检查
 

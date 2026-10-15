@@ -1,6 +1,6 @@
 import type { Agent } from '@elmino/agent'
 import type { Message } from '@elmino/llm'
-import type { RuntimeStore, ThreadTurnStatus } from '@elmino/store'
+import type { RuntimeStore, RuntimeStoreProvider, ThreadTurnStatus } from '@elmino/store'
 import type { TurnInputPart } from '../turn/input'
 import type { TurnRequest } from '../turn/types'
 
@@ -8,8 +8,8 @@ import type { TurnRequest } from '../turn/types'
 export interface RunAgentOptions extends Pick<TurnRequest, 'model' | 'approvalMode' | 'subagentMode' | 'signal' | 'onRuntimeEvent'> {
   /** 已定义提示词、工具与运行环境的 Agent */
   agent: Agent
-  /** 宿主创建并关闭的持久化存储 */
-  store: RuntimeStore
+  /** 实例由宿主关闭；配置按需借用，调用结束后释放 */
+  store: RuntimeStore | RuntimeStoreProvider
   /** 本次任务的项目目录，目录须由宿主提前准备 */
   workspace: {
     /** 与存储作用域对应的稳定工作区 ID */

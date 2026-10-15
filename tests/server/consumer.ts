@@ -1,6 +1,6 @@
 /* eslint antfu/no-top-level-await: off -- 仓库外 Node.js 消费者验证真实 HTTP 端口 */
 import { Client } from '@elmino/sdk'
-import { AgentServer } from '@elmino/server'
+import { defineServer } from '@elmino/server'
 import { listen } from '@elmino/server/node'
 
 /** 仓库外验收只读取交付需要的 OpenAPI 字段 */
@@ -24,10 +24,10 @@ interface ApiSpecification {
   security?: Record<string, unknown>[]
 }
 
-const server = AgentServer.create({
+const server = defineServer({
   agents: {},
   apiReference: { title: 'Packaged Agent API', version: '1.2.3' },
-  authorize: ({ request }) => request.headers.get('authorization') === 'Bearer fake-consumer-key',
+  apiKey: 'fake-consumer-key',
   workspace: () => { throw new Error('健康检查不应打开工作区') },
   model: () => { throw new Error('健康检查不应装配模型') },
 })

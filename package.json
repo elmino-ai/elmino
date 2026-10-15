@@ -20,8 +20,9 @@
     "pack:packages": "pnpm --filter '@elmino/*' -r pack --pack-destination ./dist/packs",
     "verify:packages": "pnpm pack:packages && node tests/runner/run.mjs",
     "example:01-basic-agent": "turbo run build --filter=@example/01-basic-agent... && pnpm --filter @example/01-basic-agent start",
-    "example:02-server-sdk": "turbo run build --filter=@example/02-server-sdk... && pnpm --filter @example/02-server-sdk start",
-    "example:02-server-sdk:client": "turbo run build --filter=@example/02-server-sdk... && pnpm --filter @example/02-server-sdk client",
+    "example:02-full-agent": "turbo run build --filter=@example/02-full-agent... && pnpm --filter @example/02-full-agent start",
+    "example:03-server-sdk": "turbo run build --filter=@example/03-server-sdk... && pnpm --filter @example/03-server-sdk start",
+    "example:03-server-sdk:client": "turbo run build --filter=@example/03-server-sdk... && pnpm --filter @example/03-server-sdk client",
     "prepare": "husky"
   },
   "devDependencies": {

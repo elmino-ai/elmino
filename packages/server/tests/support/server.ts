@@ -11,7 +11,7 @@ import { createId } from '@elmino/shared'
 import { onTestFinished } from 'vitest'
 import { createEngineStore, createTestRuntime, disposeEngineStore } from '../../../engine/tests/support/engine'
 import { createModel, response } from '../../../engine/tests/support/model'
-import { AgentServer } from '../../src/index'
+import { defineServer } from '../../src/index'
 
 /** Server 集成测试只覆盖实际需要注入的宿主能力 */
 interface HarnessOptions {
@@ -80,7 +80,7 @@ export async function createServerHarness(options: HarnessOptions = {}) {
     },
     onError: (error) => { errors.push(error) },
   }
-  let server = AgentServer.create(serverOptions)
+  let server = defineServer(serverOptions)
   onTestFinished(async () => {
     try {
       await server.close()
@@ -112,7 +112,7 @@ export async function createServerHarness(options: HarnessOptions = {}) {
     },
     async restart() {
       await server.close()
-      server = AgentServer.create(serverOptions)
+      server = defineServer(serverOptions)
     },
     request(overrides: Partial<ApiTurnCreateInput> = {}): ApiTurnCreateInput {
       return {

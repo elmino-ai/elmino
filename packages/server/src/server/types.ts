@@ -4,7 +4,7 @@ import type { AgentEngineOptions, TurnInputPart } from '@elmino/engine'
 import type { ModelTurnConfig, TurnModel } from '@elmino/llm'
 import type { ThreadLocation } from '@elmino/runtime'
 import type { Promisable, UnknownRecord } from '@elmino/shared'
-import type { RuntimeStore } from '@elmino/store'
+import type { RuntimeStore, RuntimeStoreProvider } from '@elmino/store'
 import type { ThreadInputContent } from '@elmino/thread'
 import type { RuntimeEvent } from '@elmino/thread/events'
 
@@ -14,6 +14,16 @@ export interface ServerWorkspace {
   store: RuntimeStore
   /** 从持久化目录恢复位置，新线程没有 dir，由宿主决定初始位置 */
   location: (input: { threadId: string, dir?: string }) => Promisable<ThreadLocation>
+}
+
+/** 固定本地项目工作区，线程目录由 Server 根据持久记录计算 */
+export interface LocalServerWorkspace {
+  /** 客户端使用的工作区身份 */
+  id: string
+  /** 项目根目录，相对路径以定义 Server 时的当前目录为基准 */
+  rootDir: string
+  /** 实例由宿主关闭；配置在首次访问时借用，Server 关闭时释放 */
+  store: RuntimeStore | RuntimeStoreProvider
 }
 
 /** 解析新任务或按已持久化的非敏感配置恢复模型 */
@@ -40,16 +50,18 @@ export interface ServerAuthorization {
 export interface ServerOptions {
   /** 已装配好工具、Hooks 与 Runtime 的 Agent 定义 */
   agents: Record<string, Agent>
-  /** 按 Agent / 工作区首次加载并缓存资源；宿主持有 Store 的关闭权 */
-  workspace: (target: AgentWorkspaceTarget & {
+  /** 固定本地工作区可直接传配置；动态资源按 Agent / 工作区首次加载并缓存 */
+  workspace: LocalServerWorkspace | ((target: AgentWorkspaceTarget & {
     /** Server 关闭时取消尚未完成的工作区打开 */
     signal?: AbortSignal
-  }) => Promisable<ServerWorkspace>
+  }) => Promisable<ServerWorkspace>)
   /** 为新 Turn 动态选择模型，恢复时使用 frozenConfig；凭据由宿主提供 */
   model: (input: ServerModelRequest) => Promisable<TurnModel<ModelTurnConfig>>
   /** 可选 Engine 扩展；模型恢复与事件出口由 Server 统一装配 */
   engine?: Omit<AgentEngineOptions, 'restoreModel' | 'onRuntimeEvent'>
-  /** 默认为宿主已完成授权，可在这里检查凭据和输入资源范围 */
+  /** 可选的固定 Bearer 凭据，与 SDK 的 apiKey 对应 */
+  apiKey?: string
+  /** 可检查身份与输入资源范围；配置 apiKey 时须先通过凭据校验 */
   authorize?: (context: ServerAuthorization) => Promisable<boolean>
   /** 附件预处理；省略时支持文本、引用和原始图片，文档需要宿主解析 */
   prepareInput?: (input: ThreadInputContent[], context: AgentWorkspaceTarget & {

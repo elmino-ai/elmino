@@ -1,4 +1,5 @@
 import type { Runtime } from '@elmino/runtime'
+import type { RuntimeStoreProvider } from '@elmino/store'
 import type { RuntimeEvent } from '@elmino/thread'
 import type { DefinedTools } from '@elmino/tool'
 import { readFile } from 'node:fs/promises'
@@ -180,4 +181,178 @@ test('外部取消等待模型退出与中断结算后释放 Runtime', async () 
   expect(await harness.store.turns.listAll()).toMatchObject([{ status: 'interrupted' }])
   expect(harness.disposals[0]).toHaveBeenCalledOnce()
   expect(() => harness.runtimes[0]!.sandbox()).toThrow()
+})
+
+test('等待存储提供者完成借用后才创建 Runtime，关闭 Engine 后释放租约且不关闭宿主 Store', async () => {
+  const harness = await createRunHarness()
+  const borrowed = Promise.withResolvers<void>()
+  const releasing = Promise.withResolvers<void>()
+  const released = Promise.withResolvers<void>()
+  const controller = new AbortController()
+  const closeStore = vi.spyOn(harness.store, 'close')
+  const release = vi.fn(async () => {
+    expect(harness.disposals[0]).toHaveBeenCalledOnce()
+    expect(() => harness.runtimes[0]!.sandbox()).toThrow()
+    releasing.resolve()
+    await released.promise
+    expect(await harness.store.turns.listAll()).toMatchObject([{ status: 'completed' }])
+  })
+  const provider = vi.fn<RuntimeStoreProvider>(async () => {
+    await borrowed.promise
+    return { store: harness.store, release }
+  })
+  const model = createModel([response([{ type: 'text', text: '已完成' }])])
+  const pending = runAgent({
+    agent: harness.agent,
+    model: model.model,
+    store: provider,
+    workspace: { id: 'fixed', rootDir: harness.root },
+    input: '执行任务',
+    signal: controller.signal,
+  })
+  expect(provider).toHaveBeenCalledExactlyOnceWith(controller.signal)
+  expect(harness.runtimes).toHaveLength(0)
+  expect(model.requests).toHaveLength(0)
+  expect(release).not.toHaveBeenCalled()
+  let settled = false
+  pending.then(() => {
+    settled = true
+  }, () => {
+    settled = true
+  })
+  borrowed.resolve()
+  await releasing.promise
+  expect(settled).toBe(false)
+  released.resolve()
+  const result = await pending
+  expect(result.status).toBe('completed')
+  expect(release).toHaveBeenCalledOnce()
+  expect(closeStore).not.toHaveBeenCalled()
+  expect(await harness.store.turns.read(result.turnId)).toMatchObject({ status: 'completed' })
+})
+
+test.each(['failure', 'abort'] as const)('%s 时等待 Runtime 退出后释放存储租约', async (mode) => {
+  const harness = await createRunHarness()
+  const entered = Promise.withResolvers<void>()
+  const controller = new AbortController()
+  const failure = new Error(mode === 'abort' ? '租约任务被取消' : '租约执行器失败')
+  const agent = defineAgent({
+    ...harness.agent,
+    loop: {
+      invoke: context => mode === 'failure'
+        ? Promise.reject(failure)
+        : new Promise((_resolve, reject) => {
+            context.signal!.addEventListener('abort', () => reject(context.signal!.reason), { once: true })
+            entered.resolve()
+          }),
+    },
+  })
+  const release = vi.fn(async () => {
+    expect(harness.disposals[0]).toHaveBeenCalledOnce()
+    expect(() => harness.runtimes[0]!.sandbox()).toThrow()
+    expect(await harness.store.turns.listAll()).toMatchObject([{ status: mode === 'abort' ? 'interrupted' : 'failed' }])
+  })
+  const pending = runAgent({
+    agent,
+    model: createModel([]).model,
+    store: () => Promise.resolve({ store: harness.store, release }),
+    workspace: { id: 'fixed', rootDir: harness.root },
+    input: '执行任务',
+    signal: controller.signal,
+  })
+  const rejected = expect(pending).rejects.toBe(failure)
+  if (mode === 'abort') {
+    await entered.promise
+    expect(release).not.toHaveBeenCalled()
+    controller.abort(failure)
+  }
+  await rejected
+  expect(release).toHaveBeenCalledOnce()
+  expect(await harness.store.turns.listAll()).toHaveLength(1)
+})
+
+test('Engine 初始化失败仍释放已经借到的存储租约', async () => {
+  const harness = await createRunHarness()
+  const failure = new Error('Engine 初始化失败')
+  const release = vi.fn(() => Promise.resolve())
+  const create = vi.spyOn(AgentEngine, 'create').mockImplementationOnce(() => {
+    throw failure
+  })
+  try {
+    await expect(runAgent({
+      agent: harness.agent,
+      model: createModel([]).model,
+      store: () => Promise.resolve({ store: harness.store, release }),
+      workspace: { id: 'fixed', rootDir: harness.root },
+      input: '执行任务',
+    })).rejects.toBe(failure)
+    expect(release).toHaveBeenCalledOnce()
+    expect(harness.runtimes).toHaveLength(0)
+    expect(await harness.store.turns.listAll()).toEqual([])
+  }
+  finally {
+    create.mockRestore()
+  }
+})
+
+test('存储提供者打开失败时不创建 Engine，也不清理尚未借到的资源', async () => {
+  const harness = await createRunHarness()
+  const failure = new Error('存储暂时不可用')
+  const create = vi.spyOn(AgentEngine, 'create')
+  const closeStore = vi.spyOn(harness.store, 'close')
+  const provider: RuntimeStoreProvider = () => Promise.reject(failure)
+  try {
+    await expect(runAgent({
+      agent: harness.agent,
+      model: createModel([]).model,
+      store: provider,
+      workspace: { id: 'fixed', rootDir: harness.root },
+      input: '执行任务',
+    })).rejects.toBe(failure)
+    expect(create).not.toHaveBeenCalled()
+    expect(closeStore).not.toHaveBeenCalled()
+    expect(await harness.store.turns.listAll()).toEqual([])
+  }
+  finally {
+    create.mockRestore()
+  }
+})
+
+test.each(['sync', 'async'] as const)('执行、Engine 关闭和 %s 租约释放失败时保留全部原因', async (mode) => {
+  const closeError = new Error('Runtime 关闭失败')
+  const releaseError = new Error('租约释放失败')
+  const failure = new Error('执行器失败')
+  const harness = await createRunHarness(undefined, closeError)
+  const release = vi.fn(() => {
+    if (mode === 'sync')
+      throw releaseError
+    return Promise.reject(releaseError)
+  })
+  await expect(runAgent({
+    agent: defineAgent({ ...harness.agent, loop: { invoke: () => Promise.reject(failure) } }),
+    model: createModel([]).model,
+    store: () => Promise.resolve({ store: harness.store, release }),
+    workspace: { id: 'fixed', rootDir: harness.root },
+    input: '执行任务',
+  })).rejects.toMatchObject({ errors: [failure, { errors: [closeError] }, releaseError] })
+  expect(release).toHaveBeenCalledOnce()
+  expect(harness.disposals[0]).toHaveBeenCalledOnce()
+  expect(await harness.store.turns.listAll()).toMatchObject([{ status: 'failed' }])
+})
+
+test('执行成功但 Engine 关闭和租约释放均失败时仍聚合两种清理错误', async () => {
+  const closeError = new Error('完成后 Runtime 关闭失败')
+  const releaseError = new Error('完成后租约释放失败')
+  const harness = await createRunHarness(undefined, closeError)
+  const release = vi.fn(() => Promise.reject(releaseError))
+  await expect(runAgent({
+    agent: harness.agent,
+    model: createModel([response([{ type: 'text', text: '已完成' }])]).model,
+    store: () => Promise.resolve({ store: harness.store, release }),
+    workspace: { id: 'fixed', rootDir: harness.root },
+    input: '执行任务',
+  })).rejects.toMatchObject({ errors: [{ errors: [closeError] }, releaseError] })
+  expect(release).toHaveBeenCalledOnce()
+  expect(harness.disposals[0]).toHaveBeenCalledOnce()
+  expect(await harness.store.turns.listAll()).toMatchObject([{ status: 'completed' }])
 })

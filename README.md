@@ -73,31 +73,34 @@ pnpm example:01-basic-agent
 
 命令会先构建所需的框架包，再启动示例。Agent 接收写文件任务，调用 `write_note`，将 `Hello from elmino` 写入新建临时工作区的 `result.txt`
 
-终端会按下面的结构显示结果，思考和回复内容以模型实际返回为准：
+简单版只传必填参数，执行结束后打印回复和数据目录：
 
 ```text
-思考：
-…模型返回的可见思考…
-回复：
-…模型的完成说明…
-文件内容： Hello from elmino
+回复： …模型的完成说明…
 示例数据目录： …/elmino-basic-agent-…
 ```
 
-示例使用 SQLite 与文件 BlobStore 保存运行数据，退出时关闭 Engine 和 Store。临时目录会保留，便于查看文件与运行记录；再次启动会创建新的目录
+示例使用 SQLite 与本地文件内容存储保存运行数据，调用结束后自动释放。临时工作区会保留，可在其中查看 `workspace/result.txt`
 
-本例在新建临时工作区内使用 `fullAccess` 执行固定的文件写入，并设置 60 秒执行期限。更多配置见 [Basic Agent 示例指南](docs/basic-agent.md)
+需要查看完整配置、实时思考与回复、超时和结果检查时，运行 [02-full-agent](examples/02-full-agent)。先在它自己的 `.env` 中填写模型密钥：
 
-需要通过 HTTP 调用 Agent 时，使用第二个 [Server / SDK 示例](docs/server-sdk-example.md)：在 `examples/02-server-sdk/.env` 中填写模型凭据与 `SERVER_KEY`，然后在两个终端分别运行：
+```sh
+cp examples/02-full-agent/.env.example examples/02-full-agent/.env
+pnpm example:02-full-agent
+```
+
+完整版会实时打印可见思考与回复，并展示最终状态、线程 ID、Turn ID 和文件内容。两种用法的对照见 [Basic Agent 示例指南](docs/basic-agent.md)
+
+需要通过 HTTP 调用 Agent 时，使用第三个 [Server / SDK 示例](docs/server-sdk-example.md)：在 `examples/03-server-sdk/.env` 中填写模型凭据与 `SERVER_KEY`，然后在两个终端分别运行：
 
 ```sh
 # 终端一：启动常驻 Server，默认 http://127.0.0.1:3000
-pnpm example:02-server-sdk
+pnpm example:03-server-sdk
 ```
 
 ```sh
 # 终端二：通过 SDK 提交任务并打印思考、工具结果与回复
-pnpm example:02-server-sdk:client
+pnpm example:03-server-sdk:client
 ```
 
 客户端完成后退出，Server 继续运行；在 Server 终端按 `Ctrl+C` 关闭服务。运行数据默认保存在示例目录下的 `.elmino`，重启时复用
@@ -117,8 +120,9 @@ Server 启动后，可打开 [http://127.0.0.1:3000/api/docs](http://127.0.0.1:3
 | 工具名称、参数与执行逻辑 | [tool/write-note.ts](examples/01-basic-agent/src/tool/write-note.ts) |
 | 模型配置与适配器 | [model/deepseek.ts](examples/01-basic-agent/src/model/deepseek.ts) |
 | 文件与 Shell 执行环境 | [runtime/runtime.ts](examples/01-basic-agent/src/runtime/runtime.ts) |
-| 数据库和内容存储 | [storage/storage.ts](examples/01-basic-agent/src/storage/storage.ts) |
-| 思考与正文的终端输出 | [terminal/terminal.ts](examples/01-basic-agent/src/terminal/terminal.ts) |
+| 运行数据目录与存储配置 | [app/run.ts](examples/01-basic-agent/src/app/run.ts) |
+| 完整配置、超时与结果处理 | [app/run.ts](examples/02-full-agent/src/app/run.ts) |
+| 思考与正文的终端输出 | [terminal/terminal.ts](examples/02-full-agent/src/terminal/terminal.ts) |
 
 ### Agent 的调用方式
 
@@ -139,11 +143,12 @@ const writer = defineAgent({
 
 ```ts
 import { runAgent } from '@elmino/engine'
+import { sqliteStore } from '@elmino/store-sqlite'
 
 const result = await runAgent({
   agent: writer,
   model,
-  store,
+  store: sqliteStore({ dataDir: './.elmino' }),
   workspace: { id: 'example', rootDir: './workspace' },
   input: '请写入 Hello from elmino',
   onRuntimeEvent: event => console.log(event.type),
@@ -151,7 +156,7 @@ const result = await runAgent({
 console.log(result.status, result.message)
 ```
 
-`tools`、`runtime`、`model` 与 `store` 来自上表中的示例模块；调用前创建项目目录。工作区 ID 对应宿主持有的存储作用域；入口自动生成 Thread 和 Turn ID，将字符串转为文本输入，等待执行结算并释放 Engine。返回值包含 `threadId`、`turnId`、`workspaceId`、持久化 `status`、可选的助手 `message` 与失败原因 `errorMessage`；应用最后关闭自己创建的 Store
+`tools`、`runtime` 与 `model` 来自上表中的示例模块；调用前创建项目目录。`sqliteStore()` 只定义配置，首次运行才打开 SQLite，并自动配置本地文件内容存储。工作区 ID 对应宿主持有的存储作用域；入口自动生成 Thread 和 Turn ID，将字符串转为文本输入，等待执行结算并释放 Engine。返回值包含 `threadId`、`turnId`、`workspaceId`、持久化 `status`、可选的助手 `message` 与失败原因 `errorMessage`。配置方式由入口在 Engine 结束后释放存储；也可以传入自行创建的 `RuntimeStore` 实例，其关闭仍由应用负责
 
 每次 `runAgent()` 都创建独立线程。审批等待会返回 `interrupted`，Loop 已结算的执行失败返回 `failed` 和原因；入口异常、取消和关闭错误继续抛出。需要多轮会话、接纳后立即返回、后台调度或审批恢复时，使用 `AgentEngine`，见 [接入指南](docs/integration.md)
 
@@ -220,7 +225,7 @@ console.log(result.status, result.message)
 - [x] 通用请求层与跨端事件协议，支持独立入口及浏览器构建验收
 - [x] API 契约、可注入 Server 和纯客户端 SDK，支持事件回放与审批恢复
 - [x] OpenAPI 定义与 Scalar 交互文档，REST 与 SDK 共用宿主鉴权
-- [x] `02-server-sdk` 真实模型示例，以及真实 TCP 断网回放与 Server 重建恢复测试
+- [x] `03-server-sdk` 真实模型示例，以及真实 TCP 断网回放与 Server 重建恢复测试
 - [x] Ubuntu / macOS CI，覆盖构建、类型、测试、迁移与公开包的仓库外交付验收
 
 ### 近期

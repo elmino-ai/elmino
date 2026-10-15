@@ -12,6 +12,17 @@ import type { RuntimeTurnRepository } from './turn'
 /** 事务内 RuntimeStore 视图 */
 export type RuntimeStoreTx = Except<RuntimeStore, 'close' | 'transaction'>
 
+/** 配置适配器借出的存储作用域，只能通过 release 释放其持有权 */
+export interface RuntimeStoreLease {
+  /** 本次调用可使用的存储，不直接关闭共享实例 */
+  store: RuntimeStore
+  /** 等待本次调用结束后释放；重复调用共享同一释放结果 */
+  release: () => Promise<void>
+}
+
+/** 延迟打开存储配置；共享、引用计数与最终关闭由具体适配器管理 */
+export type RuntimeStoreProvider = (signal?: AbortSignal) => Promise<RuntimeStoreLease>
+
 /** 统一运行时存储接口 */
 export interface RuntimeStore {
   /** 线程仓储 */

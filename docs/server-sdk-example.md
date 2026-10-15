@@ -1,13 +1,13 @@
-# 02 · Server 与 SDK
+# 03 · Server 与 SDK
 
-第二个示例通过常驻 Server 提供 Agent，再由独立的 SDK 客户端通过 HTTP / SSE 提交任务、接收思考与工具事件，最后查询 SQLite 保存的线程结果。客户端完成后退出，Server 继续等待下一次调用
+第三个示例通过常驻 Server 提供 Agent，再由独立的 SDK 客户端通过 HTTP / SSE 提交任务、接收思考与工具事件，最后查询 SQLite 保存的线程结果。客户端完成后退出，Server 继续等待下一次调用
 
 ## 配置
 
 在仓库根目录执行：
 
 ```sh
-cp examples/02-server-sdk/.env.example examples/02-server-sdk/.env
+cp examples/03-server-sdk/.env.example examples/03-server-sdk/.env
 ```
 
 在新建的 `.env` 中填写 `DEEPSEEK_API_KEY` 与 `SERVER_KEY`，两项都必填。该文件只属于这个示例，已被 Git 忽略；仓库不会从其他示例复制密钥
@@ -36,12 +36,29 @@ CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 | `DATA_DIR` | 可选，默认使用示例目录下的 `.elmino` 保存运行数据 |
 | `CORS_ORIGINS` | 允许的前端来源，使用逗号分隔，默认 `http://localhost:5173,http://127.0.0.1:5173` |
 
+## Server 定义
+
+示例在 `app/run.ts` 直接调用框架入口，模型和存储由宿主创建：
+
+```ts
+const server = defineServer({
+  agents: { clock },
+  workspace: { id: 'example', rootDir: workspaceRoot, store },
+  model: ({ frozenConfig }) => createModel(frozenConfig),
+  apiKey: config.key,
+  corsOrigins: config.corsOrigins,
+})
+const http = await listen({ server, port: config.port })
+```
+
+`defineServer` 来自 `@elmino/server`，`listen` 来自 `@elmino/server/node`。固定工作区无需手写位置回调，`apiKey` 与 SDK 的同名字段对应；动态资源和自定义鉴权仍可使用回调，见 [Server 与 SDK 指南](server-sdk.md)
+
 ## 双终端运行
 
 第一个终端在仓库根目录启动 Server：
 
 ```sh
-pnpm example:02-server-sdk
+pnpm example:03-server-sdk
 ```
 
 默认服务地址为 `http://127.0.0.1:3000`，启动日志会同时打印文档地址 [http://127.0.0.1:3000/api/docs](http://127.0.0.1:3000/api/docs)。启动后保持这个终端运行，Server 不会自动提交任务或退出
@@ -49,10 +66,10 @@ pnpm example:02-server-sdk
 第二个终端在仓库根目录运行 SDK 客户端：
 
 ```sh
-pnpm example:02-server-sdk:client
+pnpm example:03-server-sdk:client
 ```
 
-也可以分别在 `examples/02-server-sdk` 目录执行 `pnpm start` 和 `pnpm client`。两个命令都加载这个示例自己的 `.env`
+也可以分别在 `examples/03-server-sdk` 目录执行 `pnpm start` 和 `pnpm client`。两个命令都加载这个示例自己的 `.env`
 
 客户端先订阅事件，再提交读取服务端时间的任务。Agent 通过 `current_time` 工具获取时间，客户端打印模型提供的可见思考、工具结果和回复，查询持久化线程并打印 Turn 状态，然后关闭订阅并退出
 
@@ -69,7 +86,7 @@ pnpm example:02-server-sdk:client
 
 模型未提供可见思考时，不会生成替代文本。本例在完整片段完成后打印一次，SDK 本身也支持逐条接收正文、思考和工具输出增量
 
-Server 使用 `DATA_DIR` 中的 SQLite 与文件 BlobStore，重启时复用同一目录。默认目录为 `examples/02-server-sdk/.elmino`，运行数据不会加入 Git。客户端退出不会关闭 Server；在 Server 所在终端按 `Ctrl+C`，会等待 Server、HTTP 服务和 Store 完成关闭
+Server 通过 `store: sqliteStore({ dataDir })` 配置 `DATA_DIR` 中的 SQLite 与本地文件内容存储，按需打开并在关闭时自动释放，重启时复用同一目录。默认目录为 `examples/03-server-sdk/.elmino`，运行数据不会加入 Git。客户端退出不会关闭 Server；在 Server 所在终端按 `Ctrl+C`，会等待 Server、HTTP 服务和 Store 完成关闭
 
 ## 浏览与调试 API
 
@@ -98,16 +115,15 @@ curl -H 'Authorization: Bearer <SERVER_KEY>' \
 
 | 职责 | 文件 |
 | --- | --- |
-| Server 启动和入口错误处理 | [src/index.ts](../examples/02-server-sdk/src/index.ts) |
-| 常驻服务与资源关闭 | [app/run.ts](../examples/02-server-sdk/src/app/run.ts) |
-| 连接地址、数据目录与前端来源配置 | [app/config.ts](../examples/02-server-sdk/src/app/config.ts) |
-| SDK 客户端启动和入口错误处理 | [client/index.ts](../examples/02-server-sdk/src/client/index.ts) |
-| Agent、工作区、模型与鉴权注入 | [server/create.ts](../examples/02-server-sdk/src/server/create.ts) |
-| SDK 订阅、提交、重建与结果查询 | [client/run.ts](../examples/02-server-sdk/src/client/run.ts) |
-| 真实 DeepSeek 适配器 | [model/deepseek.ts](../examples/02-server-sdk/src/model/deepseek.ts) |
-| SQLite 与文件内容存储 | [storage/storage.ts](../examples/02-server-sdk/src/storage/storage.ts) |
-| Runtime 与本地执行环境 | [runtime/runtime.ts](../examples/02-server-sdk/src/runtime/runtime.ts) |
-| 只读时间工具 | [tool/current-time.ts](../examples/02-server-sdk/src/tool/current-time.ts) |
+| Server 启动和入口错误处理 | [src/index.ts](../examples/03-server-sdk/src/index.ts) |
+| 常驻服务与资源关闭 | [app/run.ts](../examples/03-server-sdk/src/app/run.ts) |
+| 连接地址、数据目录与前端来源配置 | [app/config.ts](../examples/03-server-sdk/src/app/config.ts) |
+| SDK 客户端启动和入口错误处理 | [client/index.ts](../examples/03-server-sdk/src/client/index.ts) |
+| Agent 定义 | [agent/clock.ts](../examples/03-server-sdk/src/agent/clock.ts) |
+| SDK 订阅、提交、重建与结果查询 | [client/run.ts](../examples/03-server-sdk/src/client/run.ts) |
+| 真实 DeepSeek 适配器 | [model/deepseek.ts](../examples/03-server-sdk/src/model/deepseek.ts) |
+| Runtime 与本地执行环境 | [runtime/runtime.ts](../examples/03-server-sdk/src/runtime/runtime.ts) |
+| 只读时间工具 | [tool/current-time.ts](../examples/03-server-sdk/src/tool/current-time.ts) |
 
 `onReset` 在回放不能续接时重新读取权威线程。普通断网由 SDK 自动重连；取消订阅不会取消已经接纳的任务。需要中断任务时使用 `client.rpc.turn.interrupt()`
 

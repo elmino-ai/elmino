@@ -1,5 +1,5 @@
 {
-  "name": "@example/02-server-sdk",
+  "name": "@example/03-server-sdk",
   "type": "module",
   "private": true,
   "scripts": {

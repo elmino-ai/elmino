@@ -8,7 +8,7 @@ import { JobQueue } from '@elmino/engine/job'
 import { extractText } from '@elmino/llm'
 import { defineRuntime } from '@elmino/runtime/local'
 import { createId } from '@elmino/shared'
-import { SqliteStore } from '@elmino/store-sqlite'
+import { sqliteStore, SqliteStore } from '@elmino/store-sqlite'
 import { LocalBlobStore } from '@elmino/store/local'
 import { readThreadInteraction, readThreadInterrupt } from '@elmino/thread'
 import { defineTools } from '@elmino/tool'
@@ -174,3 +174,18 @@ finally {
   await engine.close()
   await store.close()
 }
+
+const configured = sqliteStore({ dataDir: path.resolve('configured') })
+const configuredResult = await runAgent({
+  agent,
+  model: createModel([response([{ type: 'text', text: '配置存储完成' }])]).model,
+  store: configured,
+  workspace: { id: 'configured', rootDir: process.cwd() },
+  input: '使用配置存储执行任务',
+})
+assert.equal(configuredResult.status, 'completed')
+const lease = await configured()
+try {
+  assert.equal((await lease.store.turns.read(configuredResult.turnId))?.status, 'completed')
+}
+finally { await lease.release() }

@@ -1,6 +1,7 @@
 import type { BlobStore, BlobWriteResult } from './types'
 import { Buffer } from 'node:buffer'
 import path from 'node:path'
+import { localBlobFiles } from './files'
 import { sha256 as hashSha256 } from './hash'
 
 /** Blob 持久化依赖的最小文件能力 */
@@ -15,8 +16,8 @@ export interface BlobFiles {
 
 /** 本地 BlobStore 初始化参数 */
 export interface BlobOptions {
-  /** Blob 持久化所需的最小文件能力 */
-  files: BlobFiles
+  /** 可覆盖默认 Node.js 文件能力 */
+  files?: BlobFiles
   /** artifact blob 根目录 */
   rootDir: string
 }
@@ -35,7 +36,7 @@ export class LocalBlobStore implements BlobStore {
    * 创建 artifact blob 存储
    */
   public static create(options: BlobOptions) {
-    return new LocalBlobStore(options.files, options.rootDir)
+    return new LocalBlobStore(options.files ?? localBlobFiles, options.rootDir)
   }
 
   /**

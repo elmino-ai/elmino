@@ -9,12 +9,14 @@ import type {
   ThreadTarget,
 } from '@elmino/api'
 import type { TurnExecution, TurnInputPart } from '@elmino/engine'
-import type { RuntimeThreadRecord } from '@elmino/store'
+import type { RuntimeStore, RuntimeStoreLease, RuntimeThreadRecord } from '@elmino/store'
 import type { RuntimeEvent } from '@elmino/thread/events'
 import type { ServerOptions, ServerWorkspace } from './types'
+import path from 'node:path'
 import { API_DOCS_PATH, API_PATH, API_SPEC_PATH, apiContract, RPC_PATH } from '@elmino/api'
 import { AgentEngine } from '@elmino/engine'
 import { throwSettledErrors } from '@elmino/shared'
+import { isPathWithin } from '@elmino/shared/node'
 import {
   hydrateThreadMessages,
   readThreadSnapshot,
@@ -35,8 +37,10 @@ import { RuntimeEventHub } from '../event/hub'
 interface Scope {
   /** 作用域固定身份 */
   target: AgentWorkspaceTarget
-  /** 宿主资源，不由 Server 关闭 */
+  /** 已打开的工作区资源 */
   workspace: ServerWorkspace
+  /** 配置借出的 Store，Engine 结算并关闭后释放 */
+  lease?: RuntimeStoreLease
   /** 当前执行定义 */
   agent: Agent
   /** 当前作用域执行引擎 */
@@ -66,17 +70,23 @@ export class AgentServer {
   private _closed = false
   private _closing?: Promise<void>
 
-  /** 创建尚未打开网络端口的 Fetch 服务，工作区在第一次访问时恢复 */
-  public static create(options: ServerOptions) {
-    return new AgentServer(options)
-  }
-
-  private constructor(options: ServerOptions) {
+  /** 配置在定义时捕获，运行资源在首次访问时加载 */
+  public constructor(options: ServerOptions) {
     for (const [key, agent] of Object.entries(options.agents)) {
       if (key !== agent.id)
         throw new TypeError('Agent 注册键必须与定义中的 id 一致')
     }
-    this._options = { ...options, agents: { ...options.agents } }
+    if (options.apiKey !== undefined && !options.apiKey.trim())
+      throw new TypeError('apiKey 不能为空')
+    if (typeof options.workspace !== 'function' && !options.workspace.id.trim())
+      throw new TypeError('工作区 id 不能为空')
+    this._options = {
+      ...options,
+      agents: { ...options.agents },
+      workspace: typeof options.workspace === 'function'
+        ? options.workspace
+        : { ...options.workspace, rootDir: path.resolve(options.workspace.rootDir) },
+    }
     const api = implement(apiContract).$context<Context>()
     const router = api.router({
       meta: {
@@ -195,7 +205,7 @@ export class AgentServer {
     return new Response(response.body, { status: response.status, statusText: response.statusText, headers })
   }
 
-  /** 结束 Engine 与订阅后才允许宿主关闭 Store；重复调用共享同一关闭结果 */
+  /** 结束 Engine 与订阅后释放配置租约，外部 Store 仍归宿主；重复调用共享同一关闭结果 */
   public close(): Promise<void> {
     if (this._closing)
       return this._closing
@@ -206,12 +216,14 @@ export class AgentServer {
       const scopes = await Promise.allSettled(this._scopes.values())
       const results = await Promise.allSettled([...this._requests, ...scopes.flatMap(result => result.status === 'fulfilled'
         ? [(async () => {
-            try {
+            const cleanup = await Promise.allSettled([(async () => {
               await result.value.engine.close()
-            }
-            finally {
-              result.value.events.close()
-            }
+            })()])
+            result.value.events.close()
+            cleanup.push(...await Promise.allSettled([(async () => {
+              await result.value.lease?.release()
+            })()]))
+            throwSettledErrors(cleanup, '关闭工作区失败', true)
           })()]
         : [])])
       throwSettledErrors(results, '关闭 Agent Server 失败')
@@ -222,6 +234,8 @@ export class AgentServer {
   private async _authorize(context: Context, path: readonly string[], input: unknown) {
     if (this._closed)
       throw new ORPCError('SERVICE_UNAVAILABLE')
+    if (this._options.apiKey !== undefined && context.request.headers.get('authorization') !== `Bearer ${this._options.apiKey}`)
+      throw new ORPCError('UNAUTHORIZED')
     if (this._options.authorize && !await this._options.authorize({ request: context.request, path, input }))
       throw new ORPCError('UNAUTHORIZED')
     if (this._closed)
@@ -252,44 +266,82 @@ export class AgentServer {
     const agent = Object.hasOwn(this._options.agents, target.agentId) ? this._options.agents[target.agentId] : undefined
     if (!agent)
       throw new ORPCError('NOT_FOUND', { message: 'Agent 不存在' })
-    const workspace = await this._options.workspace({ ...target, signal: this._lifetime.signal })
-    if (this._closed)
-      throw new ORPCError('SERVICE_UNAVAILABLE')
-    const owner = this._storeWorkspaces.get(workspace.store)
-    if (owner !== undefined && owner !== target.workspaceId)
-      throw new Error('同一 RuntimeStore 不能同时属于不同工作区')
-    this._storeWorkspaces.set(workspace.store, target.workspaceId)
+    const definition = this._options.workspace
     const events = RuntimeEventHub.create({ maxBytes: this._options.eventBufferBytes })
-    /** 所有执行入口都使用同一个发布出口 */
-    const emit = async (event: RuntimeEvent) => {
-      events.publish(event)
-      try {
-        await this._options.onEvent?.(target, event)
-      }
-      catch (error) {
-        await this._report(error)
-      }
-    }
-    const engine = AgentEngine.create({ [agent.id]: agent }, {
-      ...this._options.engine,
-      restoreModel: config => this._options.model({ ...target, frozenConfig: config, signal: this._lifetime.signal }),
-      onRuntimeEvent: (_agentId, event) => emit(event),
-    })
+    let lease: RuntimeStoreLease | undefined
+    let engine: AgentEngine | undefined
     try {
+      let workspace: ServerWorkspace
+      if (typeof definition === 'function') {
+        workspace = await definition({ ...target, signal: this._lifetime.signal })
+      }
+      else {
+        if (target.workspaceId !== definition.id)
+          throw new ORPCError('NOT_FOUND', { message: '工作区不存在' })
+        const source = definition.store
+        let store: RuntimeStore
+        if (typeof source === 'function') {
+          lease = await source(this._lifetime.signal)
+          store = lease.store
+        }
+        else {
+          store = source
+        }
+        workspace = {
+          store,
+          location: ({ dir = '.' }) => {
+            const cwd = path.resolve(definition.rootDir, dir)
+            if (path.isAbsolute(dir) || !isPathWithin(definition.rootDir, cwd))
+              throw new Error('线程执行目录必须位于工作区内')
+            return {
+              workspaceId: definition.id,
+              workspaceKind: 'project',
+              workspaceRoot: definition.rootDir,
+              dir,
+              cwd,
+            }
+          },
+        }
+      }
+      if (this._closed)
+        throw new ORPCError('SERVICE_UNAVAILABLE')
+      const owner = this._storeWorkspaces.get(workspace.store)
+      if (owner !== undefined && owner !== target.workspaceId)
+        throw new Error('同一 RuntimeStore 不能同时属于不同工作区')
+      this._storeWorkspaces.set(workspace.store, target.workspaceId)
+      /** 所有执行入口都使用同一个发布出口 */
+      const emit = async (event: RuntimeEvent) => {
+        events.publish(event)
+        try {
+          await this._options.onEvent?.(target, event)
+        }
+        catch (error) {
+          await this._report(error)
+        }
+      }
+      engine = AgentEngine.create({ [agent.id]: agent }, {
+        ...this._options.engine,
+        restoreModel: config => this._options.model({ ...target, frozenConfig: config, signal: this._lifetime.signal }),
+        onRuntimeEvent: (_agentId, event) => emit(event),
+      })
       await engine.recoverWorkspace({
         agentId: agent.id,
         store: workspace.store,
         threadLocation: ({ id, dir }) => workspace.location({ threadId: id, dir }),
       })
-      return { target, workspace, agent, engine, events, emit }
+      return { target, workspace, agent, engine, events, emit, lease }
     }
     catch (error) {
-      try {
-        await engine.close()
-      }
-      finally {
-        events.close()
-      }
+      const cleanup = await Promise.allSettled([(async () => {
+        await engine?.close()
+      })()])
+      events.close()
+      cleanup.push(...await Promise.allSettled([(async () => {
+        await lease?.release()
+      })()]))
+      const errors = cleanup.flatMap(item => item.status === 'rejected' ? [item.reason] : [])
+      if (errors.length > 0)
+        await this._report(new AggregateError([error, ...errors], '打开工作区和资源关闭均失败'))
       throw error
     }
   }
@@ -448,4 +500,9 @@ export class AgentServer {
       'vary': 'Origin',
     })
   }
+}
+
+/** 定义可嵌入 Fetch 宿主的 Agent 服务，打开端口使用 @elmino/server/node 的 listen */
+export function defineServer(options: ServerOptions): AgentServer {
+  return new AgentServer(options)
 }

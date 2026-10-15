@@ -2,15 +2,38 @@
 
 `@elmino/api` 定义远程调用契约，`@elmino/server` 提供标准 Fetch 服务，`@elmino/sdk` 提供 Node.js 与浏览器均可使用的客户端。它们复用现有 AgentEngine、RuntimeStore 和 Thread，不另起执行器
 
-可运行代码见 [02-server-sdk 示例](server-sdk-example.md)，通过真实 DeepSeek 演示订阅、工具执行与持久化查询
+可运行代码见 [03-server-sdk 示例](server-sdk-example.md)，通过真实 DeepSeek 演示订阅、工具执行与持久化查询
 
 ## 装配 Server
 
 ```ts
-import { AgentServer } from '@elmino/server'
+import { defineServer } from '@elmino/server'
 import { listen } from '@elmino/server/node'
+import { sqliteStore } from '@elmino/store-sqlite'
 
-const server = AgentServer.create({
+const server = defineServer({
+  agents: { writer: agent },
+  workspace: {
+    id: 'my-workspace',
+    rootDir: './workspace',
+    store: sqliteStore({ dataDir: './.elmino' }),
+  },
+  model: ({ frozenConfig }) => createModel(frozenConfig),
+  apiKey: accessToken,
+})
+
+const http = await listen({ server, port: 3000 })
+console.log(http.url)
+```
+
+`agent` 是 `defineAgent()` 的结果；`sqliteStore()` 定义 SQLite 与本地文件内容存储，首次访问工作区才打开数据库，Server 关闭时自动释放。项目目录由宿主准备。`createModel()` 是宿主的模型工厂：新任务返回当前模型，恢复时按 `frozenConfig` 重建原模型并注入凭据
+
+`defineServer()` 定义可嵌入的 Fetch 服务，`listen()` 打开 HTTP 端口。固定工作区只需传 `id`、`rootDir` 和 `store`：相对根目录在定义 Server 时转为绝对路径，新线程从根目录执行，已有线程沿用持久化的相对目录。它只接纳配置的工作区 ID，目录归属为 `project`
+
+需要多工作区、远程执行位置或自定义身份鉴权时，使用回调配置：
+
+```ts
+const server = defineServer({
   agents: { writer: agent },
   workspace: async ({ agentId, workspaceId, signal }) => ({
     store: await getStore(agentId, workspaceId, signal),
@@ -23,12 +46,9 @@ const server = AgentServer.create({
   onError: error => console.error(error),
   apiReference: { title: 'Writer API', version: '1.0.0' },
 })
-
-const http = await listen({ server, hostname: '127.0.0.1', port: 3000 })
-console.log(http.url)
 ```
 
-`agent` 是 `defineAgent()` 的结果，示例中的 `getStore`、`getThreadLocation`、`getModel`、`restoreModel` 和 `authorizeRequest` 由宿主提供。凭据、模型目录、用户身份与工作区路径不从 HTTP 请求传入
+示例中的模型、存储、位置与身份函数均由宿主提供。凭据、模型目录、用户身份与工作区根目录不从 HTTP 请求传入
 
 Server 为每个 Agent / 工作区保留独立 Engine 和事件回放窗口。首次访问时调用 `recoverWorkspace()` 校准上次进程遗留的执行状态，并恢复可重新排队的子任务。资源解析失败不会缓存失败结果，后续请求可以重试；同一作用域在 Server 生命周期内复用同一个 Store
 
@@ -36,7 +56,7 @@ RuntimeStore 应属于一个工作区，不能把同一个实例挂到不同工�
 
 `location()` 接收已持久化的相对 `dir`，新线程没有该字段，由宿主决定初始位置。返回值使用现有 `ThreadLocation`，必须与目标工作区和已有目录一致。模型恢复必须使用 `frozenConfig`，不能因为默认模型或凭据配置发生变化而替换旧 Turn 的模型语义
 
-`authorize()` 在每个通过输入校验的 procedure 上执行，批处理中的调用分别授权。`input` 是已校验的请求，可用于限制 Agent、工作区或线程的访问范围。省略该回调表示宿主已在外层完成授权；`listen()` 默认只监听本机。浏览器跨域调用通过 `corsOrigins` 明确配置允许的 Origin
+`apiKey` 对应 SDK 的同名字段，用于固定 Bearer 凭据校验，不允许空字符串。`authorize()` 在每个通过输入校验的 procedure 上执行，批处理中的调用分别授权。`input` 是已校验的请求，可用于限制 Agent、工作区或线程的访问范围。同时配置时必须先通过 `apiKey` 检查，再通过 `authorize()` 的资源授权；两项均省略表示宿主已在外层完成授权；`listen()` 默认只监听本机。浏览器跨域调用通过 `corsOrigins` 明确配置允许的 Origin
 
 文本、引用和原始图片可以直接进入 Engine。文档解析或图片压缩由可选的 `prepareInput()` 完成，返回 `TurnInputPart[]`；它在 Engine 的入口预留期间执行，避免重复请求提前产生文档产物。省略时文档请求会被拒绝，图片按原始内容发送
 
@@ -131,11 +151,12 @@ SDK 按顺序等待处理器，保持背压。取消订阅会取消当前请求�
 stop()
 await server.close()
 await http.close()
-await store.close()
 ```
 
 Server 关闭会拒绝新操作，通知尚未完成的宿主资源解析取消，等待已有入口与 Engine 结算，再关闭事件流。`close()` 可重复调用；宿主异步解析器需要遵守提供的 `signal` 或自行结束等待
 
-Server 不关闭传入的 Store 或 BlobStore。调用方应先关闭 Server 和 HTTP 连接，再关闭自己创建的存储。Node 监听器的 `close()` 只关闭网络连接；关闭监听器不会代替 `server.close()` 的执行结算
+固定工作区使用 `sqliteStore({ dataDir })` 时，Server 在 Engine 与事件流结束后释放存储租约；同一配置供多个 Agent 或 Server 使用时，最后一个借用者退出才关闭数据库。并发使用同一数据目录应复用同一个配置对象。
+
+直接传入的 Store 实例，以及工作区回调返回的 Store，仍由宿主持有：先关闭 Server 和 HTTP 连接，再调用 `store.close()`。初始化失败时先释放本次资源，再保留原请求错误；额外的清理错误通过 `onError` 报告。Node 监听器的 `close()` 只关闭网络连接；关闭监听器不会代替 `server.close()` 的执行结算
 
 Server 提供 REST、oRPC 与事件流。接入其他 HTTP 框架时可以直接挂载 `server.fetch()`

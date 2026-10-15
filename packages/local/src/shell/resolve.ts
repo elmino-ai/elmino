@@ -17,7 +17,7 @@ export interface LocalShellAvailability {
 
 /** 本地命令解释器探测参数 */
 export interface LocalShellResolveOptions {
-  /** 覆盖账户默认 Shell；null 表示不使用账户配置 */
+  /** 覆盖系统用户的登录 Shell 路径；null 表示跳过此来源 */
   accountShell?: string | null
   /** 当前冻结的完整执行环境 */
   env: EnvVars
@@ -130,7 +130,7 @@ function resolvePlatformKinds(platform: NodeJS.Platform) {
 }
 
 /**
- * 解析账户默认 Shell，显式覆盖只用于测试与宿主注入
+ * 读取系统用户的登录 Shell 路径，允许测试与宿主显式覆盖或跳过
  */
 function resolveAccountShell(
   override: string | null | undefined,
@@ -151,7 +151,7 @@ function resolveAccountShell(
 }
 
 /**
- * 从最终 PATH、账户路径和平台固定位置解析指定 Shell
+ * 从最终 PATH、系统用户的登录 Shell 路径和平台固定位置解析指定 Shell
  */
 function resolveShell(
   kind: LocalShellKind,

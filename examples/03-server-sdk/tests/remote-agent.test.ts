@@ -2,19 +2,21 @@ import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { Client } from '@elmino/sdk'
+import { defineServer } from '@elmino/server'
 import { listen } from '@elmino/server/node'
+import { sqliteStore } from '@elmino/store-sqlite'
 import { expect, onTestFinished, test, vi } from 'vitest'
 import { createModel, response } from '../../../packages/engine/tests/support/model'
+import { clock } from '../src/agent/clock'
 import { startExampleServer } from '../src/app/run'
 import { runRemoteTask } from '../src/client/run'
-import { createServer } from '../src/server/create'
-import { createStorage } from '../src/storage/storage'
 
 test('示例经真实端口执行远程工具，打印过程并查询已持久化的线程', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'elmino-remote-example-test-'))
   const workspaceRoot = path.join(root, 'workspace')
   await mkdir(workspaceRoot)
-  const store = await createStorage(root)
+  const lease = await sqliteStore({ dataDir: root })()
+  const store = lease.store
   const model = createModel([
     response([
       { type: 'reasoning', text: '读取服务端时间' },
@@ -27,14 +29,19 @@ test('示例经真实端口执行远程工具，打印过程并查询已持久�
     ]),
   ])
   const key = 'example-test-credential'
-  const server = createServer(() => model.model, store, workspaceRoot, key)
+  const server = defineServer({
+    agents: { clock },
+    workspace: { id: 'example', rootDir: workspaceRoot, store },
+    model: () => model.model,
+    apiKey: key,
+  })
   const http = await listen({ server })
   const output = vi.spyOn(console, 'log').mockImplementation(() => undefined)
   onTestFinished(async () => {
     output.mockRestore()
     await server.close()
     await http.close()
-    await store.close()
+    await lease.release()
     await rm(root, { recursive: true, force: true })
   })
   const state = await runRemoteTask(http.url, key)

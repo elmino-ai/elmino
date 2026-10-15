@@ -41,7 +41,7 @@ export type {
   RuntimeStepStatus,
   SettleRuntimeStepInput,
 } from './runtime/step'
-export type { RuntimeStore, RuntimeStoreTx } from './runtime/store'
+export type { RuntimeStore, RuntimeStoreLease, RuntimeStoreProvider, RuntimeStoreTx } from './runtime/store'
 export type { SubagentMode, SubagentRole, SubagentRoleIcon } from './runtime/subagent'
 export type {
   RuntimeThreadLifecycle,

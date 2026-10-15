@@ -111,8 +111,10 @@ await execution.completed
 | 本机执行实现 | `@elmino/sandbox-local` 的 `LocalSandbox` | 显式注入 `cwd/env/shell/allowedRoots` 等实际配置；基础 Sandbox 契约归 `@elmino/sandbox` |
 | 运行事实存储 | `@elmino/store` 的 `RuntimeStore/RuntimeStoreTx` | Store 按稳定 Workspace 作用域共享，显式传给 Engine |
 | SQLite | `@elmino/store-sqlite` 的 `SqliteStore.create({ dataDir, blobStore })` | 数据库目录由宿主确定，不通过创建线程 Runtime 来间接打开 |
-| 大正文和二进制 | `@elmino/store/local` 的 `LocalBlobStore.create({ files, rootDir })`，或自定义 `BlobStore` | 文件能力满足 `BlobFiles`；内容存储可以与数据库实现分别替换 |
+| 大正文和二进制 | `@elmino/store/local` 的 `LocalBlobStore.create({ rootDir, files? })`，或自定义 `BlobStore` | 默认使用 Node 文件系统，注入文件能力时满足 `BlobFiles`；内容存储可以与数据库实现分别替换 |
 | 环境与 Shell | `@elmino/local` 的 `LocalEnv/loadUserEnv/resolveLocalShell` | 通用能力可单独替换，产品目录、Shell 偏好设置和应用层变量来源留在宿主 |
+
+简单接入 `runAgent` 或 Server 固定工作区时，可传 `sqliteStore({ dataDir })` 配置，由入口借用存储并在 Engine 结束后释放。同一数据目录的并发调用复用同一个配置对象；高级装配仍可直接传入 `RuntimeStore`，自行管理所有权。
 
 旧 `AgentResources.getRuntimeStore()` 通过临时 Runtime 的 `.store()` 取得存储，接入时应改为宿主直接组合 SQLite 与 BlobStore。同一数据库目录共享调用方必须使用同一个 BlobStore 实例，创建方拥有关闭权；Engine 关闭线程 Runtime，不替宿主关闭传入的共享 Store。
 

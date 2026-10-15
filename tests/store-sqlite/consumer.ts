@@ -1,7 +1,9 @@
 /* eslint antfu/no-top-level-await: off -- 仓库外 Node.js 消费者顺序验收公开入口 */
 import type { RuntimeStore } from '@elmino/store'
+import assert from 'node:assert/strict'
 import path from 'node:path'
-import { SqliteStore } from '@elmino/store-sqlite'
+import { sqliteStore, SqliteStore } from '@elmino/store-sqlite'
+import { LocalBlobStore } from '@elmino/store/local'
 import { createBlobStore, verifyBlobStore } from '../store/support'
 
 const blobs = createBlobStore(path.resolve('blobs'))
@@ -48,3 +50,25 @@ try {
     throw new Error('数据库重开后未保留内容引用')
 }
 finally { await store.close() }
+
+const configured = sqliteStore({ dataDir: path.resolve('configured') })
+const first = await configured()
+let savedId: string
+try {
+  await first.store.threads.upsert({ id: 'thread_config', agentId: 'configured', dir: '.' })
+  const artifact = await first.store.artifacts.write({
+    threadId: 'thread_config',
+    contentKind: 'bytes',
+    contentBytes: content,
+  })
+  savedId = artifact.id
+}
+finally { await first.release() }
+const reopened = await configured()
+try {
+  const artifact = await reopened.store.artifacts.read(savedId)
+  assert.ok(artifact?.blobKey)
+  const local = LocalBlobStore.create({ rootDir: path.resolve('configured/blobs') })
+  assert.deepEqual(Array.from(await local.read(artifact.blobKey)), Array.from(content))
+}
+finally { await reopened.release() }

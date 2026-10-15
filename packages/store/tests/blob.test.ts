@@ -111,3 +111,32 @@ test('propagates file access failures rather than treating them as missing blobs
   await expect(store.read('sha256/value')).rejects.toBe(failure)
   await expect(store.write('value')).rejects.toBe(failure)
 })
+
+test('默认 Node 文件能力延迟创建目录，并跨实例持久化完整二进制内容', async () => {
+  const directory = path.join(rootDir, 'default', 'blobs')
+  const store = LocalBlobStore.create({ rootDir: directory })
+  await expect(access(directory)).rejects.toMatchObject({ code: 'ENOENT' })
+  const bytes = Uint8Array.from({ length: 256 * 1024 }, (_, index) => index % 256)
+  const written = await store.write(bytes)
+  const reopened = LocalBlobStore.create({ rootDir: directory })
+
+  expect(written).toMatchObject({ sizeBytes: bytes.length, sha256: sha256(bytes) })
+  expect(await reopened.write(bytes)).toEqual(written)
+  expect(await reopened.exists(written.blobKey)).toBe(true)
+  expect(new Uint8Array(await reopened.read(written.blobKey))).toEqual(bytes)
+  expect(new Uint8Array(await readFile(path.join(directory, written.blobKey)))).toEqual(bytes)
+})
+
+test('默认 Node 文件能力区分内容缺失与不可访问的路径', async () => {
+  const store = LocalBlobStore.create({ rootDir })
+  expect(await store.exists('sha256/missing')).toBe(false)
+  await expect(store.read('sha256/missing')).rejects.toMatchObject({ code: 'ENOENT' })
+  const blocked = path.join(rootDir, 'blocked')
+  await writeFile(blocked, '保留原文件')
+  const inaccessible = LocalBlobStore.create({ rootDir: blocked })
+
+  await expect(inaccessible.exists('sha256/value')).rejects.toMatchObject({ code: 'ENOTDIR' })
+  await expect(inaccessible.read('sha256/value')).rejects.toMatchObject({ code: 'ENOTDIR' })
+  await expect(inaccessible.write('new value')).rejects.toMatchObject({ code: 'ENOTDIR' })
+  expect(await readFile(blocked, 'utf8')).toBe('保留原文件')
+})
