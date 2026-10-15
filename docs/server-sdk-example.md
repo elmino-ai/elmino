@@ -44,7 +44,7 @@ CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 pnpm example:02-server-sdk
 ```
 
-默认服务地址为 `http://127.0.0.1:3000`。启动后保持这个终端运行，Server 不会自动提交任务或退出
+默认服务地址为 `http://127.0.0.1:3000`，启动日志会同时打印文档地址 [http://127.0.0.1:3000/api/docs](http://127.0.0.1:3000/api/docs)。启动后保持这个终端运行，Server 不会自动提交任务或退出
 
 第二个终端在仓库根目录运行 SDK 客户端：
 
@@ -70,6 +70,23 @@ pnpm example:02-server-sdk:client
 模型未提供可见思考时，不会生成替代文本。本例在完整片段完成后打印一次，SDK 本身也支持逐条接收正文、思考和工具输出增量
 
 Server 使用 `DATA_DIR` 中的 SQLite 与文件 BlobStore，重启时复用同一目录。默认目录为 `examples/02-server-sdk/.elmino`，运行数据不会加入 Git。客户端退出不会关闭 Server；在 Server 所在终端按 `Ctrl+C`，会等待 Server、HTTP 服务和 Store 完成关闭
+
+## 浏览与调试 API
+
+启动 Server 后，可以直接打开 `/api/docs` 查看 Scalar 交互文档，或读取 `/api/spec.json` 获取 OpenAPI 定义。这两个地址不需要访问凭据，内容只包含静态接口结构
+
+在 Scalar 的 Bearer 认证中填写示例 `.env` 里的 `SERVER_KEY` 后，即可调用健康检查、Agent、线程和任务接口。模型凭据仍只留在服务端
+
+也可以直接检查服务：
+
+```sh
+curl -H 'Authorization: Bearer <SERVER_KEY>' \
+  http://127.0.0.1:3000/api/health
+```
+
+将 `<SERVER_KEY>` 替换为自己的开发访问凭据，成功时返回 `{"status":"ok"}`。打开文档或检查健康状态不会调用模型，提交任务才开始执行
+
+文档的标题、版本和关闭方式见 [Server 与 SDK 指南](server-sdk.md#http-与交互文档)。关闭文档不会关闭 REST 接口；SDK 客户端继续通过 `/rpc` 调用
 
 ## 前端连接
 

@@ -1,4 +1,3 @@
-import type { JsonValue } from '@elmino/shared'
 import type { ThreadMessage, ThreadPart, ThreadSettings, ThreadTokenUsage } from '@elmino/store'
 import type {
   ThreadChildState,
@@ -12,7 +11,9 @@ import type {
 import { isJsonValue } from '@elmino/shared'
 import { readThreadInterrupt, ThreadPartSchema } from '@elmino/thread/events'
 import { z } from 'zod'
+import { jsonValueMetadata, JsonValueSchema } from '../json/schema'
 import {
+  INTERRUPT_ID_PATTERN,
   MESSAGE_ID_PATTERN,
   THREAD_ID_PATTERN,
   THREAD_PART_ID_PATTERN,
@@ -21,8 +22,7 @@ import {
 } from '../runtime/id'
 
 /** JSON 化后的扩展数据，不接受函数、循环引用或非有限数字 */
-const jsonValue = z.custom<JsonValue>(isJsonValue)
-const jsonRecord = z.record(z.string(), jsonValue)
+const jsonRecord = z.record(z.string(), JsonValueSchema)
 const identifier = z.string().min(1)
 const datetime = z.iso.datetime({ offset: true })
 const turnStatus = z.enum(['queued', 'running', 'completed', 'failed', 'interrupted', 'cancelled'])
@@ -68,6 +68,36 @@ export const ThreadInterruptSchema: z.ZodType<ThreadInterrupt> = z.custom<Thread
       && interrupt.resumableWith.length === 1
       && interrupt.resumableWith[0] === 'interaction'
     )))
+}).meta({
+  jsonSchema: {
+    type: 'object',
+    description: '线程中断事实；交互中断必须提供 interaction、payload，并仅允许 interaction 恢复',
+    properties: {
+      id: { type: 'string', pattern: INTERRUPT_ID_PATTERN.source },
+      kind: { type: 'string', enum: ['interaction', 'system', 'user'] },
+      interaction: { type: 'string' },
+      ownerId: { type: 'string', minLength: 1 },
+      status: { type: 'string', enum: ['pending', 'resolved', 'cancelled'] },
+      turnId: { type: 'string', pattern: TURN_ID_PATTERN.source },
+      reason: { type: 'string' },
+      payload: jsonValueMetadata,
+      createdAt: { type: 'string', format: 'date-time' },
+      resolvedAt: { type: 'string', format: 'date-time' },
+      resumableWith: { type: 'array', items: { type: 'string', enum: ['interaction', 'message'] } },
+    },
+    required: ['id', 'kind', 'status', 'turnId', 'reason', 'createdAt', 'resumableWith'],
+    additionalProperties: jsonValueMetadata,
+    allOf: [{
+      if: { properties: { kind: { const: 'interaction' } }, required: ['kind'] },
+      then: {
+        properties: {
+          interaction: { type: 'string', minLength: 1 },
+          resumableWith: { type: 'array', items: { const: 'interaction' }, minItems: 1, maxItems: 1 },
+        },
+        required: ['interaction', 'payload'],
+      },
+    }],
+  },
 })
 
 /** 领域可选字段允许 undefined；其余字段值必须能无损传输为 JSON */
@@ -88,7 +118,7 @@ export const ThreadPartWireSchema: z.ZodType<ThreadPart> = ThreadPartSchema.supe
     context.addIssue({ code: 'custom', path: ['turnId'], message: '运行标识无效' })
   if (part.type === 'tool' && part.toolCallId !== undefined && !TOOL_CALL_ID_PATTERN.test(part.toolCallId))
     context.addIssue({ code: 'custom', path: ['toolCallId'], message: '工具调用标识无效' })
-})
+}).meta({ jsonSchema: createThreadPartJsonSchema() })
 
 /** 完整消息与其片段必须属于同一 Thread、Turn 和 Message */
 export const ThreadMessageSchema: z.ZodType<ThreadMessage> = z.object({
@@ -211,3 +241,33 @@ export const ThreadListItemSchema: z.ZodType<ThreadListItem> = threadState.pick(
 }).extend({
   runtime: z.object({ status: threadStatus, interrupt: ThreadInterruptSchema.optional() }),
 })
+
+/** 从同一领域 Schema 生成文档；wire 中原本自由的数据字段只允许 JSON */
+function createThreadPartJsonSchema() {
+  const schema = z.toJSONSchema(ThreadPartSchema, {
+    unrepresentable: 'any',
+    override: ({ zodSchema, jsonSchema }) => {
+      if (zodSchema._zod.def.type === 'custom' || zodSchema._zod.def.type === 'unknown')
+        Object.assign(jsonSchema, jsonValueMetadata)
+    },
+  })
+  delete schema.$schema
+  schema.description = '完整消息片段；片段 ID 必须属于当前消息，Thread、Turn、Message 与工具调用关联由运行时校验'
+  for (const part of schema.oneOf ?? schema.anyOf ?? []) {
+    if (typeof part === 'boolean' || !part.properties)
+      continue
+    const patterns = {
+      id: THREAD_PART_ID_PATTERN,
+      threadId: THREAD_ID_PATTERN,
+      turnId: TURN_ID_PATTERN,
+      messageId: MESSAGE_ID_PATTERN,
+      toolCallId: TOOL_CALL_ID_PATTERN,
+    }
+    for (const [key, pattern] of Object.entries(patterns)) {
+      const field = part.properties[key]
+      if (field && typeof field !== 'boolean')
+        field.pattern = pattern.source
+    }
+  }
+  return schema
+}

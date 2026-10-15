@@ -32,7 +32,10 @@ catalog:
   '@opentelemetry/api': 1.9.0
   '@orpc/client': 1.15.0
   '@orpc/contract': 1.15.0
+  '@orpc/json-schema': 1.15.0
+  '@orpc/openapi': 1.15.0
   '@orpc/server': 1.15.0
+  '@orpc/zod': 1.15.0
   '@types/cross-spawn': 6.0.6
   '@types/node': 24.13.3
   '@violetflux/eslint-config-harness': 0.1.12

@@ -68,4 +68,11 @@ export interface ServerOptions {
   onError?: (error: unknown) => Promisable<void>
   /** 允许跨域调用的浏览器 Origin，默认不开启跨域访问 */
   corsOrigins?: readonly string[]
+  /** 默认公开静态 API 文档与 Schema；false 关闭文档，业务接口始终遵循 authorize */
+  apiReference?: false | {
+    /** 文档和 OpenAPI 标题，默认 Elmino API */
+    title?: string
+    /** OpenAPI 标注的宿主 API 版本，默认 0.0.0 */
+    version?: string
+  }
 }

@@ -12,7 +12,7 @@ import type { TurnExecution, TurnInputPart } from '@elmino/engine'
 import type { RuntimeThreadRecord } from '@elmino/store'
 import type { RuntimeEvent } from '@elmino/thread/events'
 import type { ServerOptions, ServerWorkspace } from './types'
-import { apiContract, RPC_PATH } from '@elmino/api'
+import { API_DOCS_PATH, API_PATH, API_SPEC_PATH, apiContract, RPC_PATH } from '@elmino/api'
 import { AgentEngine } from '@elmino/engine'
 import { throwSettledErrors } from '@elmino/shared'
 import {
@@ -21,9 +21,14 @@ import {
   readThreadUsage,
   runtimeRecordsToThreadListItem,
 } from '@elmino/thread'
+import { SmartCoercionPlugin } from '@orpc/json-schema'
+import { OpenAPIHandler } from '@orpc/openapi/fetch'
+import { OpenAPIReferencePlugin } from '@orpc/openapi/plugins'
 import { implement, ORPCError, withEventMeta } from '@orpc/server'
 import { RPCHandler } from '@orpc/server/fetch'
 import { BatchHandlerPlugin } from '@orpc/server/plugins'
+import { ZodToJsonSchemaConverter } from '@orpc/zod/zod4'
+import { z } from 'zod'
 import { RuntimeEventHub } from '../event/hub'
 
 /** 一个 Agent / 工作区的独立执行与回放生命周期 */
@@ -55,6 +60,7 @@ export class AgentServer {
   private readonly _scopes = new Map<string, Promise<Scope>>()
   private readonly _storeWorkspaces = new WeakMap<ServerWorkspace['store'], string>()
   private readonly _handler: RPCHandler<Context>
+  private readonly _openapi: OpenAPIHandler<Context>
   private readonly _requests = new Set<Promise<Response>>()
   private readonly _lifetime = new AbortController()
   private _closed = false
@@ -128,6 +134,32 @@ export class AgentServer {
       },
     })
     this._handler = new RPCHandler(router, { plugins: [new BatchHandlerPlugin({ maxSize: 10 })] })
+    const converter = new ZodToJsonSchemaConverter({
+      interceptors: [({ schema, next }) => {
+        // 自定义运行校验的结构说明归 Schema 所有者，不让协议层依赖 HTTP 适配器
+        const jsonSchema = z.globalRegistry.get(schema)?.jsonSchema as ReturnType<ZodToJsonSchemaConverter['convert']>[1] | undefined
+        return jsonSchema ? [true, jsonSchema] : next()
+      }],
+    })
+    const reference = options.apiReference
+    this._openapi = new OpenAPIHandler(router, {
+      plugins: [
+        new SmartCoercionPlugin({ schemaConverters: [converter] }),
+        ...(reference === false
+          ? []
+          : [new OpenAPIReferencePlugin({
+              docsPath: '/docs',
+              specPath: '/spec.json',
+              docsTitle: reference?.title ?? 'Elmino API',
+              schemaConverters: [converter],
+              specGenerateOptions: {
+                info: { title: reference?.title ?? 'Elmino API', version: reference?.version ?? '0.0.0' },
+                components: { securitySchemes: { bearerAuth: { type: 'http', scheme: 'bearer' } } },
+                security: [{ bearerAuth: [] }],
+              },
+            })]),
+      ],
+    })
   }
 
   /** 可直接交给 Hono、Node 适配器或其他 Fetch 宿主 */
@@ -145,8 +177,16 @@ export class AgentServer {
     const allowedOrigin = origin && this._options.corsOrigins?.includes(origin) ? origin : undefined
     if (request.method === 'OPTIONS' && allowedOrigin)
       return new Response(null, { status: 204, headers: this._corsHeaders(allowedOrigin) })
-    const result = await this._handler.handle(request, { prefix: RPC_PATH, context: { request } })
-    const response = result.matched ? result.response : new Response('Not Found', { status: 404 })
+    const pathname = new URL(request.url).pathname.replace(/\/$/, '')
+    let response: Response
+    if (this._closed && (pathname === API_DOCS_PATH || pathname === API_SPEC_PATH)) {
+      response = Response.json({ code: 'SERVICE_UNAVAILABLE', message: 'Server 已关闭' }, { status: 503 })
+    }
+    else {
+      const rpc = await this._handler.handle(request, { prefix: RPC_PATH, context: { request } })
+      const result = rpc.matched ? rpc : await this._openapi.handle(request, { prefix: API_PATH, context: { request } })
+      response = result.matched ? result.response : new Response('Not Found', { status: 404 })
+    }
     if (!allowedOrigin)
       return response
     const headers = new Headers(response.headers)

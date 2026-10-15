@@ -1,7 +1,7 @@
 import type { RuntimeEvent } from '@elmino/thread/events'
-import { isJsonValue } from '@elmino/shared'
 import { RUNTIME_EVENT_TYPES } from '@elmino/thread/events'
 import { z } from 'zod'
+import { JsonValueSchema } from '../json/schema'
 import {
   EVENT_ID_PATTERN,
   INTERRUPT_ID_PATTERN,
@@ -25,7 +25,7 @@ export const RuntimeEventSchema: z.ZodType<RuntimeEvent> = z.object({
   toolCallId: z.string().regex(TOOL_CALL_ID_PATTERN).optional(),
   interruptId: z.string().regex(INTERRUPT_ID_PATTERN).optional(),
   createdAt: z.iso.datetime({ offset: true }),
-  payload: z.custom(isJsonValue),
+  payload: JsonValueSchema,
 }).refine(event => (
   !event.partId?.startsWith('msg_')
   || (event.messageId !== undefined && event.partId.startsWith(`${event.messageId}:`))

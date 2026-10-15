@@ -26,7 +26,6 @@
   },
   "dependencies": {
     "@elmino/protocol": "workspace:^",
-    "@elmino/shared": "workspace:^",
     "@elmino/thread": "workspace:^",
     "@opentelemetry/api": "catalog:",
     "@orpc/contract": "catalog:",
@@ -34,6 +33,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@elmino/shared": "workspace:^",
     "tsdown": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

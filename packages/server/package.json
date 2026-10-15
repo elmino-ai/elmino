@@ -41,7 +41,11 @@
     "@elmino/thread": "workspace:^",
     "@hono/node-server": "catalog:",
     "@opentelemetry/api": "catalog:",
-    "@orpc/server": "catalog:"
+    "@orpc/json-schema": "catalog:",
+    "@orpc/openapi": "catalog:",
+    "@orpc/server": "catalog:",
+    "@orpc/zod": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@elmino/sdk": "workspace:^",
@@ -49,8 +53,7 @@
     "@elmino/tool": "workspace:^",
     "tsdown": "catalog:",
     "typescript": "catalog:",
-    "vitest": "catalog:",
-    "zod": "catalog:"
+    "vitest": "catalog:"
   },
   "publishConfig": {
     "access": "public"

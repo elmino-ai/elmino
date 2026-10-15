@@ -11,7 +11,7 @@ import {
   RuntimeEventSubscribeInputSchema,
   ThreadInputContentSchema,
 } from '@elmino/api'
-import { RPC_PATH } from '@elmino/api/paths'
+import { API_DOCS_PATH, API_PATH, API_SPEC_PATH, RPC_PATH } from '@elmino/api/paths'
 import { createId } from '@elmino/shared'
 import { expect, test } from 'vitest'
 
@@ -23,6 +23,7 @@ const resuming = { ...target, turnId, interruptId: createId('interrupt'), respon
 test('契约只包含通用五域且所有客户端共用独立 RPC 挂载路径', () => {
   expect(Object.keys(apiContract)).toEqual(['meta', 'agent', 'thread', 'turn', 'events'])
   expect(RPC_PATH).toBe('/rpc')
+  expect([API_PATH, API_DOCS_PATH, API_SPEC_PATH]).toEqual(['/api', '/api/docs', '/api/spec.json'])
   expect(EmptyInputSchema.parse(undefined)).toEqual({})
   expect(apiContract.meta.health['~orpc'].route).toMatchObject({ method: 'GET', path: '/health' })
   expect(apiContract.turn.resume['~orpc'].route).toMatchObject({
@@ -205,4 +206,23 @@ test('API 输出校验接受领域原始工具消息的可选 undefined，不把
     ...state,
     messages: [{ ...message, parts: [{ ...part, args: { bad: Number.NaN } }] }],
   }).success).toBe(false)
+})
+
+test('HTTP 与 RPC 共用稳定契约，九条路由都有方法、摘要和分类', () => {
+  const routes = Object.values(apiContract).flatMap(group => Object.values(group).map(value => value['~orpc'].route))
+  expect(routes.map(route => [route.method, route.path])).toEqual([
+    ['GET', '/health'],
+    ['GET', '/agents'],
+    ['GET', '/threads'],
+    ['GET', '/threads/{threadId}'],
+    ['POST', '/threads/{threadId}/turns'],
+    ['POST', '/threads/{threadId}/turns/{turnId}/resume'],
+    ['POST', '/threads/{threadId}/turns/{turnId}/interrupt'],
+    ['POST', '/threads/{threadId}/turns/{turnId}/steer'],
+    ['GET', '/events'],
+  ])
+  for (const route of routes) {
+    expect(route.summary?.trim().length).toBeGreaterThan(0)
+    expect(route.tags?.length).toBeGreaterThan(0)
+  }
 })

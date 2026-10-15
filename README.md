@@ -102,6 +102,8 @@ pnpm example:02-server-sdk:client
 
 客户端完成后退出，Server 继续运行；在 Server 终端按 `Ctrl+C` 关闭服务。运行数据默认保存在示例目录下的 `.elmino`，重启时复用
 
+Server 启动后，可打开 [http://127.0.0.1:3000/api/docs](http://127.0.0.1:3000/api/docs) 浏览和调试 API；在 Scalar 的 Bearer 认证中填写示例的 `SERVER_KEY`。OpenAPI 定义位于 `/api/spec.json`，SDK 仍使用 `/rpc`
+
 ## 如何使用
 
 ### 从可运行示例开始修改
@@ -220,7 +222,7 @@ export async function runAgent() {
 | [`@elmino/request`](packages/request) | 动态 Header、HTTP 错误与 `/orpc` 请求入口 |
 | [`@elmino/protocol`](packages/protocol) | 跨端事件、线程快照校验、序列化与恢复游标 |
 | [`@elmino/api`](packages/api) | Agent、Thread、Turn 与事件流的类型化接口契约 |
-| [`@elmino/server`](packages/server) | 可注入模型、Store、Runtime 和鉴权的 Fetch 服务 |
+| [`@elmino/server`](packages/server) | 可注入模型、Store、Runtime 和鉴权的 Fetch 服务，提供 REST 与 Scalar 文档 |
 | [`@elmino/sdk`](packages/sdk) | Node.js / 浏览器客户端，支持订阅、重连与取消 |
 
 请求与协议的调用方式、旧包取舍及下一批边界见 [请求与事件协议](docs/transport.md)
@@ -254,6 +256,7 @@ export async function runAgent() {
 - [x] 首个真实模型示例，支持独立环境配置、思考与正文输出
 - [x] 通用请求层与跨端事件协议，支持独立入口及浏览器构建验收
 - [x] API 契约、可注入 Server 和纯客户端 SDK，支持事件回放与审批恢复
+- [x] OpenAPI 定义与 Scalar 交互文档，REST 与 SDK 共用宿主鉴权
 - [x] `02-server-sdk` 真实模型示例，以及真实 TCP 断网回放与 Server 重建恢复测试
 - [x] Ubuntu / macOS CI，覆盖构建、类型、测试、迁移与公开包的仓库外交付验收
 

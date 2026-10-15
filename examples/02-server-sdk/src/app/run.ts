@@ -1,6 +1,7 @@
 import type { ServerOptions } from '@elmino/server'
 import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
+import { API_DOCS_PATH } from '@elmino/api/paths'
 import { listen } from '@elmino/server/node'
 import { throwSettledErrors } from '@elmino/shared'
 import { createModel } from '../model/deepseek'
@@ -71,6 +72,7 @@ export async function runExample() {
       corsOrigins: config.corsOrigins,
     })
     console.log('Server 地址：', server.url)
+    console.log('API 文档：', `${server.url}${API_DOCS_PATH}`)
     console.log('示例数据目录：', config.dataDir)
     console.log('Agent：clock，工作区：example')
     console.log('服务已就绪，在另一个终端运行 pnpm client 发起任务，按 Ctrl+C 关闭')

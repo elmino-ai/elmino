@@ -1,3 +1,4 @@
+export { JsonValueSchema } from './json/schema'
 export type { RuntimeEventCursor } from './runtime/cursor'
 export { createRuntimeEventCursor, parseRuntimeEventCursor } from './runtime/cursor'
 export {

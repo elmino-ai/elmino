@@ -1,12 +1,9 @@
-import type { JsonValue } from '@elmino/shared'
 import { THREAD_ID_PATTERN } from '@elmino/protocol'
-import { isJsonValue } from '@elmino/shared'
 import { z } from 'zod'
 
 /** 宿主定义配置键，保留原始身份而不修改空白或添加产品前缀 */
 export const HostIdSchema = z.string().min(1).refine(value => value.trim().length > 0)
-/** 请求中的真实 JSON 数据，不暴露 Provider 实例或运行资源 */
-export const JsonValueSchema = z.custom<JsonValue>(isJsonValue)
+export { JsonValueSchema } from '@elmino/protocol'
 /** 无业务参数的 procedure，RPC 可以省略输入 */
 export const EmptyInputSchema = z.strictObject({}).default({})
 /** 全部工作区操作都必须明确 Agent 与稳定存储作用域 */

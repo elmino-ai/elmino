@@ -21,6 +21,7 @@ const server = AgentServer.create({
     : getModel(modelId, signal),
   authorize: ({ request, input, path }) => authorizeRequest(request, path, input),
   onError: error => console.error(error),
+  apiReference: { title: 'Writer API', version: '1.0.0' },
 })
 
 const http = await listen({ server, hostname: '127.0.0.1', port: 3000 })
@@ -38,6 +39,33 @@ RuntimeStore 应属于一个工作区，不能把同一个实例挂到不同工�
 `authorize()` 在每个通过输入校验的 procedure 上执行，批处理中的调用分别授权。`input` 是已校验的请求，可用于限制 Agent、工作区或线程的访问范围。省略该回调表示宿主已在外层完成授权；`listen()` 默认只监听本机。浏览器跨域调用通过 `corsOrigins` 明确配置允许的 Origin
 
 文本、引用和原始图片可以直接进入 Engine。文档解析或图片压缩由可选的 `prepareInput()` 完成，返回 `TurnInputPart[]`；它在 Engine 的入口预留期间执行，避免重复请求提前产生文档产物。省略时文档请求会被拒绝，图片按原始内容发送
+
+## HTTP 与交互文档
+
+启动后打开 [http://127.0.0.1:3000/api/docs](http://127.0.0.1:3000/api/docs)，可以在 Scalar 中浏览接口、查看参数并发起请求。机器可读的 OpenAPI 定义位于 `/api/spec.json`
+
+| 地址 | 用途 |
+| --- | --- |
+| `GET /api/docs` | Scalar 交互文档 |
+| `GET /api/spec.json` | OpenAPI JSON 定义 |
+| `GET /api/health` | 服务健康检查 |
+| `GET /api/agents` | 已注册的 Agent 说明 |
+| `GET /api/events` | 运行事件流，需要指定 Agent 和工作区 |
+
+文档与定义默认可直接访问，只展示静态接口结构，不包含运行数据或凭据。REST 业务接口与 `/rpc` 共用同一个宿主 `authorize()`；在 Scalar 的 Bearer 认证中填写自己的访问凭据后即可调试。运行示例时填写 `.env` 中的 `SERVER_KEY`
+
+例如，通过 REST 检查示例服务：
+
+```sh
+curl -H 'Authorization: Bearer <SERVER_KEY>' \
+  http://127.0.0.1:3000/api/health
+```
+
+将 `<SERVER_KEY>` 替换为自己的访问凭据，成功时返回 `{"status":"ok"}`。浏览文档和健康检查不会调用模型；提交任务才会进入 Agent 执行
+
+`apiReference` 不配置时使用标题 `Elmino API` 和版本 `0.0.0`；可像上面的装配示例一样设置 `title` 与 `version`。设置 `apiReference: false` 会同时关闭 `/api/docs` 和 `/api/spec.json`，REST 业务接口继续存在，并遵循原有鉴权
+
+SDK 继续使用 `/rpc`，不需要因启用 REST 与文档而修改客户端配置
 
 ## 通过 SDK 调用
 
@@ -110,4 +138,4 @@ Server 关闭会拒绝新操作，通知尚未完成的宿主资源解析取消�
 
 Server 不关闭传入的 Store 或 BlobStore。调用方应先关闭 Server 和 HTTP 连接，再关闭自己创建的存储。Node 监听器的 `close()` 只关闭网络连接；关闭监听器不会代替 `server.close()` 的执行结算
 
-本批只提供 oRPC HTTP 契约与事件流，不包含账号体系、模型管理、插件路由、React 或 UI。未来接入其他 HTTP 框架时可以直接挂载 `server.fetch()`
+Server 提供 REST、oRPC 与事件流。接入其他 HTTP 框架时可以直接挂载 `server.fetch()`
