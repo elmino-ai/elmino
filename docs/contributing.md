@@ -85,7 +85,9 @@ pnpm verify:packages
 
 `.changeset` 保存版本变更意图，需要提交 Git。版本生成和依赖解析分别执行，避免手工修改锁文件
 
-`verify:packages` 先在 `dist/packs` 生成各能力包的 tarball，再由 [交付集成测试](../tests/packages/verify-packages.mjs) 检查入口、类型、资源、映射源码与依赖版本，并安装到仓库外临时目录验证公开 API 和安装边界
+`verify:packages` 先在 `dist/packs` 生成各能力包的 tarball，再由 [交付测试入口](../tests/runner/run.mjs) 检查入口、类型、资源、映射源码与依赖版本，并安装到仓库外临时目录验证公开 API 和安装边界
+
+包自身的功能测试位于 `packages/<能力>/tests`；根目录交付测试直接按 `tests/<能力>/consumer.ts` 组织，领域内复用代码留在对应目录，执行入口归 `tests/runner`，跨领域验收辅助逻辑归 `tests/support`。消费程序使用真实 TypeScript 文件，通过公开包入口装配能力；复用包内测试夹具时使用明确的相对导入，执行器沿相对导入复制所需文件到独立消费项目，复制时为 NodeNext 补齐 `.js` 后缀，不拼接 TypeScript 源码字符串
 
 尚未发布的同批内部依赖通过验收项目的 pnpm overrides 指向对应 tarball；发布内容本身必须保存正常版本声明，不能依赖 workspace 协议、仓库路径或宿主应用源码。验收临时目录保留供诊断，测试不读取用户模型配置、不调用真实模型服务
 

@@ -18,7 +18,7 @@
     "changeset": "changeset",
     "version:packages": "changeset version",
     "pack:packages": "pnpm --filter '@elmino/*' -r pack --pack-destination ./dist/packs",
-    "verify:packages": "pnpm pack:packages && node tests/packages/verify-packages.mjs",
+    "verify:packages": "pnpm pack:packages && node tests/runner/run.mjs",
     "prepare": "husky"
   },
   "devDependencies": {

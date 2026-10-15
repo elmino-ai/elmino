@@ -13,9 +13,9 @@ import { LocalBlobStore } from '@elmino/store/local'
 import { readThreadInteraction, readThreadInterrupt } from '@elmino/thread'
 import { defineTools } from '@elmino/tool'
 import * as z from 'zod'
-import { testFiles } from './files-support.js'
-import { createModel, response } from './model-support.js'
-import { createMockSandbox } from './sandbox-support.js'
+import { testFiles } from '../../packages/engine/tests/support/files'
+import { createModel, response } from '../../packages/engine/tests/support/model'
+import { createMockSandbox } from '../../packages/loop/tests/support/sandbox'
 
 const roles = LocalSubagentRoles.create({ dir: path.resolve('roles') })
 await roles.initialize()

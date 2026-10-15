@@ -1,7 +1,7 @@
 /* eslint antfu/no-top-level-await: off -- 仓库外 Node.js 消费者顺序验收公开入口 */
 import type { Runtime, RuntimeDefinition, ThreadLocation } from '@elmino/runtime'
 import { defineRuntime } from '@elmino/runtime/local'
-import { createMockSandbox } from './sandbox-support.js'
+import { createMockSandbox } from '../../packages/loop/tests/support/sandbox'
 
 let disposed = 0
 const sandbox = createMockSandbox({

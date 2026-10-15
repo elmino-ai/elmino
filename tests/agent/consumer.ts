@@ -4,7 +4,7 @@ import { defineAgent } from '@elmino/agent'
 import { defineRuntime } from '@elmino/runtime/local'
 import { defineTools } from '@elmino/tool'
 import * as z from 'zod'
-import { createMockSandbox } from './sandbox-support.js'
+import { createMockSandbox } from '../../packages/loop/tests/support/sandbox'
 
 const tools = defineTools({
   echo: { description: 'Echo', schema: z.object({ value: z.string() }), execute: ({ value }) => value },

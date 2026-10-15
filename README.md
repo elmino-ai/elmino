@@ -49,7 +49,7 @@ elmino 是面向应用开发的可复用 Agent 框架，首阶段聚焦模型适
 
 `pnpm verify:packages` 为 15 个能力包生成 tarball，检查公开入口、类型声明、映射源码和依赖版本，再分别安装到仓库外临时目录，执行公共工具、类型检查、SDK 请求投影、环境快照与实际 Sandbox 装配、文件与 Shell 执行、数据库事务与关闭重开、默认 Agent 执行、审批恢复、文本和二进制产物持久化及依赖隔离检查。尚未发布的内部依赖由消费项目的 pnpm overrides 指向同批 tarball，打包文件中的正常版本声明保持不变。临时目录保留供失败诊断，不读取用户模型配置，不调用真实模型服务
 
-交付集成测试位于 [tests/packages/verify-packages.mjs](tests/packages/verify-packages.mjs)，由 `pnpm verify:packages` 单独执行。tarball 输出到 `dist/packs`，根项目不参与打包。宿主应用接入与重复实现清理作为后续独立批次执行
+交付集成测试按能力组织在 `tests/<feature>/consumer.ts`，执行入口位于 [tests/runner/run.mjs](tests/runner/run.mjs)，由 `pnpm verify:packages` 单独执行。tarball 输出到 `dist/packs`，根项目不参与打包。宿主应用接入与重复实现清理作为后续独立批次执行
 
 组织方式参考 [Mastra workspace](https://github.com/mastra-ai/mastra/blob/main/pnpm-workspace.yaml)、[Core 的公开入口与产物清单](https://github.com/mastra-ai/mastra/blob/main/packages/core/package.json)、[LibSQL 独立包](https://github.com/mastra-ai/mastra/blob/main/stores/libsql/package.json) 和 [Changesets 配置](https://github.com/mastra-ai/mastra/blob/main/.changeset/config.json)。Mastra 同时使用独立包与包内子路径，并对部分紧密关联的包设置同步版本组；elmino 按实际依赖划分发布边界
 

@@ -11,9 +11,10 @@ if (!isPlainRecord(resolved) || isPlainRecord([]))
   throw new Error('对象判定无法消费')
 if (!deepEqual(resolved, record) || deepEqual(resolved, { nested: { value: 2 } }))
   throw new Error('嵌套比较无法消费')
-await writeFile('prompt.md', 'Hello {{name}}')
+const template = new URL('./prompt.md', import.meta.url)
+await writeFile(template, 'Hello {{name}}')
 const prompt = createPromptTemplate({
-  template: readPromptTemplate(new URL('./prompt.md', import.meta.url)),
+  template: readPromptTemplate(template),
   inputVariables: ['name'],
 })
 if (prompt.format({ name: 'Elmino' }) !== 'Hello Elmino')

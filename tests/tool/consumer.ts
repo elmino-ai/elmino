@@ -1,7 +1,7 @@
 /* eslint antfu/no-top-level-await: off -- 仓库外 Node.js 消费者顺序验收公开入口 */
 import { createHostServices, defineHostService, defineTools, provideHostService } from '@elmino/tool'
 import * as z from 'zod'
-import { createMockSandbox } from './sandbox-support.js'
+import { createMockSandbox } from '../../packages/loop/tests/support/sandbox'
 
 const service = defineHostService<{ prefix: string }>('consumer')
 const services = createHostServices([provideHostService(service, { prefix: 'ok:' })])
