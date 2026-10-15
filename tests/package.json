@@ -1,0 +1,28 @@
+{
+  "name": "@tests/delivery",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@elmino/agent": "workspace:^",
+    "@elmino/engine": "workspace:^",
+    "@elmino/llm": "workspace:^",
+    "@elmino/llm-anthropic": "workspace:^",
+    "@elmino/llm-openai": "workspace:^",
+    "@elmino/local": "workspace:^",
+    "@elmino/loop": "workspace:^",
+    "@elmino/runtime": "workspace:^",
+    "@elmino/sandbox": "workspace:^",
+    "@elmino/sandbox-local": "workspace:^",
+    "@elmino/shared": "workspace:^",
+    "@elmino/store": "workspace:^",
+    "@elmino/store-sqlite": "workspace:^",
+    "@elmino/thread": "workspace:^",
+    "@elmino/tool": "workspace:^",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "zod": "catalog:"
+  }
+}

@@ -74,6 +74,8 @@ pnpm --filter @elmino/store-sqlite db:generate
 
 根项目保持私有，每个公开能力包独立声明版本、运行依赖、`exports`、产物白名单和公开发布配置。基础契约包不依赖具体模型、数据库或本地沙箱实现
 
+可运行消费示例归 `examples/<场景>`，使用 `@example/*` 私有工作区名称，独立声明实际依赖，不参与 `@elmino/*` 的打包与发布。[Basic Agent 示例](basic-agent.md) 提供公开入口装配与跨进程审批恢复；包级测试与类型检查会通过 Turbo 的依赖图先构建所需能力包
+
 使用 Changesets 记录公开行为与类型变化：
 
 ```sh
@@ -88,6 +90,8 @@ pnpm verify:packages
 `verify:packages` 先在 `dist/packs` 生成各能力包的 tarball，再由 [交付测试入口](../tests/runner/run.mjs) 检查入口、类型、资源、映射源码与依赖版本，并安装到仓库外临时目录验证公开 API 和安装边界
 
 包自身的功能测试位于 `packages/<能力>/tests`；根目录交付测试直接按 `tests/<能力>/consumer.ts` 组织，领域内复用代码留在对应目录，执行入口归 `tests/runner`，跨领域验收辅助逻辑归 `tests/support`。消费程序使用真实 TypeScript 文件，通过公开包入口装配能力；复用包内测试夹具时使用明确的相对导入，执行器沿相对导入复制所需文件到独立消费项目，复制时为 NodeNext 补齐 `.js` 后缀，不拼接 TypeScript 源码字符串
+
+根 `tests` 是 `@tests/delivery` 私有工作区，通过自身的依赖声明与 `tsconfig.json` 支持编辑器解析和类型检查，根 `pnpm typecheck` 会包含它并先构建依赖包。它不参与 `@elmino/*` 发布，不使用指向生产源码的路径别名；本地类型检查与仓库外 tarball 验收分别覆盖开发时导入和实际交付边界
 
 尚未发布的同批内部依赖通过验收项目的 pnpm overrides 指向对应 tarball；发布内容本身必须保存正常版本声明，不能依赖 workspace 协议、仓库路径或宿主应用源码。验收临时目录保留供诊断，测试不读取用户模型配置、不调用真实模型服务
 

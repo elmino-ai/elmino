@@ -2,7 +2,7 @@
 
 elmino 是面向应用开发的可复用 Agent 框架，首阶段聚焦模型适配与 Agent 内核
 
-模型适配、完整 Agent 运行层和本机环境装配已迁入 elmino，15 个能力包可以独立构建和打包。宿主应用接入及重复实现清理另行推进
+模型适配、完整 Agent 运行层和本机环境装配已迁入 elmino，15 个能力包可以独立构建和打包。[Basic Agent 示例](docs/basic-agent.md) 演示公开入口装配和跨进程审批恢复；旧宿主接入及重复实现清理另行推进
 
 ## 首阶段边界
 
@@ -264,6 +264,6 @@ export async function runAgent(model: TurnModel<ModelTurnConfig>, store: Runtime
 
 已迁入提交 Hook、commitlint、统一 catalog 与严格类型检查、CSpell、Turbo 构建缓存、包级测试、SQLite 迁移生成与一致性校验、Changesets 和仓库外 tarball 验收。Ubuntu/macOS CI 是为独立框架新增的验证入口，尚未在远程运行，不执行发布
 
-elmino 的模型、共享基础、持久化、线程、执行环境、工具、Loop、Agent 和 Engine 分批提交并独立验收。插件体系、客户端 SDK、UI 和宿主应用接入留待后续明确任务
+elmino 的模型、共享基础、持久化、线程、执行环境、工具、Loop、Agent 和 Engine 分批提交并独立验收。私有消费示例位于 [examples/basic-agent](examples/basic-agent)，运行方法见 [示例指南](docs/basic-agent.md)，老项目接入差异见 [接入清单](docs/integration.md)。插件体系、客户端 SDK、UI 和旧宿主实际接入留待后续明确任务
 
 开发命令与工程基建见 [开发指南](docs/contributing.md)，约定见 [AGENTS.md](AGENTS.md)
