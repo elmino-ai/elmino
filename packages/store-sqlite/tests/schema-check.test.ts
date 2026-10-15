@@ -9,16 +9,18 @@ import { checkRuntimeMigrations } from '../scripts/migrations'
 /** -------------------- 常量 -------------------- */
 /** 包内提交的真实 RuntimeStore 迁移资源 */
 const migrationsDir = path.resolve(import.meta.dirname, '../drizzle/runtime/migrations')
+/** 真实 CLI 的冷启动与多次子进程执行采用独立集成预算，保留所有迁移断言 */
+const migrationCheckOptions = { timeout: 30_000 }
 
 /** -------------------- 测试 -------------------- */
-test('真实 Schema 与既有迁移快照一致，检查前后发布资源保持逐字节一致', async () => {
+test('真实 Schema 与既有迁移快照一致，检查前后发布资源保持逐字节一致', migrationCheckOptions, async () => {
   const before = await migrationContents()
 
   await checkRuntimeMigrations()
   expect(await migrationContents()).toEqual(before)
 })
 
-test('新增 Schema 表但未生成迁移时检查失败，漂移分析不写入发布历史', async () => {
+test('新增 Schema 表但未生成迁移时检查失败，漂移分析不写入发布历史', migrationCheckOptions, async () => {
   const before = await migrationContents()
   const temporary = await createCheckFixture()
   const schemaPath = path.join(temporary, 'schema.mjs')
@@ -37,7 +39,7 @@ export const added = sqliteTable('migration_check_added', { id: text('id').prima
   expect(await migrationContents()).toEqual(before)
 })
 
-test('损坏的历史快照阻止检查，原有发布 SQL 和快照不会被重建或覆盖', async () => {
+test('损坏的历史快照阻止检查，原有发布 SQL 和快照不会被重建或覆盖', migrationCheckOptions, async () => {
   const before = await migrationContents()
   const temporary = await createCheckFixture()
   const corruptedHistory = path.join(temporary, 'history')
