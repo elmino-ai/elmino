@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import ts from 'typescript'
+import { verifyBrowserConsumer } from './browser.mjs'
 
 const run = promisify(execFile)
 const isolatedDependencies = [
@@ -16,6 +17,8 @@ const isolatedDependencies = [
   'dayjs',
   '@lydell/node-pty',
   '@vscode/ripgrep',
+  '@orpc/client',
+  '@opentelemetry/api',
 ]
 
 /** 沿真实相对导入收集消费程序和所属夹具，复制时为 NodeNext 补齐产物后缀 */
@@ -153,4 +156,6 @@ export async function verifyConsumer({ root, name, manifests, archives, packedMa
     consumer.entry,
   ], { cwd: dir })
   await run(process.execPath, [path.join('dist', consumer.entry.replace(/\.ts$/u, '.js'))], { cwd: dir, timeout: 30_000 })
+  if (name === 'request' || name === 'protocol')
+    await verifyBrowserConsumer(root, dir, consumer.entry)
 }

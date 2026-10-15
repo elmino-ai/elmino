@@ -50,6 +50,7 @@ test('完整片段事件核对 Thread、Turn 和工具归属，增量不接纳�
   expect(readRuntimeEventPartDeltaPayload(delta)).toEqual({ delta: { offset: 3, output: 'def' } })
   expect(readRuntimeEventPartDeltaPayload({ ...delta, payload: { delta: { offset: -1, output: 'x' } } })).toBeUndefined()
   expect(readRuntimeEventPartDeltaPayload({ ...delta, payload: { delta: { offset: 0.5, output: 'x' } } })).toBeUndefined()
+  expect(readRuntimeEventPartDeltaPayload({ ...delta, payload: { delta: { text: 'x', output: 'y', offset: 0 } } })).toBeUndefined()
 })
 
 test('中断恢复和 Mention 保留可持久 JSON，输入排序保持文本与引用的相对顺序', () => {

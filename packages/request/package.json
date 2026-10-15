@@ -1,0 +1,45 @@
+{
+  "name": "@elmino/request",
+  "type": "module",
+  "version": "0.0.0",
+  "description": "带动态鉴权和错误解析的 Fetch 传输与独立 oRPC 入口",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./orpc": {
+      "types": "./dist/orpc/index.d.ts",
+      "import": "./dist/orpc/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=24.18.1"
+  },
+  "scripts": {
+    "build": "tsdown --config ../../tsdown.config.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "prepack": "pnpm build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@elmino/shared": "workspace:^",
+    "@opentelemetry/api": "catalog:",
+    "@orpc/client": "catalog:"
+  },
+  "devDependencies": {
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

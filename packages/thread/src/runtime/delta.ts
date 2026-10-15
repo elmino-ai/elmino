@@ -66,7 +66,7 @@ export function readRuntimeEventPartDeltaPayload(event: RuntimeEvent): RuntimeMe
   if (typeof delta.text === 'string' && delta.output === undefined)
     return { delta: { text: delta.text } }
   if (
-    event.toolCallId && typeof delta.output === 'string' && typeof delta.offset === 'number'
+    event.toolCallId && delta.text === undefined && typeof delta.output === 'string' && typeof delta.offset === 'number'
     && Number.isSafeInteger(delta.offset) && delta.offset >= 0
   ) {
     return { delta: { output: delta.output, offset: delta.offset } }

@@ -13,6 +13,8 @@
     "@elmino/llm-openai": "workspace:^",
     "@elmino/local": "workspace:^",
     "@elmino/loop": "workspace:^",
+    "@elmino/protocol": "workspace:^",
+    "@elmino/request": "workspace:^",
     "@elmino/runtime": "workspace:^",
     "@elmino/sandbox": "workspace:^",
     "@elmino/sandbox-local": "workspace:^",
