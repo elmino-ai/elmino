@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/elmino-logo.png" alt="elmino logo" width="360">
+</p>
+
 # elmino
 
 elmino 是面向应用开发的可复用 Agent 框架，首阶段聚焦模型适配与 Agent 内核
