@@ -165,3 +165,13 @@ export function createGatedModel(text = '任务完成') {
 export function threadTarget(request: ApiTurnCreateInput): ThreadTarget {
   return { agentId: request.agentId, workspaceId: request.workspaceId, threadId: request.threadId }
 }
+
+/** 健康与鉴权请求不应打开任何工作区或模型资源 */
+export function createEmptyServer(authorize?: ServerOptions['authorize']) {
+  return defineServer({
+    agents: {},
+    authorize,
+    workspace: () => { throw new Error('健康请求不应打开工作区') },
+    model: () => { throw new Error('健康请求不应装配模型') },
+  })
+}

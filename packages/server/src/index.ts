@@ -7,5 +7,6 @@ export type {
   ServerAuthorization,
   ServerModelRequest,
   ServerOptions,
+  ServerStartOptions,
   ServerWorkspace,
 } from './server/types'

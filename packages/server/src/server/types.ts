@@ -46,6 +46,16 @@ export interface ServerAuthorization {
   input: unknown
 }
 
+/** 独立 Node 服务的启动配置，首次 start 调用确定监听参数 */
+export interface ServerStartOptions {
+  /** 默认 3000；传 0 由系统分配可用端口，实际地址由 start 返回 */
+  port?: number
+  /** 默认 127.0.0.1，仅允许本机连接 */
+  hostname?: string
+  /** 默认处理 SIGINT / SIGTERM 并统一关闭；由宿主管理退出时设为 false */
+  shutdownSignals?: boolean
+}
+
 /** 可嵌入任意 Fetch HTTP 宿主的 Agent 服务 */
 export interface ServerOptions {
   /** 已装配好工具、Hooks 与 Runtime 的 Agent 定义 */

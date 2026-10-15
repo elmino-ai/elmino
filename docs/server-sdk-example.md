@@ -38,20 +38,20 @@ CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 
 ## Server 定义
 
-示例在 `app/run.ts` 直接调用框架入口，模型和存储由宿主创建：
+示例在 `app/run.ts` 准备工作区并调用框架入口，定义后直接启动：
 
 ```ts
 const server = defineServer({
   agents: { clock },
-  workspace: { id: 'example', rootDir: workspaceRoot, store },
+  workspace: { id: 'example', rootDir: workspaceRoot, store: sqliteStore({ dataDir: config.dataDir }) },
   model: ({ frozenConfig }) => createModel(frozenConfig),
   apiKey: config.key,
   corsOrigins: config.corsOrigins,
 })
-const http = await listen({ server, port: config.port })
+const url = await server.start({ port: config.port, hostname: config.hostname })
 ```
 
-`defineServer` 来自 `@elmino/server`，`listen` 来自 `@elmino/server/node`。固定工作区无需手写位置回调，`apiKey` 与 SDK 的同名字段对应；动态资源和自定义鉴权仍可使用回调，见 [Server 与 SDK 指南](server-sdk.md)
+`defineServer` 来自 `@elmino/server`，`start()` 直接打开监听并返回实际地址。框架默认处理 Ctrl+C / SIGTERM 和统一关闭，无需手写退出流程；应用主动关闭时调用 `await server.close()`。固定工作区无需手写位置回调，`apiKey` 与 SDK 的同名字段对应；动态资源和自定义鉴权仍可使用回调，见 [Server 与 SDK 指南](server-sdk.md)
 
 ## 双终端运行
 

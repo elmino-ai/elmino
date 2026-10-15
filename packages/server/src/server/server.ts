@@ -11,7 +11,8 @@ import type {
 import type { TurnExecution, TurnInputPart } from '@elmino/engine'
 import type { RuntimeStore, RuntimeStoreLease, RuntimeThreadRecord } from '@elmino/store'
 import type { RuntimeEvent } from '@elmino/thread/events'
-import type { ServerOptions, ServerWorkspace } from './types'
+import type { ServerListener } from '../node/listen'
+import type { ServerOptions, ServerStartOptions, ServerWorkspace } from './types'
 import path from 'node:path'
 import { API_DOCS_PATH, API_PATH, API_SPEC_PATH, apiContract, RPC_PATH } from '@elmino/api'
 import { AgentEngine } from '@elmino/engine'
@@ -69,6 +70,8 @@ export class AgentServer {
   private readonly _lifetime = new AbortController()
   private _closed = false
   private _closing?: Promise<void>
+  private _listener?: Promise<ServerListener>
+  private _shutdown?: () => void
 
   /** 配置在定义时捕获，运行资源在首次访问时加载 */
   public constructor(options: ServerOptions) {
@@ -172,7 +175,46 @@ export class AgentServer {
     })
   }
 
-  /** 可直接交给 Hono、Node 适配器或其他 Fetch 宿主 */
+  /** 启动独立 Node 服务并返回实际地址；重复调用复用首次监听，关闭后不能重启 */
+  public async start(options: ServerStartOptions = {}): Promise<string> {
+    if (this._closed)
+      throw new Error('Server 已关闭，请重新定义服务后启动')
+    const { port = 3000, hostname, shutdownSignals = true } = options
+    // 只在独立启动时加载 Node HTTP 适配器；Fetch 宿主不会注册端口或退出信号
+    this._listener ??= (async () => {
+      const { listen } = await import('../node/listen')
+      if (this._closed)
+        throw new Error('Server 已关闭，启动已取消')
+      const listener = await listen({ server: this, port, hostname })
+      if (!this._closed && shutdownSignals) {
+        this._shutdown = () => {
+          this.close().catch(async (error) => {
+            process.exitCode = 1
+            if (this._options.onError)
+              await this._report(error)
+            else
+              console.error('关闭 Agent Server 失败', error)
+          })
+        }
+        process.on('SIGINT', this._shutdown)
+        process.on('SIGTERM', this._shutdown)
+      }
+      return listener
+    })()
+    try {
+      const listener = await this._listener
+      if (this._closed)
+        throw new Error('Server 已关闭，启动已取消')
+      return listener.url
+    }
+    catch (error) {
+      const cleanup = await Promise.allSettled([this.close()])
+      throwSettledErrors([{ status: 'rejected', reason: error }, ...cleanup], '启动 Server 与资源清理均失败', true)
+      throw error
+    }
+  }
+
+  /** 可直接交给 Hono、Node 适配器或其他 Fetch 宿主，无需调用 start */
   public fetch(request: Request): Promise<Response> {
     const task = this._handle(request)
     if (!this._closed) {
@@ -205,7 +247,7 @@ export class AgentServer {
     return new Response(response.body, { status: response.status, statusText: response.statusText, headers })
   }
 
-  /** 结束 Engine 与订阅后释放配置租约，外部 Store 仍归宿主；重复调用共享同一关闭结果 */
+  /** 结算 Engine、订阅和租约，再关闭 start 打开的端口；重复调用共享同一关闭结果 */
   public close(): Promise<void> {
     if (this._closing)
       return this._closing
@@ -226,6 +268,14 @@ export class AgentServer {
             throwSettledErrors(cleanup, '关闭工作区失败', true)
           })()]
         : [])])
+      // 等待尚未完成的监听；启动失败由 start 报告，不重复计入关闭错误
+      const [opened] = await Promise.allSettled([this._listener])
+      if (opened.status === 'fulfilled' && opened.value)
+        results.push(...await Promise.allSettled([opened.value.close()]))
+      if (this._shutdown) {
+        process.off('SIGINT', this._shutdown)
+        process.off('SIGTERM', this._shutdown)
+      }
       throwSettledErrors(results, '关闭 Agent Server 失败')
     })
     return this._closing
@@ -502,7 +552,7 @@ export class AgentServer {
   }
 }
 
-/** 定义可嵌入 Fetch 宿主的 Agent 服务，打开端口使用 @elmino/server/node 的 listen */
+/** 定义 Agent 服务；独立运行调用 start，嵌入已有 HTTP 服务使用 fetch */
 export function defineServer(options: ServerOptions): AgentServer {
   return new AgentServer(options)
 }

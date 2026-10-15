@@ -1,19 +1,8 @@
 import type { ServerAuthorization } from '../src/index'
 import { Client } from '@elmino/sdk'
 import { expect, onTestFinished, test, vi } from 'vitest'
-import { defineServer } from '../src/index'
 import { listen } from '../src/node/index'
-import { createServerHarness } from './support/server'
-
-/** 健康与鉴权请求不应打开任何工作区或模型资源 */
-function createEmptyServer(authorize?: (context: ServerAuthorization) => boolean | Promise<boolean>) {
-  return defineServer({
-    agents: {},
-    authorize,
-    workspace: () => { throw new Error('健康请求不应打开工作区') },
-    model: () => { throw new Error('健康请求不应装配模型') },
-  })
-}
+import { createEmptyServer, createServerHarness } from './support/server'
 
 test('真实随机端口提供 SDK 健康检查并拒绝缺少凭据的请求', async () => {
   const server = createEmptyServer(({ request }) => request.headers.get('authorization') === 'Bearer fake-network-key')

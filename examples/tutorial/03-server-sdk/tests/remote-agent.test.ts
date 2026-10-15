@@ -7,12 +7,11 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { Client } from '@elmino/sdk'
 import { defineServer } from '@elmino/server'
-import { listen } from '@elmino/server/node'
 import { sqliteStore } from '@elmino/store-sqlite'
 import { expect, onTestFinished, test, vi } from 'vitest'
 import { createModel, response } from '../../../../packages/engine/tests/support/model'
 import { clock } from '../src/agent/clock'
-import { startExampleServer } from '../src/app/run'
+import { createExampleServer } from '../src/app/run'
 import { runRemoteTask } from '../src/client/run'
 
 test('示例经真实端口执行远程工具，打印过程并查询已持久化的线程', async () => {
@@ -39,16 +38,15 @@ test('示例经真实端口执行远程工具，打印过程并查询已持久�
     model: () => model.model,
     apiKey: key,
   })
-  const http = await listen({ server })
+  const url = await server.start({ port: 0, shutdownSignals: false })
   const output = vi.spyOn(console, 'log').mockImplementation(() => undefined)
   onTestFinished(async () => {
     output.mockRestore()
     await server.close()
-    await http.close()
     await lease.release()
     await rm(root, { recursive: true, force: true })
   })
-  const state = await runRemoteTask(http.url, key)
+  const state = await runRemoteTask(url, key)
   const [turn] = await store.turns.list(state.threadId)
   expect(turn?.status).toBe('completed')
   expect(await store.steps.list(turn!.id)).toHaveLength(2)
@@ -83,18 +81,19 @@ test('常驻 Server 在客户端结束后继续服务，同目录重启仍可读
     return next.model
   })
   const key = 'persistent-server-test-credential'
-  let server: Awaited<ReturnType<typeof startExampleServer>> | undefined
+  let server: Awaited<ReturnType<typeof createExampleServer>> | undefined
   const output = vi.spyOn(console, 'log').mockImplementation(() => undefined)
   onTestFinished(async () => {
     output.mockRestore()
     await server?.close()
     await rm(root, { recursive: true, force: true })
   })
-  server = await startExampleServer({ model, key, dataDir: root, port: 0 })
-  const client = Client.create({ baseUrl: server.url, apiKey: key })
-  const first = await runRemoteTask(server.url, key)
+  server = await createExampleServer({ model, key, dataDir: root })
+  const url = await server.start({ port: 0, shutdownSignals: false })
+  const client = Client.create({ baseUrl: url, apiKey: key })
+  const first = await runRemoteTask(url, key)
   expect(await client.rpc.meta.health({})).toEqual({ status: 'ok' })
-  const second = await runRemoteTask(server.url, key)
+  const second = await runRemoteTask(url, key)
   expect(second.threadId).not.toBe(first.threadId)
   expect(await client.rpc.meta.health({})).toEqual({ status: 'ok' })
   expect(model).toHaveBeenCalledTimes(2)
@@ -102,8 +101,9 @@ test('常驻 Server 在客户端结束后继续服务，同目录重启仍可读
   expect(second.turns).toMatchObject([{ status: 'completed' }])
 
   await server.close()
-  server = await startExampleServer({ model, key, dataDir: root, port: 0 })
-  const restarted = Client.create({ baseUrl: server.url, apiKey: key })
+  server = await createExampleServer({ model, key, dataDir: root })
+  const restartedUrl = await server.start({ port: 0, shutdownSignals: false })
+  const restarted = Client.create({ baseUrl: restartedUrl, apiKey: key })
   for (const state of [first, second]) {
     const historical = await restarted.rpc.thread.get({
       agentId: 'clock',

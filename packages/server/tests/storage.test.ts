@@ -106,6 +106,29 @@ test('同一作用域并发访问只借用一次，关闭先结算执行和事�
   await expect(store.turns.read(turnId)).rejects.toThrow()
 })
 
+test('存储释放失败仍关闭 start 打开的端口，失败不会导致重复释放', async () => {
+  const { root, store } = await createEngineStore()
+  const failure = new Error('测试租约释放失败')
+  const release = vi.fn<() => Promise<void>>().mockRejectedValue(failure)
+  const server = defineServer({
+    agents: { writer },
+    workspace: { id: 'fixed', rootDir: root, store: vi.fn<RuntimeStoreProvider>().mockResolvedValue({ store, release }) },
+    model: () => { throw new Error('列表不应装配模型') },
+  })
+  onTestFinished(async () => {
+    await Promise.allSettled([server.close()])
+    await disposeEngineStore(root, store)
+  })
+  const url = await server.start({ port: 0, shutdownSignals: false })
+  const client = Client.create({ baseUrl: url })
+  await expect(client.rpc.thread.list({ agentId: 'writer', workspaceId: 'fixed' })).resolves.toMatchObject({ items: [] })
+  const closing = server.close()
+  await expect(closing).rejects.toThrow('关闭 Agent Server 失败')
+  expect(server.close()).toBe(closing)
+  expect(release).toHaveBeenCalledOnce()
+  await expect(fetch(`${url}/api/health`)).rejects.toThrow()
+})
+
 test('同一 SQLite 配置在多 Agent 和 Server 间共享，最后释放后重启恢复历史', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'elmino-server-storage-'))
   const servers: AgentServer[] = []

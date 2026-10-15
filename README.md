@@ -215,7 +215,7 @@ pnpm example:agent-engine
 | [`@elmino/request`](packages/request) | 动态 Header、HTTP 错误与 `/orpc` 请求入口 |
 | [`@elmino/protocol`](packages/protocol) | 跨端事件、线程快照校验、序列化与恢复游标 |
 | [`@elmino/api`](packages/api) | Agent、Thread、Turn 与事件流的类型化接口契约 |
-| [`@elmino/server`](packages/server) | 可注入模型、Store、Runtime 和鉴权的 Fetch 服务，提供 REST 与 Scalar 文档 |
+| [`@elmino/server`](packages/server) | 可直接 start 的 Agent 服务，也可嵌入 Fetch 宿主，提供 REST 与 Scalar 文档 |
 | [`@elmino/sdk`](packages/sdk) | Node.js / 浏览器客户端，支持订阅、重连与取消 |
 
 请求与协议的调用方式、旧包取舍及下一批边界见 [请求与事件协议](docs/transport.md)
