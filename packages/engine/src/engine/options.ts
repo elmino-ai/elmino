@@ -28,10 +28,10 @@ export type WorkspaceAccessAcquirer = (
 
 /** AgentEngine 的宿主依赖 */
 export interface AgentEngineOptions {
-  /** 解析当前子智能体角色目录 */
-  resolveSubagentRoles?: () => Promise<SubagentRole[]>
+  /** 同步或异步加载新 Turn 的角色目录，恢复时沿用已冻结的角色 */
+  subagentRoles?: () => Promisable<SubagentRole[]>
   /** 校验持久化冻结配置并恢复可调用模型 */
-  restoreModel?: (config: UnknownRecord) => Promise<TurnModel<ModelTurnConfig>>
+  restoreModel?: (config: UnknownRecord) => Promisable<TurnModel<ModelTurnConfig>>
   /** 使用宿主路径策略创建项目 Runtime */
   createRuntime?: RuntimeFactory
   /** 在 Turn 全生命周期内阻止项目被删除 */

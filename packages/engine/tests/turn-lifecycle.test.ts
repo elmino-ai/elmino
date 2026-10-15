@@ -1120,7 +1120,7 @@ test('AgentEngine replaces a provisional interrupted event with the persisted in
   }
 })
 
-test('AgentEngine freezes the root role catalog and restores it without rereading config', async () => {
+test.each(['sync', 'async'])('角色目录支持 %s 回调，恢复时沿用冻结快照', async (mode) => {
   const { root, store } = await createEngineStore()
 
   try {
@@ -1141,9 +1141,9 @@ test('AgentEngine freezes the root role catalog and restores it without rereadin
     const frozenRoles = [testSubagentRole, explorerRole]
     let configuredRoles = frozenRoles
     let readCalls = 0
-    const resolveSubagentRoles = () => {
+    const subagentRoles = () => {
       readCalls++
-      return Promise.resolve(configuredRoles)
+      return mode === 'sync' ? configuredRoles : Promise.resolve(configuredRoles)
     }
     const seen: SubagentRole[][] = []
     const turnId = testId('turn', 'frozen-roles')
@@ -1159,7 +1159,7 @@ test('AgentEngine freezes the root role catalog and restores it without rereadin
 
       return Promise.resolve(completedTurnResult())
     })
-    const engine = createEngine(agent, { resolveSubagentRoles })
+    const engine = createEngine(agent, { subagentRoles })
 
     await engine.run(turnRequest('thread-frozen-roles', turnId), store).completed
     expect(await store.turns.read(turnId)).toMatchObject({

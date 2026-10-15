@@ -95,7 +95,7 @@ export function completedTurnResult(): TurnResult {
 export function createEngine(agent: Agent, options: Partial<AgentEngineOptions> = {}) {
   return AgentEngine.create({ [agent.id]: agent }, {
     createRuntime: (target, context) => target.runtime.create({ agentId: target.id, ...context }),
-    resolveSubagentRoles: () => Promise.resolve(testSubagentRoles),
+    subagentRoles: () => testSubagentRoles,
     ...options,
   })
 }
@@ -188,10 +188,10 @@ export function resumableTurnRequest(threadId: string, turnId: string): TurnRequ
 }
 
 /**
- * 从持久线程目录恢复实际执行位置
+ * 创建绑定工作区根目录的线程位置回调
  */
-export function resolveTestThreadLocation(workspaceRoot = '/tmp/elmino-agent-engine') {
-  return (thread: { id: string, dir: string }) => Promise.resolve({
+export function createTestThreadLocation(workspaceRoot = '/tmp/elmino-agent-engine') {
+  return (thread: { id: string, dir: string }) => ({
     workspaceId: 'default',
     workspaceKind: 'managed' as const,
     workspaceRoot,

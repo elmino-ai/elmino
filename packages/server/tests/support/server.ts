@@ -50,7 +50,7 @@ export async function createServerHarness(options: HarnessOptions = {}) {
       const resource = workspaceId === 'secondary' ? secondary : primary
       return {
         store: resource.store,
-        resolveLocation: ({ dir = '.' }) => ({
+        location: ({ dir = '.' }) => ({
           workspaceId,
           workspaceKind: 'project',
           workspaceRoot: resource.root,

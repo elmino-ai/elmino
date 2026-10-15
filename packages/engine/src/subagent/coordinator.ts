@@ -42,9 +42,9 @@ interface SubagentCoordinatorContext {
   /** 单 Turn 执行与结算能力 */
   executor: TurnExecutor
   /** 解析当前子智能体角色目录 */
-  resolveSubagentRoles: () => Promise<SubagentRole[]>
+  subagentRoles: () => Promisable<SubagentRole[]>
   /** 校验冻结配置并恢复可调用模型 */
-  restoreModel?: (config: UnknownRecord) => Promise<TurnModel<ModelTurnConfig>>
+  restoreModel?: (config: UnknownRecord) => Promisable<TurnModel<ModelTurnConfig>>
   /** 宿主全局运行事件出口 */
   onRuntimeEvent?: (event: RuntimeEvent) => Promisable<void>
   /** Engine 统一 Turn 提交入口 */
@@ -137,7 +137,7 @@ export class SubagentCoordinator {
       subagentRoles = turn!.subagentRoles
     }
     else {
-      subagentRoles = await this._context.resolveSubagentRoles()
+      subagentRoles = await this._context.subagentRoles()
       const rootRole = subagentRoles.find(role => role.id === 'default')
 
       if (!rootRole)
@@ -370,9 +370,9 @@ export class SubagentCoordinator {
     /** 当前项目事实存储 */
     store: RuntimeStore
     /** 在真正恢复 queued 子线程前解析其完整执行位置 */
-    resolveThreadLocation: (
+    threadLocation: (
       thread: Pick<RuntimeThreadRecord, 'id' | 'dir'>,
-    ) => Promise<ThreadLocation>
+    ) => Promisable<ThreadLocation>
     /** 是否重新提交可恢复的 queued 子线程 */
     resumeQueuedChildren?: boolean
   }) {
@@ -447,7 +447,7 @@ export class SubagentCoordinator {
         continue
 
       try {
-        const location = await input.resolveThreadLocation(thread)
+        const location = await input.threadLocation(thread)
         const model = await this._context.restoreModel(turn.modelConfig)
 
         if (this._context.turns.owns(thread.id, turn.id))

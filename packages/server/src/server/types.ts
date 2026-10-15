@@ -13,7 +13,7 @@ export interface ServerWorkspace {
   /** 同一作用域在 Server 生命周期中使用同一个 Store 实例 */
   store: RuntimeStore
   /** 从持久化目录恢复位置，新线程没有 dir，由宿主决定初始位置 */
-  resolveLocation: (input: { threadId: string, dir?: string }) => Promisable<ThreadLocation>
+  location: (input: { threadId: string, dir?: string }) => Promisable<ThreadLocation>
 }
 
 /** 解析新任务或按已持久化的非敏感配置恢复模型 */

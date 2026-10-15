@@ -6,9 +6,9 @@ import {
   createAgent,
   createEngine,
   createEngineStore,
+  createTestThreadLocation,
   disposeEngineStore,
   interruptedTurnResult,
-  resolveTestThreadLocation,
   resumableTurnRequest,
   seedParentTurn,
   testId,
@@ -153,7 +153,7 @@ test('工作区恢复只结算指定 Agent 的孤立 Turn 与扩展状态', asyn
     const other = await store.threads.read('thread-orphan-other-agent')
     const otherTurn = await store.turns.read(testId('turn', 'orphan-other-agent'))
 
-    await engine.recoverWorkspace({ agentId: agent.id, store, resolveThreadLocation: resolveTestThreadLocation() })
+    await engine.recoverWorkspace({ agentId: agent.id, store, threadLocation: createTestThreadLocation() })
     expect((await store.turns.read(testId('turn', 'orphan-code')))?.status).toBe('interrupted')
     expect(settleState).toHaveBeenCalledTimes(1)
     expect(await store.threads.read(other!.id)).toEqual(other)

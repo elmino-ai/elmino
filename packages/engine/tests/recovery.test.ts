@@ -11,8 +11,8 @@ import {
   createAgent,
   createEngine,
   createEngineStore,
+  createTestThreadLocation,
   disposeEngineStore,
-  resolveTestThreadLocation,
   seedParentTurn,
   testId,
   testSubagentRole,
@@ -55,7 +55,7 @@ test('Repeated recovery preserves five Child Turns already accepted by the same 
     const originalQueued = await store.turns.read(queued.turnId)
 
     expect(originalQueued?.status).toBe('queued')
-    await engine.recoverWorkspace({ agentId: 'code', store, resolveThreadLocation: resolveTestThreadLocation() })
+    await engine.recoverWorkspace({ agentId: 'code', store, threadLocation: createTestThreadLocation() })
     expect(restores).toBe(0)
     expect(await store.turns.read(queued.turnId)).toEqual(originalQueued)
     for (const child of children.slice(0, 4))
@@ -103,7 +103,7 @@ test('Recovery preserves a Child Turn while its accepted input supplier is still
     await preparing.promise
     const original = await store.turns.read(child!.turnId)
 
-    await engine.recoverWorkspace({ agentId: 'code', store, resolveThreadLocation: resolveTestThreadLocation() })
+    await engine.recoverWorkspace({ agentId: 'code', store, threadLocation: createTestThreadLocation() })
     expect(restores).toBe(0)
     expect(invoked).toBe(0)
     expect(await store.turns.read(child!.turnId)).toEqual(original)
@@ -151,12 +151,12 @@ test.each(['location', 'model', 'model-error'] as const)(
       const recovery = engine.recoverWorkspace({
         agentId: 'code',
         store,
-        resolveThreadLocation: async (thread) => {
+        threadLocation: async (thread) => {
           if (phase === 'location') {
             recoveryWaiting.resolve()
             await releaseRecovery.promise
           }
-          return resolveTestThreadLocation()(thread)
+          return createTestThreadLocation()(thread)
         },
       })
 
@@ -228,7 +228,7 @@ test('Orphan settlement yields to a Child accepted while its transaction is read
     const recovery = engine.recoverWorkspace({
       agentId: 'code',
       store,
-      resolveThreadLocation: resolveTestThreadLocation(),
+      threadLocation: createTestThreadLocation(),
       resumeQueuedChildren: false,
     })
 
@@ -290,7 +290,7 @@ test('Recovery rolls back all settlement writes if a Child is accepted during it
     const recovery = engine.recoverWorkspace({
       agentId: 'code',
       store,
-      resolveThreadLocation: resolveTestThreadLocation(),
+      threadLocation: createTestThreadLocation(),
       resumeQueuedChildren: false,
     })
 
@@ -328,7 +328,7 @@ test('Recovery rolls back all settlement writes if a Child is accepted during it
   }
 })
 
-test('workspace recovery resubmits queued children and interrupts orphaned Turns', async () => {
+test.each(['sync', 'async'])('workspace recovery with %s callbacks resubmits queued children and interrupts orphaned Turns', async (mode) => {
   const { root, store } = await createEngineStore()
 
   try {
@@ -533,19 +533,22 @@ test('workspace recovery resubmits queued children and interrupts orphaned Turns
       return Promise.resolve(completedTurnResult())
     }), {
       restoreModel: (config) => {
-        if (config.id === 'bad/model')
+        if (config.id === 'bad/model') {
+          if (mode === 'sync')
+            throw new Error('模型配置已失效')
           return Promise.reject(new Error('模型配置已失效'))
-
-        return Promise.resolve(turnModel)
+        }
+        return mode === 'sync' ? turnModel : Promise.resolve(turnModel)
       },
     })
 
     await engine.recoverWorkspace({
       agentId: 'code',
       store,
-      resolveThreadLocation: resolveTestThreadLocation(
-        '/tmp/elmino-agent-engine-relinked',
-      ),
+      threadLocation: (thread) => {
+        const location = createTestThreadLocation('/tmp/elmino-agent-engine-relinked')(thread)
+        return mode === 'sync' ? location : Promise.resolve(location)
+      },
     })
     await waitForChildTurns(store, testId('turn', 'parent'))
 
@@ -735,7 +738,7 @@ test('AgentEngine close interrupts and drains a recovered background Child Turn'
     await engine.recoverWorkspace({
       agentId: 'code',
       store,
-      resolveThreadLocation: resolveTestThreadLocation(),
+      threadLocation: createTestThreadLocation(),
     })
     const childContext = await childStarted
 
@@ -867,7 +870,7 @@ test('AgentEngine close drains recovered Child Turns beyond the scheduler limit 
     await engine.recoverWorkspace({
       agentId: 'code',
       store,
-      resolveThreadLocation: resolveTestThreadLocation(),
+      threadLocation: createTestThreadLocation(),
     })
     const contexts = await runningStarted
 
@@ -948,7 +951,7 @@ test('workspace recovery interrupts queued children when the physical workspace 
     await engine.recoverWorkspace({
       agentId: 'code',
       store,
-      resolveThreadLocation: resolveTestThreadLocation(
+      threadLocation: createTestThreadLocation(
         '/tmp/elmino-agent-engine-missing',
       ),
       resumeQueuedChildren: false,
@@ -1070,7 +1073,7 @@ test('stale Turn recovery rolls back Turn facts when tool cleanup fails', async 
     await expect(engine.recoverWorkspace({
       agentId: 'code',
       store: failingStore,
-      resolveThreadLocation: resolveTestThreadLocation(),
+      threadLocation: createTestThreadLocation(),
     })).rejects.toThrow('工具结算失败')
 
     expect(await store.turns.read(testId('turn', 'child'))).toMatchObject({ status: 'running' })

@@ -23,7 +23,7 @@ export function createServer(model: ServerOptions['model'], store: RuntimeStore,
         throw new Error('示例只提供 example 工作区')
       return {
         store,
-        resolveLocation: ({ dir = '.' }) => ({
+        location: ({ dir = '.' }) => ({
           workspaceId,
           workspaceKind: 'project',
           workspaceRoot,

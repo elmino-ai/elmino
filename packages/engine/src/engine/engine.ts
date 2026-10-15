@@ -2,6 +2,7 @@ import type { Agent } from '@elmino/agent'
 import type { Message } from '@elmino/llm'
 import type { TurnRuntimeEventHandler, TurnServices } from '@elmino/loop'
 import type { Runtime, ThreadLocation } from '@elmino/runtime'
+import type { Promisable } from '@elmino/shared'
 import type { RuntimeStore, ThreadMessage } from '@elmino/store'
 import type { PreparedTurn, ResolvedTurnRequest, TurnExecution, TurnHandle, TurnRequest } from '../turn/types'
 import type { TurnReservation } from './control'
@@ -85,7 +86,7 @@ export class AgentEngine {
       acquireWorkspace,
       createRuntime: runtimeFactory,
       onRuntimeEvent: emitRuntimeEvent,
-      resolveSubagentRoles = () => Promise.resolve(getBuiltinSubagentRoles()),
+      subagentRoles = getBuiltinSubagentRoles,
       restoreModel,
     } = options
     const turns = this._turns
@@ -112,7 +113,7 @@ export class AgentEngine {
         turnQueue,
         turns,
         executor,
-        resolveSubagentRoles,
+        subagentRoles,
         restoreModel,
         onRuntimeEvent,
         submit,
@@ -357,9 +358,9 @@ export class AgentEngine {
     /** 当前项目事实存储 */
     store: RuntimeStore
     /** 在真正恢复 queued 子线程前解析其完整执行位置 */
-    resolveThreadLocation: (
+    threadLocation: (
       thread: { id: string, dir: string },
-    ) => Promise<ThreadLocation>
+    ) => Promisable<ThreadLocation>
     /** 是否重新提交可恢复的 queued 子线程 */
     resumeQueuedChildren?: boolean
   }) {

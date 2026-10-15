@@ -238,6 +238,27 @@ test('注册键与 Agent 定义身份不一致时在创建 Server 时拒绝', ()
   expect(workspace).not.toHaveBeenCalled()
 })
 
+test.each(['sync', 'async'])('输入预处理支持 %s 回调并持久化处理后的消息', async (mode) => {
+  const harness = await createServerHarness({
+    prepareInput: () => {
+      const parts = [{ type: 'text' as const, text: 'prepared input' }]
+      return mode === 'sync' ? parts : Promise.resolve(parts)
+    },
+  })
+  const model = createModel([response([{ type: 'text', text: '完成' }])])
+  harness.models.push(model.model)
+  const request = harness.request()
+  await harness.client().rpc.turn.create(request)
+  await vi.waitFor(async () => {
+    expect((await harness.stores.primary.store.turns.read(request.turnId))?.status).toBe('completed')
+  })
+  const state = await harness.client().rpc.thread.get(threadTarget(request))
+  expect(state.messages.flatMap(message => message.parts))
+    .toContainEqual(expect.objectContaining({ type: 'text', text: 'prepared input' }))
+  expect(model.requests[0]!.messages.flatMap(message => message.parts))
+    .toContainEqual({ type: 'text', text: 'prepared input' })
+})
+
 test('异步输入预处理持有接纳预留，重复 Turn 不会重复执行附件副作用', async () => {
   const entered = Promise.withResolvers<void>()
   const release = Promise.withResolvers<void>()

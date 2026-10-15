@@ -272,14 +272,14 @@ export class AgentServer {
     }
     const engine = AgentEngine.create({ [agent.id]: agent }, {
       ...this._options.engine,
-      restoreModel: config => Promise.resolve(this._options.model({ ...target, frozenConfig: config, signal: this._lifetime.signal })),
+      restoreModel: config => this._options.model({ ...target, frozenConfig: config, signal: this._lifetime.signal }),
       onRuntimeEvent: (_agentId, event) => emit(event),
     })
     try {
       await engine.recoverWorkspace({
         agentId: agent.id,
         store: workspace.store,
-        resolveThreadLocation: ({ id, dir }) => Promise.resolve(workspace.resolveLocation({ threadId: id, dir })),
+        threadLocation: ({ id, dir }) => workspace.location({ threadId: id, dir }),
       })
       return { target, workspace, agent, engine, events, emit }
     }
@@ -306,7 +306,7 @@ export class AgentServer {
   }
 
   private async _location(scope: Scope, threadId: string, record?: RuntimeThreadRecord) {
-    const location = await scope.workspace.resolveLocation({ threadId, dir: record?.dir })
+    const location = await scope.workspace.location({ threadId, dir: record?.dir })
     if (location.workspaceId !== scope.target.workspaceId || (record && location.dir !== record.dir))
       throw new Error('宿主返回的位置与线程工作区或持久化目录不一致')
     return location
@@ -359,13 +359,21 @@ export class AgentServer {
       turnId: input.turnId,
       model,
       location,
-      input: () => Promise.resolve(this._options.prepareInput
-        ? this._options.prepareInput(input.input, { ...scope.target, threadId: input.threadId, location, store: scope.workspace.store })
-        : input.input.map((part): TurnInputPart => {
-            if (part.type === 'document')
-              throw new ORPCError('BAD_REQUEST', { message: '文档输入需要宿主提供 prepareInput' })
-            return part
-          })),
+      input: () => {
+        if (this._options.prepareInput) {
+          return this._options.prepareInput(input.input, {
+            ...scope.target,
+            threadId: input.threadId,
+            location,
+            store: scope.workspace.store,
+          })
+        }
+        return input.input.map((part): TurnInputPart => {
+          if (part.type === 'document')
+            throw new ORPCError('BAD_REQUEST', { message: '文档输入需要宿主提供 prepareInput' })
+          return part
+        })
+      },
       onRuntimeEvent: scope.emit,
       approvalMode: input.approvalMode,
       subagentMode: input.subagentMode,

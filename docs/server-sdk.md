@@ -14,7 +14,7 @@ const server = AgentServer.create({
   agents: { writer: agent },
   workspace: async ({ agentId, workspaceId, signal }) => ({
     store: await getStore(agentId, workspaceId, signal),
-    resolveLocation: ({ threadId, dir }) => getThreadLocation(workspaceId, threadId, dir),
+    location: ({ threadId, dir }) => getThreadLocation(workspaceId, threadId, dir),
   }),
   model: ({ modelId, frozenConfig, signal }) => frozenConfig
     ? restoreModel(frozenConfig, signal)
@@ -34,7 +34,7 @@ Server 为每个 Agent / 工作区保留独立 Engine 和事件回放窗口。�
 
 RuntimeStore 应属于一个工作区，不能把同一个实例挂到不同工作区 ID。多个 Agent 可在同一工作区使用同一 Store，线程的固定 Agent 归属仍由 Server 与 Engine 检查。宿主应在工作区打开前完成自己的长期数据迁移
 
-`resolveLocation()` 接收已持久化的相对 `dir`，新线程没有该字段，由宿主决定初始位置。返回值使用现有 `ThreadLocation`，必须与目标工作区和已有目录一致。模型恢复必须使用 `frozenConfig`，不能因为默认模型或凭据配置发生变化而替换旧 Turn 的模型语义
+`location()` 接收已持久化的相对 `dir`，新线程没有该字段，由宿主决定初始位置。返回值使用现有 `ThreadLocation`，必须与目标工作区和已有目录一致。模型恢复必须使用 `frozenConfig`，不能因为默认模型或凭据配置发生变化而替换旧 Turn 的模型语义
 
 `authorize()` 在每个通过输入校验的 procedure 上执行，批处理中的调用分别授权。`input` 是已校验的请求，可用于限制 Agent、工作区或线程的访问范围。省略该回调表示宿主已在外层完成授权；`listen()` 默认只监听本机。浏览器跨域调用通过 `corsOrigins` 明确配置允许的 Origin
 

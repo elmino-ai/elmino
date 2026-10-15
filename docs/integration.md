@@ -42,6 +42,8 @@
 
 `TurnModel<ModelTurnConfig>` 仍由 `{ config, adapter }` 组成。`config.id/providerId` 是宿主稳定配置 ID，`config.name` 是 Provider 原生模型名称；`config` 只能保存可持久化的非敏感配置，凭据与 SDK 实例不进入运行快照。模型目录、配置升级、启停状态、目录同步与认证文件继续由旧宿主管理。
 
+宿主注入的 `subagentRoles()`、`restoreModel()`、`threadLocation()` 和 Turn 输入准备回调均支持直接返回结果或 Promise，无需手动包装 `Promise.resolve()`。
+
 新 Turn 由宿主解析当前模型；审批恢复由宿主读取原 Turn 的冻结配置再调用 `resume()`。Engine 的 `restoreModel(config)` 主要用于 queued 子线程重启恢复：宿主校验持久化配置、根据冻结 `providerId` 读取当前凭据并返回新的可调用实例，不能静默换成当前默认模型。
 
 这部分可以先独立替换：旧 Agent/Loop 暂时保留，先在旧模型服务边界使用 elmino 适配器，并检查实际消息协议与请求映射。不必同时切换数据库、事件和插件。
@@ -65,7 +67,7 @@ import { AgentEngine } from '@elmino/engine'
 const engine = AgentEngine.create(agents, {
   createRuntime,
   restoreModel,
-  resolveSubagentRoles,
+  subagentRoles,
   acquireWorkspace,
   onRuntimeEvent,
 })
