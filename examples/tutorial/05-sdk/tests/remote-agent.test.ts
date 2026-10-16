@@ -1,14 +1,14 @@
 /**
- * Tutorial 04 验收：只作为远程客户端连接 Tutorial 03，验证订阅、工具输出与最终快照
+ * Tutorial 05 验收：只作为远程客户端连接 Tutorial 04，验证订阅、工具输出与最终快照
  *
- * 模型和服务端资源仍由 03-server 的入口装配；本文件不创建引擎、不访问数据库
+ * 模型和服务端资源仍由 04-server 的入口装配；本文件不创建引擎、不访问数据库
  * 不加载 .env，也不连接真实模型，所有请求都通过本机 HTTP / SSE 完成
  */
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { afterEach, expect, onTestFinished, test, vi } from 'vitest'
-import { createExampleServer } from '../../03-server/src/app/run'
+import { createExampleServer } from '../../04-server/src/app/run'
 import { createModel, response } from '../../../../packages/engine/tests/support/model'
 import { runRemoteTask } from '../src/app/run'
 

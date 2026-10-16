@@ -91,19 +91,28 @@ pnpm example:full-agent
 
 完整版会实时打印可见思考与回复，并展示最终状态、线程 ID、Turn ID 和文件内容。两种用法的对照见 [Basic Agent 示例指南](docs/basic-agent.md)
 
-需要通过 HTTP 提供 Agent 时，运行第三个 [Server 教程](docs/server-example.md)。先配置它自己的模型凭据和可选访问 Key：
+需要在应用内注册 Agent、模型和工作区并复用执行资源时，先运行第三个 [Elmino 教程](docs/elmino-example.md)：
 
 ```sh
-cp examples/tutorial/03-server/.env.example examples/tutorial/03-server/.env
+cp examples/tutorial/03-elmino/.env.example examples/tutorial/03-elmino/.env
+pnpm example:elmino
+```
+
+在它自己的 `.env` 中填写模型密钥。教程直接调用 `elmino.run()`，在同一线程完成两轮并查询持久化结果，最后关闭应用实例
+
+需要通过 HTTP 提供 Agent 时，运行第四个 [Server 教程](docs/server-example.md)。先配置它自己的模型凭据和可选访问 Key：
+
+```sh
+cp examples/tutorial/04-server/.env.example examples/tutorial/04-server/.env
 pnpm example:server
 ```
 
 默认服务地址为 `http://127.0.0.1:3000`。Server 常驻等待请求，运行记录保存在它自己的 `.elmino`，重启继续复用；在这个终端按 `Ctrl+C` 关闭服务和 Elmino
 
-第四个 [SDK 教程](docs/sdk-example.md) 只负责连接与远程调用。在另一个终端配置它自己的 Server 地址；服务端设置了访问 Key 时，再填写相同值：
+第五个 [SDK 教程](docs/sdk-example.md) 只负责连接与远程调用。在另一个终端配置它自己的 Server 地址；服务端设置了访问 Key 时，再填写相同值：
 
 ```sh
-cp examples/tutorial/04-sdk/.env.example examples/tutorial/04-sdk/.env
+cp examples/tutorial/05-sdk/.env.example examples/tutorial/05-sdk/.env
 pnpm example:sdk
 ```
 
@@ -119,8 +128,9 @@ Server 启动后，可打开 [http://127.0.0.1:3000/api/docs](http://127.0.0.1:3
 | --- | --- | --- | --- |
 | Tutorial | [01-basic-agent](examples/tutorial/01-basic-agent) | 最少参数，完成一次任务 | `pnpm example:basic-agent` |
 | Tutorial | [02-full-agent](examples/tutorial/02-full-agent) | 单次运行的可选配置、实时输出与结果处理 | `pnpm example:full-agent` |
-| Tutorial | [03-server](examples/tutorial/03-server) | 注册 Agent、装配模型与存储、启动常驻 HTTP 服务 | `pnpm example:server` |
-| Tutorial | [04-sdk](examples/tutorial/04-sdk) | 连接服务、订阅事件、提交任务与读取结果 | `pnpm example:sdk` |
+| Tutorial | [03-elmino](examples/tutorial/03-elmino) | 定义应用实例、同线程两轮、查询结果与关闭资源 | `pnpm example:elmino` |
+| Tutorial | [04-server](examples/tutorial/04-server) | 注册 Agent、装配模型与存储、启动常驻 HTTP 服务 | `pnpm example:server` |
+| Tutorial | [05-sdk](examples/tutorial/05-sdk) | 连接服务、订阅事件、提交任务与读取结果 | `pnpm example:sdk` |
 | Reference | [agent-engine](examples/reference/agent-engine) | 多轮、审批恢复与引擎资源管理 | `pnpm example:agent-engine` |
 | Reference | [agent-hooks](examples/reference/agent-hooks) | 上下文、工具策略与 Turn 清理 | `pnpm example:agent-hooks` |
 | Reference | [turn-control](examples/reference/turn-control) | 运行中引导与中断 | `pnpm example:turn-control` |
@@ -177,7 +187,7 @@ console.log(result.status, result.message)
 
 `tools`、`runtime` 与 `model` 来自上表中的示例模块；调用前创建项目目录。`sqliteStore()` 只定义配置，首次运行才打开 SQLite，并自动配置本地文件内容存储。工作区 ID 对应宿主持有的存储作用域；入口自动生成 Thread 和 Turn ID，将字符串转为文本输入，等待执行结算并释放 Engine。返回值包含 `threadId`、`turnId`、`workspaceId`、持久化 `status`、可选的助手 `message` 与失败原因 `errorMessage`。配置方式由入口在 Engine 结束后释放存储；也可以传入自行创建的 `RuntimeStore` 实例，其关闭仍由应用负责
 
-每次 `runAgent()` 都创建独立线程。审批等待会返回 `interrupted`，Loop 已结算的执行失败返回 `failed` 和原因；入口异常、取消和关闭错误继续抛出。需要多轮会话、接纳后立即返回、后台调度或审批恢复时，使用 `AgentEngine`，见 [高级用法参考](docs/agent-engine.md)
+每次 `runAgent()` 都创建独立线程。审批等待会返回 `interrupted`，Loop 已结算的执行失败返回 `failed` 和原因；入口异常、取消和关闭错误继续抛出。需要在应用内注册 Agent、模型和工作区并复用执行资源时，使用 `defineElmino()` 与 `elmino.run()`，见 [Elmino 教程](docs/elmino-example.md)。需要直接管理底层调度、多轮和审批恢复时，使用 `AgentEngine`，见 [高级用法参考](docs/agent-engine.md)
 
 ### 高级参考：AgentEngine
 
@@ -258,7 +268,7 @@ pnpm example:agent-engine
 - [x] 独立 Elmino 应用实例，模型注册与共享执行，可接入多个 Server
 - [x] API 契约、可注入 Server 和纯客户端 SDK，支持事件回放与审批恢复
 - [x] OpenAPI 定义与 Scalar 交互文档，REST 与 SDK 共用宿主鉴权
-- [x] 独立 `03-server` 与 `04-sdk` 教程，各自配置环境与启动入口；覆盖真实 TCP 断网回放与 Server 重建恢复测试
+- [x] 按 Elmino 本地应用、Server 服务端、SDK 客户端顺序组织独立教程，各自配置环境与启动入口；覆盖真实 TCP 断网回放与 Server 重建恢复测试
 - [x] Ubuntu / macOS CI，覆盖构建、类型、测试、迁移与公开包的仓库外交付验收
 
 ### 近期
@@ -302,7 +312,8 @@ pnpm verify:packages
 - [子智能体](docs/subagents.md)：宿主服务、角色、派生与等待
 - [Basic Agent 示例](docs/basic-agent.md)：真实模型配置、源码导航与运行说明
 - [请求与事件协议](docs/transport.md)：独立请求入口、跨端 Schema 与后续远程调用边界
-- [Elmino 应用实例](docs/elmino.md)：应用装配、本地执行与资源所有权
+- [Elmino 教程](docs/elmino-example.md)：注册 Agent、本地执行、读取线程与关闭实例
+- [Elmino 应用实例](docs/elmino.md)：模型选择、动态工作区与资源所有权
 - [Server 与 SDK](docs/server-sdk.md)：远程调用、资源注入与重连恢复
 - [Server 教程](docs/server-example.md)：Agent 注册、模型与持久化装配、常驻服务和 API 文档
 - [SDK 教程](docs/sdk-example.md)：独立客户端、事件订阅、远程调用与结果查询

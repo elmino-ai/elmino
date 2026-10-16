@@ -62,7 +62,7 @@
 - 使用 `interface` 表达对象结构，联合与工具类型使用 `type`
 - 类型检查、构建和测试脚本随真实源码与测试落地，不声明空测试命令
 - 能力测试归所属包 `tests`；只运行本轮相关文件的 ESLint、类型检查和测试
-- Server 与 SDK 教程分别归 examples/tutorial/03-server 和 examples/tutorial/04-sdk，各自以 src/index.ts 启动并维护自己的环境文件；SDK 教程生产代码仅连接已存在服务，模型和存储装配归 Server 教程
+- Elmino、Server 与 SDK 教程依次归 examples/tutorial/03-elmino、examples/tutorial/04-server 和 examples/tutorial/05-sdk，各自以 src/index.ts 启动并维护自己的环境文件；Elmino 教程讲本地应用实例，Server 教程讲 HTTP 接入，SDK 教程生产代码仅连接已存在服务
 - 根目录交付测试按 `tests/<能力>/consumer.ts` 组织，入口归 `tests/runner`，跨领域验收辅助代码归 `tests/support`；消费样例使用真实 TypeScript 文件，不通过字符串生成源码
 - 核心重构完成后按命名与出口、依赖与所有权、完整生命周期链路进行三轮复查
 - 修复问题应定位设计源头，完成每批次后清理重复实现和残留入口

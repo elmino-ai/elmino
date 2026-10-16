@@ -6,15 +6,15 @@
 | --- | --- | --- |
 | 完成一次任务 | `runAgent()` | [Basic Agent](../examples/tutorial/01-basic-agent) |
 | 配置实时输出、超时和执行模式 | `runAgent()` 可选参数 | [Full Agent](../examples/tutorial/02-full-agent) |
-| 应用内复用 Agent、模型和工作区 | `defineElmino()` / `elmino.run()` | [应用实例](elmino.md) |
-| 提供常驻 HTTP 服务 | `defineServer()` | [Server](../examples/tutorial/03-server) |
-| 连接远程 Agent 并订阅事件 | `Client.create()` | [SDK](../examples/tutorial/04-sdk) |
+| 应用内复用 Agent、模型和工作区 | `defineElmino()` / `elmino.run()` | [Elmino](../examples/tutorial/03-elmino) |
+| 提供常驻 HTTP 服务 | `defineServer()` | [Server](../examples/tutorial/04-server) |
+| 连接远程 Agent 并订阅事件 | `Client.create()` | [SDK](../examples/tutorial/05-sdk) |
 | 保留线程并管理多轮、审批恢复 | `AgentEngine` | [引擎参考](../examples/reference/agent-engine) |
 | 注入上下文、改写工具参数与释放 Turn 资源 | `AgentHooks` | [Hooks 参考](../examples/reference/agent-hooks) |
 | 向运行中的任务补充要求或中断它 | `engine.steer()` / `engine.interrupt()` | [运行控制参考](../examples/reference/turn-control) |
 | 显式委派子任务并等待结果 | 工具中的 `subagentHostService` | [子智能体参考](../examples/reference/subagents) |
 
-Tutorial 按顺序学习，Reference 按能力查阅。第三方框架、平台或服务的接入示例归 `integration`，不把框架自身的 API 用法放入该分类
+Tutorial 按 Basic Agent → Full Agent → Elmino → Server → SDK 的顺序学习；[Elmino 教程](elmino-example.md) 先讲本地应用实例，再引入 HTTP 与远程客户端。Reference 按能力查阅。第三方框架、平台或服务的接入示例归 `integration`，不把框架自身的 API 用法放入该分类
 
 ## 定义行为
 

@@ -1,15 +1,15 @@
-# 04 · SDK
+# 05 · SDK
 
-第四个教程使用独立客户端调用已经运行的 Server：建立连接、订阅事件、提交任务、等待终态、读取持久化结果，最后取消订阅并退出。这里不创建 Agent、不连接模型，也不打开服务端存储
+第五个教程使用独立客户端调用已经运行的 Server：建立连接、订阅事件、提交任务、等待终态、读取持久化结果，最后取消订阅并退出。这里不创建 Agent、不连接模型，也不打开服务端存储
 
-示例位于 `examples/tutorial/04-sdk`，私有工作区包名为 `@example/sdk`。请先完成 [03 · Server](server-example.md)，在另一个终端保持 `pnpm example:server` 运行
+示例位于 `examples/tutorial/05-sdk`，私有工作区包名为 `@example/sdk`。请先完成 [04 · Server](server-example.md)，在另一个终端保持 `pnpm example:server` 运行
 
 ## 配置客户端
 
 在仓库根目录执行：
 
 ```sh
-cp examples/tutorial/04-sdk/.env.example examples/tutorial/04-sdk/.env
+cp examples/tutorial/05-sdk/.env.example examples/tutorial/05-sdk/.env
 ```
 
 本例只有两个连接配置：
@@ -34,7 +34,7 @@ ELMINO_SERVER_KEY=
 pnpm example:sdk
 ```
 
-命令先构建所需能力包，再启动 `@example/sdk`。也可以在依赖已经构建后，进入 `examples/tutorial/04-sdk` 执行 `pnpm start`
+命令先构建所需能力包，再启动 `@example/sdk`。也可以在依赖已经构建后，进入 `examples/tutorial/05-sdk` 执行 `pnpm start`
 
 客户端提交任务，请服务端 Agent 读取当前时间，打印模型提供的可见思考、工具结果与回复，然后查询保存的线程并打印运行状态。输出正文和时间以真实模型返回为准：
 
@@ -51,7 +51,7 @@ pnpm example:sdk
 
 ## 阅读调用流程
 
-先看 [client/client.ts](../examples/tutorial/04-sdk/src/client/client.ts) 中的连接配置，再看 [app/run.ts](../examples/tutorial/04-sdk/src/app/run.ts) 的远程执行流程。SDK 通过公开入口创建：
+先看 [client/client.ts](../examples/tutorial/05-sdk/src/client/client.ts) 中的连接配置，再看 [app/run.ts](../examples/tutorial/05-sdk/src/app/run.ts) 的远程执行流程。SDK 通过公开入口创建：
 
 ```ts
 import { Client } from '@elmino/sdk'
@@ -108,8 +108,8 @@ SDK 自动重连事件订阅。收到 `stream.reset` 时，说明不能只靠当
 
 | 想了解什么 | 文件 |
 | --- | --- |
-| 启动与入口错误处理 | [src/index.ts](../examples/tutorial/04-sdk/src/index.ts) |
-| 仅客户端所属的连接配置 | [client/client.ts](../examples/tutorial/04-sdk/src/client/client.ts) |
-| 订阅、提交、快照恢复、结果查询与取消 | [app/run.ts](../examples/tutorial/04-sdk/src/app/run.ts) |
+| 启动与入口错误处理 | [src/index.ts](../examples/tutorial/05-sdk/src/index.ts) |
+| 仅客户端所属的连接配置 | [client/client.ts](../examples/tutorial/05-sdk/src/client/client.ts) |
+| 订阅、提交、快照恢复、结果查询与取消 | [app/run.ts](../examples/tutorial/05-sdk/src/app/run.ts) |
 
 完整 API、事件回放与鉴权配置见 [Server 与 SDK 指南](server-sdk.md)，协议与游标边界见 [请求与事件协议](transport.md)

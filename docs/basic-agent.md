@@ -73,4 +73,4 @@ const result = await runAgent({
 pnpm exec turbo run typecheck --filter=@example/basic-agent --filter=@example/full-agent
 ```
 
-远程调用继续阅读 [Server 教程](server-example.md) 与 [SDK 教程](sdk-example.md)，旧宿主接入见 [接入清单](integration.md)，工程命令见 [开发指南](contributing.md)
+应用内复用 Agent、模型与工作区时，先阅读 [Elmino 教程](elmino-example.md)；远程调用继续阅读 [Server 教程](server-example.md) 与 [SDK 教程](sdk-example.md)，旧宿主接入见 [接入清单](integration.md)，工程命令见 [开发指南](contributing.md)

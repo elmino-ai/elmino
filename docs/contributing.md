@@ -98,9 +98,11 @@ pnpm --filter @elmino/store-sqlite db:generate
 
 示例需要本地配置时，在自身根目录放置 `.env` 与不含密钥的 `.env.example`，通过自己的启动命令加载 `.env`。真实 `.env` 由根 `.gitignore` 忽略，不在源码中写入密钥，也不跨示例共享环境文件
 
-[03-server](server-example.md) 只负责服务端：在 `examples/tutorial/03-server/.env` 填写 `DEEPSEEK_API_KEY`，可选配置 `ELMINO_SERVER_KEY`，从根目录执行 `pnpm example:server`。Server、SQLite 与模型在所属入口读取配置，默认监听 `127.0.0.1:3000`，启动不会调用模型；数据默认保存在示例自己的 `.elmino`。按 `Ctrl+C` 由示例宿主统一关闭 Server 与 Elmino，等待 Store 租约释放。私有工作区包名为 `@example/server`
+[03-elmino](elmino-example.md) 讲本地应用实例：在 `examples/tutorial/03-elmino/.env` 配置模型，可选设置 `ELMINO_DATA_DIR`，从根目录执行 `pnpm example:elmino`。用 `defineElmino()` 注册 Agent、模型与工作区，再通过 `await elmino.run()` 在同一线程完成两轮，查询线程后在 `finally` 中关闭实例。私有工作区包名为 `@example/elmino`
 
-[04-sdk](sdk-example.md) 只负责客户端：先保持 Server 运行，再配置 `examples/tutorial/04-sdk/.env` 中的 `ELMINO_SERVER_URL` 与可选 `ELMINO_SERVER_KEY`，从另一个终端执行 `pnpm example:sdk`。它不读取模型、监听或存储配置，任务完成后自行退出，Server 继续运行。私有工作区包名为 `@example/sdk`。依赖已构建时，两者也可在各自示例目录执行 `pnpm start`，各自加载自己的 `.env`
+[04-server](server-example.md) 只负责服务端：在 `examples/tutorial/04-server/.env` 填写 `DEEPSEEK_API_KEY`，可选配置 `ELMINO_SERVER_KEY`，从根目录执行 `pnpm example:server`。Server、SQLite 与模型在所属入口读取配置，默认监听 `127.0.0.1:3000`，启动不会调用模型；数据默认保存在示例自己的 `.elmino`。按 `Ctrl+C` 由示例宿主统一关闭 Server 与 Elmino，等待 Store 租约释放。私有工作区包名为 `@example/server`
+
+[05-sdk](sdk-example.md) 只负责客户端：先保持 Server 运行，再配置 `examples/tutorial/05-sdk/.env` 中的 `ELMINO_SERVER_URL` 与可选 `ELMINO_SERVER_KEY`，从另一个终端执行 `pnpm example:sdk`。它不读取模型、监听或存储配置，任务完成后自行退出，Server 继续运行。私有工作区包名为 `@example/sdk`。依赖已构建时，两者也可在各自示例目录执行 `pnpm start`，各自加载自己的 `.env`
 
 [AgentEngine](agent-engine.md) 归 `reference`，展示生命周期 API：同线程多轮、显式管理 Engine 和 Store、工具审批与同进程引擎重建后的恢复。运行命令为 `pnpm example:agent-engine`，模型配置来自自己的 `.env`。
 

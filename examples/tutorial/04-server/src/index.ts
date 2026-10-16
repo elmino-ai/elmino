@@ -1,5 +1,5 @@
 /**
- * Tutorial 03 · 启动 Agent Server
+ * Tutorial 04 · 启动 Agent Server
  *
  * 学习目标：装配 Agent、模型和存储，启动服务并查看 API 文档
  * 运行：在仓库根执行 pnpm example:server

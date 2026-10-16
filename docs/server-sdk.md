@@ -2,7 +2,7 @@
 
 `@elmino/api` 定义远程调用契约，`@elmino/server` 使用 Hono 承载 HTTP 路由、中间件与 CORS，oRPC 处理 API 契约、REST、RPC 与 OpenAPI。`@elmino/sdk` 提供 Node.js 与浏览器均可使用的客户端。它们复用现有 AgentEngine、RuntimeStore 和 Thread，不另起执行器
 
-可运行教程按职责拆开：[03 · Server](server-example.md) 注册 Agent、连接真实 DeepSeek 并启动常驻服务；[04 · SDK](sdk-example.md) 通过独立客户端订阅事件、提交任务与查询持久化结果。两者各有自己的 `.env` 和启动入口
+先通过 [03 · Elmino](elmino-example.md) 学习本地应用实例。远程调用教程按职责拆开：[04 · Server](server-example.md) 注册 Agent、连接真实 DeepSeek 并启动常驻服务；[05 · SDK](sdk-example.md) 通过独立客户端订阅事件、提交任务与查询持久化结果。两者各有自己的 `.env` 和启动入口
 
 ## 装配 Server
 

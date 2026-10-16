@@ -1,0 +1,32 @@
+{
+  "name": "@example/elmino",
+  "type": "module",
+  "private": true,
+  "description": "定义 Elmino 应用、注册 Agent 与模型、复用线程并查询运行记录",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env --import tsx src/index.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@elmino/agent": "workspace:^",
+    "@elmino/core": "workspace:^",
+    "@elmino/llm": "workspace:^",
+    "@elmino/llm-anthropic": "workspace:^",
+    "@elmino/local": "workspace:^",
+    "@elmino/runtime": "workspace:^",
+    "@elmino/sandbox-local": "workspace:^",
+    "@elmino/schema": "workspace:^",
+    "@elmino/shared": "workspace:^",
+    "@elmino/store-sqlite": "workspace:^",
+    "@elmino/tool": "workspace:^",
+    "@t3-oss/env-core": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

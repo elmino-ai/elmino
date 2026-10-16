@@ -2,6 +2,8 @@
 
 `@elmino/core` 提供 `defineElmino()`，注册 Agent、模型和工作区，管理共享 Engine 与存储租约。实例可以直接用于本地执行，也可以传给一个或多个 Server。核心不依赖 Hono、oRPC、SDK 或具体数据库实现
 
+可运行入门见 [03 · Elmino 教程](elmino-example.md)：直接本地执行并查询线程；完成后再学习 [04 · Server](server-example.md) 与 [05 · SDK](sdk-example.md)
+
 ## 定义与调用
 
 ```ts

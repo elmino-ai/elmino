@@ -1,5 +1,5 @@
 /**
- * Tutorial 04 · SDK 客户端入口：先运行 03-server，再执行 pnpm example:sdk
+ * Tutorial 05 · SDK 客户端入口：先运行 04-server，再执行 pnpm example:sdk
  *
  * 连接配置来自当前示例 .env；客户端使用 ELMINO_SERVER_KEY，这个例子只需服务地址和访问凭据
  * 完成一次远程任务后客户端退出，Server 会继续等待后续请求

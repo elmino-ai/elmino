@@ -1,5 +1,5 @@
 /**
- * Tutorial 04 · SDK 客户端阅读路线：连接 → 订阅 → 提交任务 → 等待终态 → 查询快照 → 退出
+ * Tutorial 05 · SDK 客户端阅读路线：连接 → 订阅 → 提交任务 → 等待终态 → 查询快照 → 退出
  *
  * 先在另一个终端启动 pnpm example:server，再执行 pnpm example:sdk
  * 客户端通过 HTTP 调用 Server，只有 Server 需要连接模型；客户端不创建 AgentEngine
