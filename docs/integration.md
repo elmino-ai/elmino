@@ -81,7 +81,7 @@ await execution.completed
 
 上面的变量由宿主装配，完整运行示例见 [01-basic-agent](../examples/tutorial/01-basic-agent)。`accepted` 表示输入和启动事实已经持久化，`completed` 表示本次执行与结算结束；HTTP 宿主可在接纳后返回，继续通过事件观察执行。`resume(request, store)` 恢复原 interrupted Turn，`submit(request, store)` 提交已经持久化的后台任务。
 
-`AgentEngineOptions` 的实际名称仍为 **`onRuntimeEvent`**，不是此前讨论草案中的 `onEvent`。全局回调签名是 `(agentId, event)`；请求也可提供 `(event)` 回调。宿主应按实际入口接线，避免同一个事件被两路重复发布。框架不会创建 SSE Hub、重放缓冲或 HTTP 路由。
+`AgentEngineOptions` 的实际名称仍为 **`onRuntimeEvent`**，不是此前讨论草案中的 `onEvent`。全局回调签名是 `(agentId, event)`；请求也可提供 `(event)` 回调。宿主应按实际入口接线，避免同一个事件被两路重复发布。Engine 不创建 SSE Hub、重放缓冲或 HTTP 路由；这些能力由可选的 Server 提供，共享应用资源由 `@elmino/core` 的 Elmino 持有。
 
 ### 插件是整体接入前的主要适配点
 
@@ -116,7 +116,7 @@ await execution.completed
 | 大正文和二进制 | `@elmino/store/local` 的 `LocalBlobStore.create({ rootDir, files? })`，或自定义 `BlobStore` | 默认使用 Node 文件系统，注入文件能力时满足 `BlobFiles`；内容存储可以与数据库实现分别替换 |
 | 环境与 Shell | `@elmino/local` 的 `LocalEnv/loadUserEnv/resolveLocalShell` | 通用能力可单独替换，产品目录、Shell 偏好设置和应用层变量来源留在宿主 |
 
-简单接入 `runAgent` 或 Server 固定工作区时，可传 `sqliteStore({ dataDir })` 配置，由入口借用存储并在 Engine 结束后释放。同一数据目录的并发调用复用同一个配置对象；高级装配仍可直接传入 `RuntimeStore`，自行管理所有权。
+简单接入 `runAgent` 或 Elmino 固定工作区时，可传 `sqliteStore({ dataDir })` 配置；`runAgent` 在本次执行结束后释放租约，Elmino 则持有到实例关闭。同一数据目录的并发调用复用同一个配置对象；高级装配仍可直接传入 `RuntimeStore`，自行管理所有权。
 
 旧 `AgentResources.getRuntimeStore()` 通过临时 Runtime 的 `.store()` 取得存储，接入时应改为宿主直接组合 SQLite 与 BlobStore。同一数据库目录共享调用方必须使用同一个 BlobStore 实例，创建方拥有关闭权；Engine 关闭线程 Runtime，不替宿主关闭传入的共享 Store。
 

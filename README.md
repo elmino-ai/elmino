@@ -91,21 +91,25 @@ pnpm example:full-agent
 
 完整版会实时打印可见思考与回复，并展示最终状态、线程 ID、Turn ID 和文件内容。两种用法的对照见 [Basic Agent 示例指南](docs/basic-agent.md)
 
-需要通过 HTTP 调用 Agent 时，使用第三个 [Server / SDK 示例](docs/server-sdk-example.md)：在 `examples/tutorial/03-server-sdk/.env` 中填写模型凭据与 `SERVER_KEY`，然后在两个终端分别运行：
+需要通过 HTTP 提供 Agent 时，运行第三个 [Server 教程](docs/server-example.md)。先配置它自己的模型凭据和可选访问 Key：
 
 ```sh
-# 终端一：启动常驻 Server，默认 http://127.0.0.1:3000
-pnpm example:server-sdk
+cp examples/tutorial/03-server/.env.example examples/tutorial/03-server/.env
+pnpm example:server
 ```
+
+默认服务地址为 `http://127.0.0.1:3000`。Server 常驻等待请求，运行记录保存在它自己的 `.elmino`，重启继续复用；在这个终端按 `Ctrl+C` 关闭服务和 Elmino
+
+第四个 [SDK 教程](docs/sdk-example.md) 只负责连接与远程调用。在另一个终端配置它自己的 Server 地址；服务端设置了访问 Key 时，再填写相同值：
 
 ```sh
-# 终端二：通过 SDK 提交任务并打印思考、工具结果与回复
-pnpm example:server-sdk:client
+cp examples/tutorial/04-sdk/.env.example examples/tutorial/04-sdk/.env
+pnpm example:sdk
 ```
 
-客户端完成后退出，Server 继续运行；在 Server 终端按 `Ctrl+C` 关闭服务。运行数据默认保存在示例目录下的 `.elmino`，重启时复用
+客户端打印思考、工具结果与回复，查询持久化状态后退出。它不需要模型密钥或存储配置，也不会关闭 Server
 
-Server 启动后，可打开 [http://127.0.0.1:3000/api/docs](http://127.0.0.1:3000/api/docs) 浏览和调试 API；在 Scalar 的 Bearer 认证中填写示例的 `SERVER_KEY`。OpenAPI 定义位于 `/api/spec.json`，SDK 仍使用 `/rpc`
+Server 启动后，可打开 [http://127.0.0.1:3000/api/docs](http://127.0.0.1:3000/api/docs) 浏览和调试 API；配置了访问 Key 时，在 Scalar 的 Bearer 认证中填写示例的 `ELMINO_SERVER_KEY`；未配置时可直接调用。OpenAPI 定义位于 `/api/spec.json`，SDK 仍使用 `/rpc`
 
 ## 如何使用
 
@@ -115,7 +119,8 @@ Server 启动后，可打开 [http://127.0.0.1:3000/api/docs](http://127.0.0.1:3
 | --- | --- | --- | --- |
 | Tutorial | [01-basic-agent](examples/tutorial/01-basic-agent) | 最少参数，完成一次任务 | `pnpm example:basic-agent` |
 | Tutorial | [02-full-agent](examples/tutorial/02-full-agent) | 单次运行的可选配置、实时输出与结果处理 | `pnpm example:full-agent` |
-| Tutorial | [03-server-sdk](examples/tutorial/03-server-sdk) | 常驻服务与远程客户端 | `pnpm example:server-sdk` |
+| Tutorial | [03-server](examples/tutorial/03-server) | 注册 Agent、装配模型与存储、启动常驻 HTTP 服务 | `pnpm example:server` |
+| Tutorial | [04-sdk](examples/tutorial/04-sdk) | 连接服务、订阅事件、提交任务与读取结果 | `pnpm example:sdk` |
 | Reference | [agent-engine](examples/reference/agent-engine) | 多轮、审批恢复与引擎资源管理 | `pnpm example:agent-engine` |
 | Reference | [agent-hooks](examples/reference/agent-hooks) | 上下文、工具策略与 Turn 清理 | `pnpm example:agent-hooks` |
 | Reference | [turn-control](examples/reference/turn-control) | 运行中引导与中断 | `pnpm example:turn-control` |
@@ -193,10 +198,11 @@ pnpm example:agent-engine
 
 ## 包与扩展
 
-20 个能力包按职责拆分，各自声明依赖和公开入口，不要求应用把所有包都直接引入。使用 Agent 的应用通常直接组合 `agent`、`engine`、模型适配器，以及所需的存储和执行环境
+22 个能力包按职责拆分，各自声明依赖和公开入口，不要求应用把所有包都直接引入。使用 Agent 的应用通常直接组合 `agent`、`engine`、模型适配器，以及所需的存储和执行环境
 
 | 包 | 职责 |
 | --- | --- |
+| [`@elmino/core`](packages/core) | Elmino 应用实例，注册 Agent 与模型，管理工作区和共享执行 |
 | [`@elmino/agent`](packages/agent) | Agent 定义，装配工具、Hooks、Loop、Thread 和 Runtime |
 | [`@elmino/engine`](packages/engine) | 执行调度、生命周期、中断恢复与子智能体协调 |
 | [`@elmino/loop`](packages/loop) | 单轮模型采样、工具执行、上下文管理与审批 |
@@ -212,15 +218,16 @@ pnpm example:agent-engine
 | [`@elmino/sandbox-local`](packages/sandbox-local) | 本地文件、Shell、PTY 和进程执行 |
 | [`@elmino/local`](packages/local) | 本机环境、Shell 选择与程序探测 |
 | [`@elmino/shared`](packages/shared) | 跨包复用的通用工具与类型 |
+| [`@elmino/schema`](packages/schema) | 通用字符串、HTTP 地址、来源与端口校验，独立于业务和环境加载 |
 | [`@elmino/request`](packages/request) | 动态 Header、HTTP 错误与 `/orpc` 请求入口 |
 | [`@elmino/protocol`](packages/protocol) | 跨端事件、线程快照校验、序列化与恢复游标 |
 | [`@elmino/api`](packages/api) | Agent、Thread、Turn 与事件流的类型化接口契约 |
-| [`@elmino/server`](packages/server) | 可直接 start 的 Agent 服务，也可嵌入 Fetch 宿主，提供 REST 与 Scalar 文档 |
+| [`@elmino/server`](packages/server) | 基于 Hono 的 Agent 服务，可直接 start 或嵌入 Fetch 宿主，提供 REST 与 Scalar 文档 |
 | [`@elmino/sdk`](packages/sdk) | Node.js / 浏览器客户端，支持订阅、重连与取消 |
 
 请求与协议的调用方式、旧包取舍及下一批边界见 [请求与事件协议](docs/transport.md)
 
-远程调用、宿主注入与生命周期见 [Server 与 SDK 指南](docs/server-sdk.md)
+应用装配、本地调用与共享资源见 [Elmino 应用实例](docs/elmino.md)。远程调用、宿主注入与生命周期见 [Server 与 SDK 指南](docs/server-sdk.md)
 
 需要替换能力时，可以从这些边界接入：
 
@@ -248,9 +255,10 @@ pnpm example:agent-engine
 - [x] 模块独立构建、类型声明、Changesets 和仓库外 tarball 验收
 - [x] 首个真实模型示例，支持独立环境配置、思考与正文输出
 - [x] 通用请求层与跨端事件协议，支持独立入口及浏览器构建验收
+- [x] 独立 Elmino 应用实例，模型注册与共享执行，可接入多个 Server
 - [x] API 契约、可注入 Server 和纯客户端 SDK，支持事件回放与审批恢复
 - [x] OpenAPI 定义与 Scalar 交互文档，REST 与 SDK 共用宿主鉴权
-- [x] `03-server-sdk` 真实模型示例，以及真实 TCP 断网回放与 Server 重建恢复测试
+- [x] 独立 `03-server` 与 `04-sdk` 教程，各自配置环境与启动入口；覆盖真实 TCP 断网回放与 Server 重建恢复测试
 - [x] Ubuntu / macOS CI，覆盖构建、类型、测试、迁移与公开包的仓库外交付验收
 
 ### 近期
@@ -294,8 +302,10 @@ pnpm verify:packages
 - [子智能体](docs/subagents.md)：宿主服务、角色、派生与等待
 - [Basic Agent 示例](docs/basic-agent.md)：真实模型配置、源码导航与运行说明
 - [请求与事件协议](docs/transport.md)：独立请求入口、跨端 Schema 与后续远程调用边界
+- [Elmino 应用实例](docs/elmino.md)：应用装配、本地执行与资源所有权
 - [Server 与 SDK](docs/server-sdk.md)：远程调用、资源注入与重连恢复
-- [Server / SDK 示例](docs/server-sdk-example.md)：常驻 Server、独立 SDK 客户端与环境配置
+- [Server 教程](docs/server-example.md)：Agent 注册、模型与持久化装配、常驻服务和 API 文档
+- [SDK 教程](docs/sdk-example.md)：独立客户端、事件订阅、远程调用与结果查询
 - [AgentEngine 高级参考](docs/agent-engine.md)：线程多轮对话、审批恢复与引擎生命周期
 - [已有宿主接入清单](docs/integration.md)：接口差异、资源所有权与数据保留
 - [开发约定](AGENTS.md)：能力边界与代码规则

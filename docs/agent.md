@@ -6,7 +6,9 @@
 | --- | --- | --- |
 | 完成一次任务 | `runAgent()` | [Basic Agent](../examples/tutorial/01-basic-agent) |
 | 配置实时输出、超时和执行模式 | `runAgent()` 可选参数 | [Full Agent](../examples/tutorial/02-full-agent) |
-| 通过 HTTP / SDK 调用 | `defineServer()` / `Client.create()` | [Server / SDK](../examples/tutorial/03-server-sdk) |
+| 应用内复用 Agent、模型和工作区 | `defineElmino()` / `elmino.run()` | [应用实例](elmino.md) |
+| 提供常驻 HTTP 服务 | `defineServer()` | [Server](../examples/tutorial/03-server) |
+| 连接远程 Agent 并订阅事件 | `Client.create()` | [SDK](../examples/tutorial/04-sdk) |
 | 保留线程并管理多轮、审批恢复 | `AgentEngine` | [引擎参考](../examples/reference/agent-engine) |
 | 注入上下文、改写工具参数与释放 Turn 资源 | `AgentHooks` | [Hooks 参考](../examples/reference/agent-hooks) |
 | 向运行中的任务补充要求或中断它 | `engine.steer()` / `engine.interrupt()` | [运行控制参考](../examples/reference/turn-control) |
@@ -87,11 +89,11 @@ Runtime 定义通过 `runtime.create()` 取得位置，创建当前线程所需 
 | 存储接入方式 | 创建与释放 |
 | --- | --- |
 | `runAgent({ store: sqliteStore({ dataDir }) })` | 入口按需借用，Engine 关闭后释放 |
-| Server 固定工作区配置 `sqliteStore({ dataDir })` | 首次访问时借用，Server 关闭后释放 |
+| Elmino 固定工作区配置 `sqliteStore({ dataDir })` | 首次访问时借用，Elmino 关闭后释放 |
 | 直接传入 `RuntimeStore` 实例 | 由宿主创建与关闭 |
 | `const lease = await sqliteStore({ dataDir })()` | 宿主显式借用，Engine 结束后调用 `lease.release()` |
 
-同一数据目录的并发调用应复用同一个 `sqliteStore` 配置对象，最后一个借用者释放时才关闭。`BlobStore` 与 `RuntimeStore` 仍可分别替换；文件写入等外部操作不会随数据库事务回滚
+`sqliteStore()` 可省略参数，依次采用显式 `dataDir`、环境变量 `ELMINO_DATA_DIR`、定义时当前目录下的 `.elmino`；定义不会创建目录或打开数据库。同一数据目录的并发调用应复用同一个 `sqliteStore` 配置对象，最后一个借用者释放时才关闭。`BlobStore` 与 `RuntimeStore` 仍可分别替换；文件写入等外部操作不会随数据库事务回滚
 
 ## 状态、事件与后续控制
 

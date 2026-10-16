@@ -24,13 +24,16 @@
 - `llm-openai` 与 `llm-anthropic` 分别持有对应消息协议的适配器和厂商差异
 - Provider 原生字段只留在适配器边界，内部工具调用统一使用 `args`
 - `shared` 持有实际跨包复用的纯工具和通用类型，领域类型留在实际拥有该能力的包，不整包复制产品共用代码
+- `schema` 是仅依赖 Zod 的通用字段规则叶子包，不设置环境默认值或加载配置；领域 ID Schema 归 protocol，接口结构与文档说明归 api，不为共用校验把 shared 基础工具绑定到 Zod
 - `local` 持有本机环境快照、登录环境加载、程序探测与 Shell 选择，复用 `sandbox` 的环境契约；目录、认证、模型配置和应用控制数据归宿主。命令与环境加载共用进程清理，环境刷新不改变已创建 Runtime 的快照
 - `store` 持有 RuntimeStore、BlobStore、运行记录和持久化线程数据契约；本地 BlobStore 从 `/local` 引入，默认使用 Node 文件系统，也可注入 BlobFiles；基础入口不加载 Node 实现
-- `store-sqlite` 持有 SqliteStore、Drizzle 仓储与运行数据库迁移，提供 `sqliteStore({ dataDir })` 延迟配置，默认在其下使用 database 与 blobs；不持有产品 control.db、工作区控制目录或 UI 默认文案
+- `store-sqlite` 持有 SqliteStore、Drizzle 仓储与运行数据库迁移，提供 `sqliteStore()` 延迟配置，目录优先显式 dataDir，其次 ELMINO_DATA_DIR，再次定义时 cwd 下的 .elmino，默认在其下使用 database 与 blobs；不持有产品 control.db、工作区控制目录或 UI 默认文案
 - `engine` 持有 Agent 调度与执行生命周期，执行实体按 `Thread -> Turn -> Step -> ToolInvocation` 组织；`loop` 持有单轮执行，`agent` 装配工具、Hooks、Loop、Thread 和 Runtime，插件体系暂不迁入
 - 模型解析、持久化、运行环境与事件处理通过实际能力契约注入，避免内核依赖具体应用
 - `request` 持有通用 Fetch 与独立 oRPC 子入口；`protocol` 持有跨端 Schema、事件 JSON 和游标语法，复用 `thread` / `store` 的领域类型，事件定义与工厂仍归 `thread/events`；连接、回放队列和重连分别归 Server / SDK
-- `api` 持有远程调用契约，`server` 装配宿主资源与 Engine、回放及 HTTP 生命周期，`sdk` 持有纯客户端调用与重连；账号、模型目录、工作区管理及 React 状态不迁入。Server 关闭自己的 Engine 与事件流，配置提供器借出的 Store 租约在 Engine 与事件流结束后释放；直接传入或工作区回调返回的 Store 仍由宿主关闭
+- `core` 通过 defineElmino 装配 Agent、模型、工作区与共享 Engine，持有执行和配置 Store 租约；`api` 持有远程契约，`server` 借用 Elmino，只拥有 HTTP 与自己的回放和订阅，`sdk` 持有纯客户端调用与重连。关闭 Server 不关闭 Elmino；创建方分别关闭两者。Elmino 在 Engine 和观察结束后释放租约，直接传入或动态工作区返回的 Store 仍由宿主关闭；账号、产品模型目录、工作区管理及 React 状态不迁入
+- Server 的 HTTP 路由、中间件、CORS 与错误响应使用 Hono，协议和逐项授权仍归 oRPC；宿主通过 `http(app)` 同步扩展中间件与自定义路由，所有请求共用关闭门禁与请求结算
+- Server 与 SQLite 在各自配置入口使用 `@t3-oss/env-core` 读取所属环境变量，框架变量统一使用 `ELMINO_` 前缀，供应商已有前缀（如 `DEEPSEEK_`）保留；显式参数优先，空环境值按缺省处理；读取使用独立快照，不修改 process.env、不自动加载环境文件；Core 和浏览器 SDK 不承担服务端环境配置
 - 产品预设、品牌、账号、市场、遥测上报和 UI 不进入内核
 - elmino 不反向依赖宿主应用；应用通过公开包接入框架，接入后清理自身重复实现
 - 不为目录对称预建空包、空文件、一次性封装、重复状态或薄转发层
@@ -59,6 +62,7 @@
 - 使用 `interface` 表达对象结构，联合与工具类型使用 `type`
 - 类型检查、构建和测试脚本随真实源码与测试落地，不声明空测试命令
 - 能力测试归所属包 `tests`；只运行本轮相关文件的 ESLint、类型检查和测试
+- Server 与 SDK 教程分别归 examples/tutorial/03-server 和 examples/tutorial/04-sdk，各自以 src/index.ts 启动并维护自己的环境文件；SDK 教程生产代码仅连接已存在服务，模型和存储装配归 Server 教程
 - 根目录交付测试按 `tests/<能力>/consumer.ts` 组织，入口归 `tests/runner`，跨领域验收辅助代码归 `tests/support`；消费样例使用真实 TypeScript 文件，不通过字符串生成源码
 - 核心重构完成后按命名与出口、依赖与所有权、完整生命周期链路进行三轮复查
 - 修复问题应定位设计源头，完成每批次后清理重复实现和残留入口

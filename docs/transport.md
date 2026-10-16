@@ -1,11 +1,12 @@
 # 请求与事件协议
 
-通用请求和事件传输能力可以独立使用，也被 `@elmino/api`、`@elmino/server` 和 `@elmino/sdk` 复用。完整远程装配见 [Server 与 SDK](server-sdk.md)
+通用请求和事件传输能力可以独立使用，也被 `@elmino/api`、`@elmino/server` 和 `@elmino/sdk` 复用。完整远程装配见 [Server 与 SDK](server-sdk.md)，独立运行入口分别见 [Server 教程](server-example.md) 与 [SDK 教程](sdk-example.md)
 
 ## 包的职责
 
 | 包或入口 | 职责 |
 | --- | --- |
+| `@elmino/schema` | 无业务依赖的字符串、HTTP 地址、精确来源与端口字段校验 |
 | `@elmino/request` | 绑定基础地址、动态默认 Header、标准 Fetch 和 HTTP 错误解析 |
 | `@elmino/request/orpc` | 将上述传输接入类型化 oRPC，控制批处理范围 |
 | `@elmino/protocol` | 校验跨端事件、线程快照和控制消息，处理 JSON 与事件流游标 |
@@ -14,6 +15,29 @@
 模型消息继续归 `llm`，持久化契约继续归 `store`，线程与执行事件类型继续归 `thread`。`protocol` 引用这些类型，定义外部传输边界的 Schema，不把内核改为依赖 HTTP 或 SDK
 
 旧 `protocol` 中的账号、模型目录、工作区管理、产品设置和 UI 状态没有迁入。这些能力不属于通用 Agent 引擎。宿主自己的 Agent、模型和工作区配置键不强制使用旧产品的 ID 格式；内核生成的 Thread、Turn、Message、Tool、Interrupt 和 Event ID 继续在外部边界校验 UUID v4
+
+## Schema 的归属与组合
+
+通用字段从 `@elmino/schema` 引入，默认值与输入转换由实际入口决定：
+
+```ts
+import { HttpUrlSchema, PortSchema, TrimmedStringSchema } from '@elmino/schema'
+import { z } from 'zod'
+
+const connectionSchema = z.object({
+  url: HttpUrlSchema,
+  hostname: TrimmedStringSchema.default('127.0.0.1'),
+  port: z.coerce.number().pipe(PortSchema).default(3000),
+})
+```
+
+`PortSchema` 只接受数值端口 1–65535；监听时需要允许系统分配端口，改用 `ListenPortSchema` 接受 0。`HttpUrlSchema` 接受 HTTP / HTTPS 地址，`HttpOriginSchema` 要求精确浏览器来源，不接受路径、末尾斜杠或凭据；逗号列表的解析仍留在环境配置入口
+
+`NonBlankStringSchema` 拒绝空白但保留原文，适合宿主配置键；`TrimmedStringSchema` 明确裁剪首尾空白，适合允许归一化的配置。不能为了减少代码把消息或身份字段自动 trim，也不把工具名、注册键与内核 ID 混成一类
+
+Thread、Turn、Message、Interrupt 等领域 ID 从 `@elmino/protocol` 的具名 Schema 引入，仍沿用各自的前缀和 UUID 规则。API 复用这些字段组成 strict 请求对象，并通过最终 Schema 推导类型。复用 `.shape` 时需要保留对象的 strict、refinement 与 catchall 约束，不能只复制字段而丢掉边界语义
+
+`/api/docs` 的接口说明来自契约 `route.description`，字段说明和示例来自 Schema 的 `.describe()`、`.meta({ examples })`。代码 JSDoc 供源码阅读，不会自动生成接口字段说明。自定义 JSON 与消息片段的文档结构仍由领域 Schema 提供，Server 只合并调用场景添加的说明与示例；不会单独维护第二份请求结构
 
 ## 使用请求层
 
@@ -116,4 +140,4 @@ Server 负责回放与 `reset`，SDK 在回调处理成功后推进游标，并�
 
 ## 上层调用
 
-`api` 契约引用这些 Schema，Server 注入模型、Store、Runtime 与鉴权，纯 SDK 复用请求层并处理事件重连。审批恢复、断线重连与 Server 重建沿用持久化执行事实，详情见 [Server 与 SDK 指南](server-sdk.md)
+`api` 契约引用这些 Schema，Elmino 装配模型、Store 与 Runtime，Server 借用实例并提供鉴权，纯 SDK 复用请求层并处理事件重连。审批恢复、断线重连与 Server 重建沿用持久化执行事实，详情见 [Server 与 SDK 指南](server-sdk.md)

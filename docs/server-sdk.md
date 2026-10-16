@@ -1,65 +1,111 @@
 # Server 与 SDK
 
-`@elmino/api` 定义远程调用契约，`@elmino/server` 提供标准 Fetch 服务，`@elmino/sdk` 提供 Node.js 与浏览器均可使用的客户端。它们复用现有 AgentEngine、RuntimeStore 和 Thread，不另起执行器
+`@elmino/api` 定义远程调用契约，`@elmino/server` 使用 Hono 承载 HTTP 路由、中间件与 CORS，oRPC 处理 API 契约、REST、RPC 与 OpenAPI。`@elmino/sdk` 提供 Node.js 与浏览器均可使用的客户端。它们复用现有 AgentEngine、RuntimeStore 和 Thread，不另起执行器
 
-可运行代码见 [03-server-sdk 示例](server-sdk-example.md)，通过真实 DeepSeek 演示订阅、工具执行与持久化查询
+可运行教程按职责拆开：[03 · Server](server-example.md) 注册 Agent、连接真实 DeepSeek 并启动常驻服务；[04 · SDK](sdk-example.md) 通过独立客户端订阅事件、提交任务与查询持久化结果。两者各有自己的 `.env` 和启动入口
 
 ## 装配 Server
 
+先定义应用实例，再把它交给 Server。模型、Agent、工作区和执行默认值归 Elmino，网络配置归 Server：
+
 ```ts
+import { defineElmino } from '@elmino/core'
 import { defineServer } from '@elmino/server'
 import { sqliteStore } from '@elmino/store-sqlite'
 
-const server = defineServer({
+const elmino = defineElmino({
   agents: { writer: agent },
+  models: { deepseek: ({ frozenConfig }) => createModel(frozenConfig) },
   workspace: {
     id: 'my-workspace',
     rootDir: './workspace',
-    store: sqliteStore({ dataDir: './.elmino' }),
+    store: sqliteStore(),
   },
-  model: ({ frozenConfig }) => createModel(frozenConfig),
-  apiKey: accessToken,
 })
-
+const server = defineServer({ elmino })
 const url = await server.start()
 console.log(url)
 ```
 
-`agent` 是 `defineAgent()` 的结果；`sqliteStore()` 定义 SQLite 与本地文件内容存储，首次访问工作区才打开数据库，Server 关闭时自动释放。项目目录由宿主准备。`createModel()` 是宿主的模型工厂：新任务返回当前模型，恢复时按 `frozenConfig` 重建原模型并注入凭据
+`agent` 来自 `defineAgent()`；模型工厂返回的 `config.id` 应与注册键 `deepseek` 一致。恢复时按 `frozenConfig` 重建原模型并注入凭据。项目目录由宿主准备；首次访问才打开数据库，直到 `elmino.close()` 才释放存储租约。实例也能通过 `elmino.getAgent()` 和 `elmino.run()` 在本地使用，详见 [Elmino 应用实例](elmino.md)
 
-`defineServer()` 定义服务，随后调用 `await server.start()` 就能常驻运行，无需额外引入 HTTP 适配器。默认地址为 `http://127.0.0.1:3000`，返回值是实际监听地址；`port: 0` 可分配临时端口。首次 `start()` 确定配置，重复调用复用同一个监听，关闭后需要重新 `defineServer()` 才能启动
+`defineServer()` 默认使用 Hono，`await server.start()` 直接常驻监听，无需额外配置 HTTP 适配器。默认地址为 `http://127.0.0.1:3000`，返回实际监听地址；`port: 0` 可分配临时端口。首次 `start()` 确定配置，重复调用复用监听，关闭后重新定义 Server 即可继续接入同一个 Elmino
 
-固定工作区只需传 `id`、`rootDir` 和 `store`：相对根目录在定义 Server 时转为绝对路径，新线程从根目录执行，已有线程沿用持久化的相对目录。它只接纳配置的工作区 ID，目录归属为 `project`
-
-需要多工作区、远程执行位置或自定义身份鉴权时，使用回调配置：
+需要多工作区、动态模型目录和自定义鉴权时，分别配置：
 
 ```ts
-const server = defineServer({
+const elmino = defineElmino({
   agents: { writer: agent },
   workspace: async ({ agentId, workspaceId, signal }) => ({
     store: await getStore(agentId, workspaceId, signal),
     location: ({ threadId, dir }) => getThreadLocation(workspaceId, threadId, dir),
   }),
-  model: ({ modelId, frozenConfig, signal }) => frozenConfig
+  models: ({ modelId, frozenConfig, signal }) => frozenConfig
     ? restoreModel(frozenConfig, signal)
     : getModel(modelId, signal),
+  onError: error => console.error('执行错误', error),
+})
+const server = defineServer({
+  elmino,
   authorize: ({ request, input, path }) => authorizeRequest(request, path, input),
-  onError: error => console.error(error),
+  onError: error => console.error('HTTP 错误', error),
   apiReference: { title: 'Writer API', version: '1.0.0' },
 })
 ```
 
-示例中的模型、存储、位置与身份函数均由宿主提供。凭据、模型目录、用户身份与工作区根目录不从 HTTP 请求传入
+示例中的模型、存储、位置与身份函数由宿主提供。凭据、模型目录、用户身份与工作区根目录不从 HTTP 请求传入。Elmino 持有每个 Agent / 工作区的唯一 Engine，首次打开作用域时恢复运行事实；多个 Server 共享这份执行。各 Server 只维护自己的事件回放窗口
 
-Server 为每个 Agent / 工作区保留独立 Engine 和事件回放窗口。首次访问时调用 `recoverWorkspace()` 校准上次进程遗留的执行状态，并恢复可重新排队的子任务。资源解析失败不会缓存失败结果，后续请求可以重试；同一作用域在 Server 生命周期内复用同一个 Store
+`RuntimeStore` 属于稳定工作区，动态回调返回的 Store 由宿主关闭。固定工作区的路径校验、模型选择顺序、冻结配置、执行默认值与附件预处理 `prepareInput()` 详见 [应用装配](elmino.md)
 
-RuntimeStore 应属于一个工作区，不能把同一个实例挂到不同工作区 ID。多个 Agent 可在同一工作区使用同一 Store，线程的固定 Agent 归属仍由 Server 与 Engine 检查。宿主应在工作区打开前完成自己的长期数据迁移
+`apiKey` 对应 SDK 的同名字段，用于固定 Bearer 凭据校验；省略时读取 `ELMINO_SERVER_KEY`，两者均未配置则不启用固定凭据。显式 `apiKey: null` 可禁用环境凭据，空字符串仍视为错误。`authorize()` 在每个通过输入校验的 procedure 上执行，批处理中的调用分别授权。`input` 是已校验的请求，可用于限制 Agent、工作区或线程的访问范围。同时配置时先通过 `apiKey`，再执行资源授权；`authorize` 省略且没有有效 Key 时，框架不执行身份校验。`start()` 默认只监听本机，浏览器跨域通过 `corsOrigins` 明确配置允许的 Origin
 
-`location()` 接收已持久化的相对 `dir`，新线程没有该字段，由宿主决定初始位置。返回值使用现有 `ThreadLocation`，必须与目标工作区和已有目录一致。模型恢复必须使用 `frozenConfig`，不能因为默认模型或凭据配置发生变化而替换旧 Turn 的模型语义
+## 环境变量与覆盖
 
-`apiKey` 对应 SDK 的同名字段，用于固定 Bearer 凭据校验，不允许空字符串。`authorize()` 在每个通过输入校验的 procedure 上执行，批处理中的调用分别授权。`input` 是已校验的请求，可用于限制 Agent、工作区或线程的访问范围。同时配置时必须先通过 `apiKey` 检查，再通过 `authorize()` 的资源授权；两项均省略表示宿主已在外层完成授权；`start()` 默认只监听本机。浏览器跨域调用通过 `corsOrigins` 明确配置允许的 Origin
+入口使用 `@t3-oss/env-core` 校验自己消费的环境变量，优先级为显式参数 > 环境变量 > 默认值。无需在应用中逐层转发：
 
-文本、引用和原始图片可以直接进入 Engine。文档解析或图片压缩由可选的 `prepareInput()` 完成，返回 `TurnInputPart[]`；它在 Engine 的入口预留期间执行，避免重复请求提前产生文档产物。省略时文档请求会被拒绝，图片按原始内容发送
+| 所属入口 | 环境变量 | 缺省行为 |
+| --- | --- | --- |
+| `defineServer()` | `ELMINO_SERVER_KEY` | 不启用固定 Bearer 凭据 |
+| `defineServer()` | `ELMINO_CORS_ORIGINS` | 不开放浏览器跨域；有值时按逗号拆分完整 Origin |
+| `server.start()` | `ELMINO_HOST` / `ELMINO_PORT` | `127.0.0.1:3000`，端口 `0` 表示随机端口 |
+| `sqliteStore()` | `ELMINO_DATA_DIR` | 定义时当前目录下的 `.elmino` |
+
+授权与 CORS 在定义实例时捕获，监听参数在首次 `start()` 时捕获，SQLite 目录在定义提供器时固定。之后修改环境不会改变已配置的实例。环境空字符串或空白视为未配置，值无效时在对应入口报错；被显式参数覆盖的环境值不参与校验
+
+`apiKey: null`、`corsOrigins: []` 可显式关闭对应环境配置，`port: 0` 可覆盖环境端口。实例读取不修改 `process.env`，也不会自行搜索或加载 `.env`；文件加载由 Node 启动命令或宿主负责
+
+SDK 浏览器入口不读取服务端环境或凭据。Node SDK 教程只在自己的入口读取 `ELMINO_SERVER_URL` 与可选 `ELMINO_SERVER_KEY`；连接地址默认 `http://127.0.0.1:3000`，不读取模型、存储或 Server 监听参数
+
+## 扩展 Hono
+
+普通服务定义后直接 `start()`。需要自定义接口或中间件时，通过可选的 `http(app)` 使用真实的 Hono API：
+
+```ts
+const server = defineServer({
+  elmino,
+  http(app) {
+    // 同步注册中间件；处理请求的回调可以异步执行
+    app.use('*', async (context, next) => {
+      await next()
+      context.header('X-App', 'writer')
+    })
+    // 自定义接口使用独立前缀，避免覆盖框架的 /api 与 /rpc
+    app.get('/host/info', context => context.json({ name: 'writer-service' }))
+  },
+})
+
+await server.start()
+```
+
+`http(app)` 在定义 Server 时执行一次，用于同步注册 `use()`、`get()`、`post()`、`route()` 等 Hono 能力；不要在其中异步打开存储或启动监听。它先于内置 API 注册，所以宿主中间件可以覆盖 REST、RPC、文档与事件订阅
+
+框架的 CORS 与关闭门禁在宿主中间件之前执行。`corsOrigins` 使用 Hono 的 CORS 中间件和默认 HTTP 方法集合，同时作用于内置 API 与自定义接口；未配置时不开放跨域。预检不会进入业务鉴权，实际 API 请求继续按 oRPC procedure 分别检查权限，包括 batch 中的每一项
+
+需要自定义允许的请求头、暴露头或 Cookie 策略时，配置 `corsOrigins: []` 关闭内置环境配置，在 `http(app)` 中自行注册 [Hono CORS 中间件](https://hono.dev/docs/middleware/builtin/cors)，由宿主管理完整跨域配置
+
+`apiKey` 与 `authorize()` 约束框架 API；自定义接口的身份和资源授权由宿主 Hono 中间件负责。宿主可以调用 `app.onError()` 定义 HTTP 错误响应；默认处理器通过 `onError` 报告未处理异常并返回通用 500 响应，不暴露异常详情
+
+自定义请求与内置 API 共用生命周期：关闭后新的业务请求返回 503；`server.close()` 结束自己的事件流、等待已进入的请求并关闭端口；共享 Engine 与存储仍归 Elmino。自定义长请求与流的结束由宿主负责；嵌入外部 HTTP 宿主时，还需关闭宿主自己的监听与连接
 
 ## HTTP 与交互文档
 
@@ -73,18 +119,20 @@ RuntimeStore 应属于一个工作区，不能把同一个实例挂到不同工�
 | `GET /api/agents` | 已注册的 Agent 说明 |
 | `GET /api/events` | 运行事件流，需要指定 Agent 和工作区 |
 
-文档与定义默认可直接访问，只展示静态接口结构，不包含运行数据或凭据。REST 业务接口与 `/rpc` 共用同一个宿主 `authorize()`；在 Scalar 的 Bearer 认证中填写自己的访问凭据后即可调试。运行示例时填写 `.env` 中的 `SERVER_KEY`
+文档与定义默认可直接访问，只展示静态接口结构，不包含运行数据或凭据。REST 业务接口与 `/rpc` 共用同一个宿主 `authorize()`；配置了固定 Key 时，在 Scalar 的 Bearer 认证中填写自己的访问凭据。示例填写 `.env` 中的 `ELMINO_SERVER_KEY`；未配置时无需填写。自定义 `authorize` 或外层宿主使用其他身份机制时，按其规则提供身份
 
 例如，通过 REST 检查示例服务：
 
 ```sh
-curl -H 'Authorization: Bearer <SERVER_KEY>' \
+curl -H 'Authorization: Bearer <ELMINO_SERVER_KEY>' \
   http://127.0.0.1:3000/api/health
 ```
 
-将 `<SERVER_KEY>` 替换为自己的访问凭据，成功时返回 `{"status":"ok"}`。浏览文档和健康检查不会调用模型；提交任务才会进入 Agent 执行
+配置固定 Key 时，将 `<ELMINO_SERVER_KEY>` 替换为自己的访问凭据；示例未配置时可以省略 `-H` 参数。成功时返回 `{"status":"ok"}`。浏览文档和健康检查不会调用模型；提交任务才会进入 Agent 执行
 
 `apiReference` 不配置时使用标题 `Elmino API` 和版本 `0.0.0`；可像上面的装配示例一样设置 `title` 与 `version`。设置 `apiReference: false` 会同时关闭 `/api/docs` 和 `/api/spec.json`，REST 业务接口继续存在，并遵循原有鉴权
+
+Scalar 中会展示接口用途、字段约束、示例，以及创建与恢复的接纳语义。文档复用实际校验契约；无固定 Key 时不标记必需 Bearer，自定义 `authorize` 的身份规则在服务说明中标明由宿主决定。Schema 的复用与维护方式见 [请求与事件协议](transport.md#schema-的归属与组合)
 
 SDK 继续使用 `/rpc`，不需要因启用 REST 与文档而修改客户端配置
 
@@ -152,24 +200,23 @@ SDK 按顺序等待处理器，保持背压。取消订阅会取消当前请求�
 
 ```ts
 stop()
-await server.close()
+const results = await Promise.allSettled([server.close(), elmino.close()])
+throwSettledErrors(results, '关闭应用失败', true)
 ```
 
-独立服务只需调用一次 `server.close()`：拒绝新操作，通知尚未完成的宿主资源解析取消，等待已有入口与 Engine 结算，结束事件流并释放租约，然后关闭 HTTP 端口。即使某项资源释放失败，仍会继续关闭端口并报告错误。`close()` 可重复调用；宿主异步解析器需要遵守提供的 `signal` 或自行结束等待
+`throwSettledErrors` 从 `@elmino/shared` 导入。创建方分别关闭接入与应用实例：`server.close()` 拒绝新 HTTP 请求、结束自己的订阅、等待请求并关闭监听；`elmino.close()` 取消资源解析、结算执行、结束观察并释放存储配置租约。并行发起可让 Engine 取消解除尚未结束的请求，两者都等待完毕后再报告失败。关闭方法均可重复调用
 
-固定工作区使用 `sqliteStore({ dataDir })` 时，Server 在 Engine 与事件流结束后释放存储租约；同一配置供多个 Agent 或 Server 使用时，最后一个借用者退出才关闭数据库。并发使用同一数据目录应复用同一个配置对象。
+一个 Elmino 可以接入多个 Server。关闭其中一个不会中断任务或关闭数据库；另一个 Server 与本地调用继续使用同一份资源。Server 启动失败也只清理自身。Elmino 关闭后，尚未关闭的 Server 拒绝新的业务请求
 
-直接传入的 Store 实例，以及工作区回调返回的 Store，仍由宿主持有：先调用 `server.close()`，再调用 `store.close()`。初始化失败时先释放本次资源，再保留原请求错误；额外的清理错误通过 `onError` 报告。`start()` 失败会自动关闭本次服务并保留监听错误；若清理也失败，两类错误会一起报告
+固定工作区的 `sqliteStore({ dataDir })` 租约由 Elmino 释放；直接传入的 Store 实例与动态工作区返回的 Store 仍由宿主在 Elmino 关闭后自行关闭。同一数据目录的并发调用应复用同一个配置对象
 
-`start()` 默认处理 `SIGINT` / `SIGTERM`，因此按 Ctrl+C 时不必手写信号处理和资源释放。关闭完成后撤销注册的监听，不强制调用 `process.exit()`；清理失败会通过 `onError` 报告并把退出码设为 1。宿主还需关闭自己创建的其他资源。
-
-已有应用负责退出流程时，关闭自动信号处理：
+`start()` 默认的 `SIGINT` / `SIGTERM` 处理只关闭 Server。应用统一拥有 Elmino 和其他资源时，应关闭这项自动处理，自行协调退出；可运行示例已经提供完整流程：
 
 ```ts
-const url = await server.start({ port: 3000, shutdownSignals: false })
-// 应用决定退出时调用 await server.close()
+await server.start({ port: 3000, shutdownSignals: false })
+// 应用退出时等待 server.close() 与 elmino.close()
 ```
 
-嵌入 Hono 或其他 Fetch 宿主时，直接挂载 `request => server.fetch(request)`，无需调用 `start()`，也不会注册进程信号。宿主关闭自己的 HTTP 服务，并调用 `server.close()` 释放 Agent 执行资源。
+嵌入 Hono 或其他 Fetch 宿主时，挂载 `request => server.fetch(request)`，无需调用 `start()`，也不会注册信号。宿主关闭自己的监听，分别关闭 Server 与 Elmino
 
-高级接入仍可从 `@elmino/server/node` 引入 `listen({ server, port, hostname })`：默认随机端口，仅管理网络，不注册信号。它适合单独断开或重建网络而保持 Agent 运行的场景，需要调用方分别关闭 Server 和监听器。不要对同一服务同时使用独立 `listen()` 和 `start()`
+高级接入可从 `@elmino/server/node` 引入 `listen({ server, port, hostname })`：默认随机端口，仅管理网络，不注册信号。调用方分别关闭监听、Server 和 Elmino；不要对同一服务同时使用独立 `listen()` 和 `start()`
