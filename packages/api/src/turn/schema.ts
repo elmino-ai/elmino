@@ -56,17 +56,26 @@ export const ApiTurnResumeInputSchema = ApiTurnTargetSchema.extend({
   interruptId: InterruptIdSchema.describe('当前待处理交互中断的标识，必须与指定运行中的中断一致'),
   response: JsonValueSchema.describe('交互工具约定的 JSON 回复；审批时提交批准或拒绝决定，具体结构由交互类型定义').meta({ examples: [{ decisions: [{ type: 'approve', callId: 'native_tool_call_id' }] }] }),
 })
+/** 取消必须绑定原待处理交互，过期审批不能影响后来的执行 */
+export const ApiTurnCancelInputSchema = ApiTurnTargetSchema.extend({
+  interruptId: InterruptIdSchema.describe('仍待处理的交互中断标识，过期或已恢复时返回冲突'),
+  reason: z.string().describe('取消整个待处理任务的原因').optional(),
+})
+/** 停止指定活跃 Turn，原因用于持久化运行结果 */
 export const ApiTurnInterruptInputSchema = ApiTurnTargetSchema.extend({
   reason: z.string().describe('可选的中断原因，会记录在运行结果中').meta({ examples: ['用户停止任务'] }).optional(),
 })
+/** 在安全执行边界向同一 Turn 追加要求，不创建新的运行 */
 export const ApiTurnSteerInputSchema = ApiTurnTargetSchema.extend({
   text: NonBlankStringSchema.describe('向正在运行的 Agent 追加的引导文本，保留原始空白').meta({ examples: ['请先完成摘要，再继续分析'] }),
 })
+/** 返回已接纳引导的运行和消息身份，供客户端关联提交结果 */
 export const ApiTurnSteerResultSchema = z.object({
   turnId: TurnIdSchema,
   messageId: MessageIdSchema.describe('已接纳引导消息的标识'),
 })
 
+export type ApiTurnCancelInput = z.infer<typeof ApiTurnCancelInputSchema>
 export type ApiTurnCreateInput = z.infer<typeof ApiTurnCreateInputSchema>
 export type ApiTurnResumeInput = z.infer<typeof ApiTurnResumeInputSchema>
 export type ApiTurnInterruptInput = z.infer<typeof ApiTurnInterruptInputSchema>

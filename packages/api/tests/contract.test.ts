@@ -3,6 +3,7 @@ import {
   apiContract,
   ApiThreadListInputSchema,
   ApiThreadListResultSchema,
+  ApiTurnCancelInputSchema,
   ApiTurnCreateInputSchema,
   ApiTurnInterruptInputSchema,
   ApiTurnResumeInputSchema,
@@ -209,7 +210,7 @@ test('API 输出校验接受领域原始工具消息的可选 undefined，不把
   }).success).toBe(false)
 })
 
-test('HTTP 与 RPC 共用稳定契约，九条路由都有方法、摘要、说明和分类', () => {
+test('HTTP 与 RPC 共用稳定契约，所有路由都有方法、摘要、说明和分类', () => {
   const routes = Object.values(apiContract).flatMap(group => Object.values(group).map(value => value['~orpc'].route))
   expect(routes.map(route => [route.method, route.path])).toEqual([
     ['GET', '/health'],
@@ -218,6 +219,7 @@ test('HTTP 与 RPC 共用稳定契约，九条路由都有方法、摘要、说�
     ['GET', '/threads/{threadId}'],
     ['POST', '/threads/{threadId}/turns'],
     ['POST', '/threads/{threadId}/turns/{turnId}/resume'],
+    ['POST', '/threads/{threadId}/turns/{turnId}/cancel'],
     ['POST', '/threads/{threadId}/turns/{turnId}/interrupt'],
     ['POST', '/threads/{threadId}/turns/{turnId}/steer'],
     ['GET', '/events'],
@@ -237,4 +239,15 @@ test('通用非空 Schema 保留宿主配置键与引导原文，拒绝全空白
     expect(AgentWorkspaceTargetSchema.safeParse({ ...input, [field]: ' \t\n ' }).success).toBe(false)
   expect(ApiTurnCreateInputSchema.safeParse({ ...creating, modelId: ' \t ' }).success).toBe(false)
   expect(ApiTurnSteerInputSchema.parse({ ...target, turnId, text: '  保留原文  ' }).text).toBe('  保留原文  ')
+})
+
+test('取消待交互运行必须提交准确的原中断，禁止模型和审批回复注入', () => {
+  const request = { ...target, turnId, interruptId: createId('interrupt'), reason: '停止整个任务' }
+  expect(ApiTurnCancelInputSchema.parse(request)).toEqual(request)
+  expect(apiContract.turn.cancel['~orpc'].route).toMatchObject({
+    method: 'POST',
+    path: '/threads/{threadId}/turns/{turnId}/cancel',
+  })
+  for (const patch of [{ interruptId: undefined }, { interruptId: 'legacy' }, { response: {} }, { modelId: 'other' }])
+    expect(ApiTurnCancelInputSchema.safeParse({ ...request, ...patch }).success).toBe(false)
 })

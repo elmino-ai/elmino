@@ -138,51 +138,80 @@ SDK 继续使用 `/rpc`，不需要因启用 REST 与文档而修改客户端配
 
 ## 通过 SDK 调用
 
+普通应用先绑定会话，后续发送、审批和控制都复用同一身份：
+
 ```ts
 import { Client } from '@elmino/sdk'
-import { createId } from '@elmino/shared'
 
-const client = Client.create({
-  baseUrl: 'http://127.0.0.1:3000',
-  apiKey: accessToken,
+const client = Client.create({ baseUrl: 'http://127.0.0.1:3000' })
+const thread = client.thread({ agentId: 'writer', workspaceId: 'my-workspace' })
+const result = await thread.run('请完成当前任务', {
+  onText: delta => { process.stdout.write(delta) },
 })
-const target = { agentId: 'writer', workspaceId: 'my-workspace' }
-const threadId = createId('thread')
-const turnId = createId('turn')
 
+console.log(result.status, result.message)
+await thread.run('继续总结刚才的结果')
+```
+
+配置固定访问凭据时向 `Client.create()` 传入 `apiKey`，动态认证使用异步 `headers`，自定义宿主可注入 `fetch`。SDK 可在 Node.js 和浏览器使用；浏览器将输出回调接到页面状态
+
+`thread()` 不创建空会话，首次 `run()` 才持久化。SDK 分配缺省身份，等待事件连接就绪后只提交一次任务，观察终态并读取权威快照。结果包含 Agent、工作区、线程、Turn 身份，`status`、可选的本轮最后一条助手消息 `message`、完整 `thread`，以及待处理时的 `interaction`
+
+| 用户目标 | 入口 |
+| --- | --- |
+| 发送或继续聊天 | `thread.run(input, options?)` |
+| 启动并取得控制句柄 | `thread.start(input, options?)` |
+| 运行中补充要求、停止 | `task.steer(text)`、`task.interrupt(reason?)` |
+| 等待接纳或结束 | `task.accepted`、`task.completed` |
+| 批准、拒绝或分项处理工具 | `thread.approve()`、`thread.reject()`、`thread.respond()` |
+| 恢复其他自定义交互 | `thread.resume(interaction, response, options?)` |
+| 取消整个待处理任务 | `thread.cancel(interaction, reason?, options?)` |
+| 刷新后重新观察既有执行 | `thread.attach(turnId, options?)` |
+| 历史查询与实时状态 | `thread.get()`、`thread.watch(listener, options?)` |
+| 服务探活、Agent 和线程列表 | `client.health()`、`client.listAgents()`、`client.listThreads()` |
+
+`run()` 与 `start()` 的可选配置包括服务端模型键 `modelId`、`approvalMode`、`subagentMode`、正文 / 思考 / 工具 / 事件回调以及本地等待 `signal`。恢复与重新观察不接受模型或权限覆盖。一次性调用仍可使用 `client.run({ agentId, workspaceId, input, ... })`，它复用同一个执行生命周期
+
+执行结果 `status` 为 `completed`、`failed`、`cancelled` 或 `interrupted`；鉴权、请求与回调异常通过 Promise 拒绝返回。没有默认等待期限，`signal` 和 `task.detach()` 只结束本地观察，不自动停止远端任务，也不自动重试提交。停止活跃执行使用 `interrupt()`，取消待交互的整个任务使用 `cancel()`
+
+输出回调只处理目标 Turn 的助手增量，断线或 reset 后通过快照补齐。`watch()` 为实时界面维护线程状态，同一 Client 的高级会话操作共享所属 Agent / 工作区的事件连接；每个观察者独立释放。完整调用与边界见 [SDK 运行控制](sdk-control.md)，最简单的真实模型调用见 [05 · SDK](sdk-example.md)
+
+## 高级 RPC 与事件订阅
+
+需要自行投影工作区事件或接入原始接口时，保留类型化的 `client.rpc` 与 `client.subscribe()`：
+
+```ts
+const target = { agentId: 'writer', workspaceId: 'my-workspace' }
 const stop = client.subscribe(target, {
   onEvent: event => applyEvent(event),
   onReset: async () => reloadPersistedThreads(target),
+  onConnected: () => console.log('事件连接已就绪'),
   onError: error => console.error('连接暂时中断', error),
 })
 
-const thread = await client.rpc.turn.create({
-  ...target,
-  threadId,
-  turnId,
-  input: [{ type: 'text', text: '请完成当前任务' }],
-})
+// 不再观察时释放订阅；不会取消服务端任务
+stop()
 ```
 
-`accessToken`、`applyEvent` 和 `reloadPersistedThreads` 由应用提供。可以使用异步 `headers` 代替固定 `apiKey`，以及注入自定义 `fetch`。所有具体方法直接通过类型化的 `client.rpc` 调用，不重复维护一套转发方法
-
-订阅可以先于线程创建，只传 Agent / 工作区目标；指定 `threadId` 时，Server 要求该线程已经存在。首次订阅会收到 `stream.reset`，应用应在 `onReset` 中重新读取持久化数据；不维护本地状态、只观察后续事件的调用方可以省略该回调
-
-`turn.create()` 在输入与启动事实已持久化后返回线程快照，不等待模型完成。HTTP 请求结束或调用 `stop()` 取消订阅不会停止任务；模型或工具稍后的失败通过事件和持久状态体现
+`applyEvent` 与 `reloadPersistedThreads` 由宿主提供。订阅可以先于线程创建，只传 Agent / 工作区目标；指定 `threadId` 时，Server 要求该线程已经存在。首次订阅会收到 `stream.reset`，应用应在 `onReset` 中重新读取持久化数据；只观察后续事件的调用方可以省略该回调。`onConnected` 在每次连接就绪并完成必要的 reset 处理后调用
 
 | 调用 | 用途 |
 | --- | --- |
+| `client.run({ agentId, workspaceId, input, ... })` | 提交一次任务并等待终态与最终快照 |
 | `rpc.meta.health({})` | 检查服务是否可访问 |
 | `rpc.agent.list({})` | 读取注册的 Agent |
 | `rpc.thread.list({ agentId, workspaceId, limit?, archived? })` | 读取轻量线程列表，返回 `items` 与 `hasMore` |
 | `rpc.thread.get({ agentId, workspaceId, threadId })` | 读取完整持久化投影与当前流式内容 |
-| `rpc.turn.create({ ...target, threadId, turnId, input, ... })` | 提交新任务，可同时创建线程 |
+| `rpc.turn.create({ ...target, threadId, turnId, input, ... })` | 提交新任务，可同时创建线程；返回仅表示已接纳 |
 | `rpc.turn.resume({ ...target, threadId, turnId, interruptId, response })` | 恢复原中断，不覆盖冻结模型或权限 |
+| `rpc.turn.cancel({ ...target, threadId, turnId, interruptId, reason? })` | 取消准确匹配的待交互运行，清除交互并固定取消终态 |
 | `rpc.turn.interrupt({ ...target, threadId, turnId, reason? })` | 中断指定的当前任务 |
 | `rpc.turn.steer({ ...target, threadId, turnId, text })` | 给指定活跃任务追加引导 |
 | `client.subscribe({ ...target, threadId? }, handlers)` | 订阅事实，返回取消订阅函数 |
 
-远程调用沿用引擎的运行控制语义：`turn.steer()` 只接纳到指定活跃 Turn，补充要求在 Step 边界消费；`turn.interrupt()` 中断准确的 `turnId`，不等同于取消事件订阅。目标已结束或正在结算时，引导可能被拒绝。直接操作引擎的可运行示例见 [运行控制](agent-control.md)
+与 `run()` 等待完成不同，底层 `turn.create()` 在输入与启动事实持久化后就返回线程快照。HTTP 请求结束或调用 `stop()` 取消订阅不会停止任务；模型或工具稍后的失败通过事件和持久状态体现
+
+远程调用沿用引擎的运行控制语义：`turn.steer()` 只接纳到指定活跃 Turn，补充要求在 Step 边界消费；`turn.interrupt()` 中断准确的 `turnId`。目标已结束或正在结算时，引导可能被拒绝。直接操作引擎的可运行示例见 [运行控制](agent-control.md)
 
 列表沿用 RuntimeStore 的稳定前缀语义：需要更多条目时增大 `limit`，不使用虚构的列表游标。返回的轻量列表不携带完整消息；查看线程时再调用 `thread.get()`
 
@@ -192,9 +221,9 @@ SDK 在事件处理成功后才确认 SSE 游标。`onEvent` 或 `onReset` 失�
 
 连接失败按有界指数退避重试，默认从 500 毫秒增长到 10 秒；可通过 `retry.initialDelayMs` 和 `retry.maxDelayMs` 调整。连续断线期间只通知一次 `onError`，观察器自身异常不会停止重连
 
-每次 Server 进程新建事件流都会更换流 ID。游标过期、重放窗口不足或 Server 重启后，客户端收到 `stream.reset`，由应用重新读取权威快照。回放队列默认保留 8 MiB 序列化事件，可通过 `eventBufferBytes` 调整；它是进程内缓存，持久化事实仍归 Store
+每次 Server 进程新建事件流都会更换流 ID。游标过期、重放窗口不足或 Server 重启后，客户端收到 `stream.reset`。`run()`、`attach()` 和 `watch()` 自动查询目标线程快照；使用底层 `subscribe()` 时由宿主在 `onReset` 中读取。回放队列默认保留 8 MiB 序列化事件，可通过 `eventBufferBytes` 调整；它是进程内缓存，持久化事实仍归 Store
 
-SDK 按顺序等待处理器，保持背压。取消订阅会取消当前请求、释放流读取器和重试计时器。SDK 不持有 React 状态、UI 缓存或额外线程副本
+SDK 按顺序等待处理器，保持背压。取消订阅会取消当前请求、释放流读取器和重试计时器。SDK 不持有 React 状态或 UI 缓存；执行句柄只在单次观察期间维护输出去重与完成判定所需状态，`watch()` 维护当前线程投影
 
 ## 关闭与所有权
 

@@ -13,6 +13,7 @@ export { ApiThreadListInputSchema, ApiThreadListResultSchema, threadContract } f
 export type { ApiThreadListInput, ApiThreadListResult } from './thread/contract'
 export { turnContract } from './turn/contract'
 export {
+  ApiTurnCancelInputSchema,
   ApiTurnCreateInputSchema,
   ApiTurnInterruptInputSchema,
   ApiTurnResumeInputSchema,
@@ -21,6 +22,7 @@ export {
   ThreadInputContentSchema,
 } from './turn/schema'
 export type {
+  ApiTurnCancelInput,
   ApiTurnCreateInput,
   ApiTurnInterruptInput,
   ApiTurnResumeInput,

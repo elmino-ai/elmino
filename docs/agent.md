@@ -8,7 +8,7 @@
 | 配置实时输出、超时和执行模式 | `runAgent()` 可选参数 | [Full Agent](../examples/tutorial/02-full-agent) |
 | 应用内复用 Agent、模型和工作区 | `defineElmino()` / `elmino.run()` | [Elmino](../examples/tutorial/03-elmino) |
 | 提供常驻 HTTP 服务 | `defineServer()` | [Server](../examples/tutorial/04-server) |
-| 连接远程 Agent 并订阅事件 | `Client.create()` | [SDK](../examples/tutorial/05-sdk) |
+| 远程执行并按需接收实时输出 | `Client.create()` / `client.run()` | [SDK](../examples/tutorial/05-sdk) |
 | 保留线程并管理多轮、审批恢复 | `AgentEngine` | [引擎参考](../examples/reference/agent-engine) |
 | 注入上下文、改写工具参数与释放 Turn 资源 | `AgentHooks` | [Hooks 参考](../examples/reference/agent-hooks) |
 | 向运行中的任务补充要求或中断它 | `engine.steer()` / `engine.interrupt()` | [运行控制参考](../examples/reference/turn-control) |

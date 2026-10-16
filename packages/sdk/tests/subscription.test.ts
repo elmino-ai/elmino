@@ -6,6 +6,33 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
+test('首次 reset 校准成功后才通知就绪，合法游标重连也通知就绪', async () => {
+  vi.useFakeTimers()
+  const gate = Promise.withResolvers<void>()
+  const onConnected = vi.fn()
+  const onReset = vi.fn(() => gate.promise)
+  const first = openStream([frame({ type: 'stream.reset' }, `${streamId}:0`)])
+  const second = openStream([frame({ type: 'stream.connected' }, `${streamId}:0`)])
+  const fetch = vi.fn().mockResolvedValueOnce(first.response).mockResolvedValueOnce(second.response)
+  const client = Client.create({ baseUrl: 'https://service.example', fetch, retry: { initialDelayMs: 10 } })
+  const stop = client.subscribe(scope, { onEvent: () => {}, onReset, onConnected })
+  onTestFinished(stop)
+  await flushUntil(() => onReset.mock.calls.length === 1)
+  expect(onConnected).not.toHaveBeenCalled()
+  gate.resolve()
+  await flushUntil(() => onConnected.mock.calls.length === 1)
+  stop()
+  await first.cancelled
+
+  // 单独的后续连接收到 connected，不需要再次执行 reset 校准
+  const resumed = client.subscribe(scope, { onEvent: () => {}, onReset, onConnected })
+  onTestFinished(resumed)
+  await flushUntil(() => onConnected.mock.calls.length === 2)
+  expect(onReset).toHaveBeenCalledOnce()
+  resumed()
+  await second.cancelled
+})
+
 test('只在 handler 成功后确认游标，重连保持作用域和动态鉴权', async () => {
   vi.useFakeTimers()
   const requests: Request[] = []

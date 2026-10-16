@@ -9,12 +9,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@elmino/protocol": "workspace:^",
     "@elmino/schema": "workspace:^",
     "@elmino/sdk": "workspace:^",
-    "@elmino/shared": "workspace:^",
-    "@elmino/store": "workspace:^",
-    "@elmino/thread": "workspace:^",
     "@t3-oss/env-core": "catalog:"
   },
   "devDependencies": {

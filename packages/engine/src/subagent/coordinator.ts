@@ -103,11 +103,13 @@ export class SubagentCoordinator {
    * 根据持久父子关系解析 Turn 身份
    */
   public async prepare(options: TurnRequest, store: RuntimeStore) {
+    // 并行读取线程与 Turn 的派生关系，确定请求是根执行还是子执行
     const [edge, turn, thread] = await Promise.all([
       store.spawnEdges.readByChild(options.threadId),
       store.turns.read(options.turnId),
       store.threads.read(options.threadId),
     ])
+    // 协调器只服务创建时固定的 Agent，持久归属必须与之匹配
     const agentId = this._context.agent.id
 
     if (thread && thread.agentId !== agentId)
@@ -127,8 +129,11 @@ export class SubagentCoordinator {
       throw new Error('Turn 不属于当前线程或 Agent')
     if (edge && !turn)
       throw new Error('子线程缺少对应的持久 Turn')
+    // 持久派生边决定父线程身份，请求不能自行声明父子关系
     const parentThreadId = edge?.parentThreadId
+    // 当前角色在恢复时沿用原 Turn，新根执行才从目录选择
     let subagentRole: SubagentRole
+    // 可派生角色目录同样冻结于原根 Turn，恢复时不重新加载用户配置
     let subagentRoles: SubagentRole[]
 
     // 已有 Turn 的角色与目录都是执行事实，恢复时不能重新读取可变的用户配置
@@ -138,6 +143,7 @@ export class SubagentCoordinator {
     }
     else {
       subagentRoles = await this._context.subagentRoles()
+      // 新根执行必须有 default 角色，保证根任务角色快照完整
       const rootRole = subagentRoles.find(role => role.id === 'default')
 
       if (!rootRole)
@@ -158,15 +164,20 @@ export class SubagentCoordinator {
    * 创建只属于当前根 Turn 的子智能体控制面
    */
   public createController(parent: PreparedTurn): SubagentController {
+    // 子任务控制面始终使用父 Turn 的事实存储
     const { store } = parent.services
+    // 等待和派生执行都绑定父任务控制器，父任务停止后不能继续等待
     const signal = parent.control!.controller.signal
 
     /** 校验并读取等待请求指定的直接子任务 */
     const readRequested = async (threadIds: string[]) => {
+      // 等待请求只能访问当前父线程实际拥有的直接子任务
       const children = await this._listFromStore(store, parent.threadId)
+      // 按线程身份索引，保持返回顺序与调用方请求顺序一致
       const byThreadId = new Map(children.map(child => [child.state.threadId, child]))
 
       return threadIds.map((threadId) => {
+        // 逐个校验被请求的子任务归属，未知线程不能进入等待集合
         const child = byThreadId.get(threadId)
 
         if (!child)
@@ -184,6 +195,7 @@ export class SubagentCoordinator {
     ) => {
       // 先注册进程态监听，再二次读库，封住状态读取与订阅之间的变化窗口
       const waitController = new AbortController()
+      // 二次读取已发现稳定状态时，用独立标记结束临时等待
       const observed = Symbol('subagent-state-observed')
       /** 将父 Turn 取消同步到本次临时监听 */
       const abortWait = () => waitController.abort(signal.reason)
@@ -193,6 +205,7 @@ export class SubagentCoordinator {
       else
         signal.addEventListener('abort', abortWait, { once: true })
 
+      // 先登记变化监听，封住读取状态与等待之间的丢失通知窗口
       const waiting = this._context.turns.waitForSubagentChange(
         threadIds,
         timeoutMs,
@@ -225,11 +238,13 @@ export class SubagentCoordinator {
       threadIds,
       timeoutMs,
     }: SubagentWaitInput): Promise<SubagentWaitResult> => {
+      // 先读一次目标状态，已有可观察结果时无需建立等待
       const current = await readRequested(threadIds)
 
       if (current.some(item => settledSubagentStatuses.has(item.result.status)))
         return { subagents: current.map(item => item.result) }
 
+      // 超时只结束本次等待，不会取消被观察的子任务
       const timedOut = await waitForChange(
         threadIds,
         timeoutMs,
@@ -237,6 +252,7 @@ export class SubagentCoordinator {
           await readRequested(threadIds)
         ).some(item => settledSubagentStatuses.has(item.result.status)),
       )
+      // 等待结束后重新读取事实，返回最新状态而非最初的缓存
       const subagents = (await readRequested(threadIds))
         .map(item => item.result)
 
@@ -256,6 +272,7 @@ export class SubagentCoordinator {
         )
       ).map(item => item.result),
       interrupt: async (threadId) => {
+        // 父控制面取消前再次确认目标仍是自己的直接子任务
         const child = (await this._listFromStore(store, parent.threadId, false))
           .find(item => item.state.threadId === threadId)
 
@@ -270,6 +287,7 @@ export class SubagentCoordinator {
           )
         }
 
+        // 取消后优先重新读取持久结果；未产生新事实时保留原展示信息
         const agent = (await this._readByTurn(store, child.state.turnId))?.result
           ?? child.result
 
@@ -306,9 +324,9 @@ export class SubagentCoordinator {
   }
 
   /**
-   * 发布在调度或准备阶段失败的子智能体 Turn 终态
+   * 发布进程外结算或调度失败后的子智能体 Turn 状态
    */
-  public async publishSubmittedFailure(
+  public async publishSettledTurn(
     input: Pick<
       TurnRequest,
       | 'threadId'
@@ -331,13 +349,16 @@ export class SubagentCoordinator {
    * 异步提交在排队阶段取消时固定 cancelled 终态
    */
   public async settleCancellation(options: PreparedTurn) {
+    // 明确取消标记可以区别于普通父信号中断，用于固定 cancelled 状态
     const explicitlyCancelled = this._cancelledTurns.has(options.turnId)
+    // 尚未取得执行槽的子任务也需要在父信号取消后完成持久结算
     const cancelledWhileQueued = Boolean(options.parentThreadId)
       && options.signal?.aborted
 
     if (!explicitlyCancelled && !cancelledWhileQueued)
       return false
 
+    // 使用统一结算入口关闭原运行、工具与线程状态
     const endedAt = await this._markCancelled(
       options.services.store,
       options.threadId,
@@ -376,31 +397,40 @@ export class SubagentCoordinator {
     /** 是否重新提交可恢复的 queued 子线程 */
     resumeQueuedChildren?: boolean
   }) {
+    // 恢复只操作宿主明确提供的工作区存储
     const { store } = input
+    // 线程派生关系用于区分可重调度子任务与没有持久调度器的根任务
     const threadEdges = await store.spawnEdges.list()
+    // 按子线程身份快速判断每条 Turn 的恢复策略
     const childThreadIds = new Set(threadEdges.map(edge => edge.childThreadId))
+    // 工作区全部线程与运行事实构成启动恢复的唯一状态来源
     const [threads, turns] = await Promise.all([
       store.threads.listAll(),
       store.turns.listAll(),
     ])
+    // 过滤到当前固定 Agent，避免恢复其他 Agent 拥有的运行
     const threadById = new Map(
       threads.filter(thread => thread.agentId === this._context.agent.id)
         .map(thread => [thread.id, thread]),
     )
 
+    // 逐个检查持久 Turn，已经被本进程接纳的执行保持不动
     for (const turn of turns) {
+      // 运行只有仍归属于当前 Agent 的线程时才可恢复或结算
       const thread = threadById.get(turn.threadId)
 
       if (!thread || turn.agentSnapshot.id !== this._context.agent.id)
         continue
       if (this._context.turns.owns(thread.id, turn.id))
         continue
+      // 只有带持久父子关系的 queued 任务才有重提交依据
       const isChild = childThreadIds.has(thread.id)
 
       if (
         turn.status === 'running'
         && this._context.turns.get(thread.id)?.turnId !== turn.id
       ) {
+        // 失去控制器的 running 任务统一结算为可观察的系统中断
         const interrupted = await this._interruptOrphanedTurn(
           store,
           thread,
@@ -423,6 +453,7 @@ export class SubagentCoordinator {
         turn.status === 'queued'
         && (!isChild || input.resumeQueuedChildren === false)
       ) {
+        // 不可重调度的 queued 记录也要固定中断，不能永久停留在排队状态
         const interrupted = await this._interruptOrphanedTurn(
           store,
           thread,
@@ -447,7 +478,9 @@ export class SubagentCoordinator {
         continue
 
       try {
+        // 真正重提交前解析原线程位置，缺失项目不能静默创建新目录
         const location = await input.threadLocation(thread)
+        // 模型按原 Turn 冻结配置重建，不能使用宿主当前默认模型
         const model = await this._context.restoreModel(turn.modelConfig)
 
         if (this._context.turns.owns(thread.id, turn.id))
@@ -467,6 +500,7 @@ export class SubagentCoordinator {
       catch (error) {
         if (this._context.turns.owns(thread.id, turn.id))
           continue
+        // 准备或重调度失败时只结算仍无人拥有的 queued Turn
         const failed = await this._context.executor.settleTurn({
           store,
           threadId: thread.id,
@@ -499,10 +533,14 @@ export class SubagentCoordinator {
     /** 当前项目事实存储 */
     store: RuntimeStore
   }) {
+    // 级联取消继续使用父 Turn 所属的同一事实存储
     const { store } = input
+    // 按父 Turn 查询派生边，避免误取消同线程其他轮次产生的子任务
     const edges = await store.turnSpawnEdges.listChildren(input.parentTurnId)
 
+    // 逐个处理该父 Turn 实际派生的子运行
     for (const edge of edges) {
+      // 读取子任务当前状态，已终结的任务无需再次取消
       const child = await this._readByTurn(store, edge.childTurnId, false)
 
       if (child && !terminalSubagentStatuses.has(child.state.status)) {
@@ -543,12 +581,15 @@ export class SubagentCoordinator {
     /** 当前项目事实存储 */
     store: RuntimeStore
   }) {
+    // 显式取消子线程时，派生关系和状态均从同一存储读取
     const { store } = input
+    // 只有真实子线程才进入子任务取消路径，根线程返回未处理
     const edge = await store.spawnEdges.readByChild(input.threadId)
 
     if (!edge)
       return false
 
+    // 在父线程当前子任务集合中定位目标，保留准确 Turn 匹配约束
     const child = (await this._listFromStore(store, edge.parentThreadId, false))
       .find(item => item.state.threadId === input.threadId)
 
@@ -579,8 +620,11 @@ export class SubagentCoordinator {
     turn: RuntimeTurnRecord,
     from: 'queued' | 'running',
   ) {
+    // 孤立运行结算使用统一结束时间，运行和 Step 共享这个时间
     const endedAt = dayjs().toISOString()
+    // 系统中断原因明确来自服务重启，不混同用户取消或工具失败
     const reason = '服务重启中断了未完成的运行'
+    // 为失去进程控制器的运行建立持久系统中断身份
     const interrupt: ThreadInterrupt = {
       id: createId('interrupt'),
       kind: 'system',
@@ -590,11 +634,13 @@ export class SubagentCoordinator {
       createdAt: endedAt,
       resumableWith: ['message'],
     }
+    // 只收口原 Turn 尚在运行的 Step，已结束采样保持原状
     const runningSteps = (await store.steps.list(turn.id))
       .filter(step => step.status === 'running')
 
     if (this._context.turns.owns(thread.id, turn.id))
       return
+    // 结算前后都检查进程所有权，避免启动恢复覆盖刚接纳的新执行
     const interruptedTurn = await this._context.executor.settleTurn({
       store,
       threadId: thread.id,
@@ -607,6 +653,7 @@ export class SubagentCoordinator {
       errorMessage: reason,
       interrupt,
       onSettled: async (tx, settledAt) => {
+        // 同一事务内收口所有孤立的运行中 Step，不留下永远运行的采样记录
         for (const step of runningSteps) {
           await tx.steps.settle(step.id, {
             status: 'interrupted',
@@ -632,27 +679,38 @@ export class SubagentCoordinator {
     parent: PreparedTurn,
     request: SpawnSubagentRequest,
   ): Promise<SubagentResult> {
+    // 角色只能从父 Turn 冻结目录选择，不能临时注入未授权角色
     const subagentRole = parent.subagentRoles.find(role => role.id === request.role)
 
     if (!subagentRole)
       throw new Error(`未知子智能体角色: ${request.role}`)
 
+    // 子线程沿用父任务所属的事实存储与工作区边界
     const { store } = parent.services
+    // 每次新派生生成独立线程身份，和根会话消息分开持久化
     const threadId = createId('thread')
+    // 新子线程的首轮运行有独立 Turn 身份，用派生边关联原工具调用
     const turnId = createId('turn')
+    // 子线程、运行、输入和派生边共用创建时间
     const now = dayjs().toISOString()
+    // 派生描述同时作为子任务输入和初始上下文内容
     const text = request.description
+    // 只为子任务建立本次描述输入，不复制父线程的完整消息历史
     const contextMessages = [{
       role: 'user' as const,
       parts: [{ type: 'text' as const, text }],
     }]
 
+    // 创建子线程及两类派生关系必须原子提交，避免恢复时出现半份关系
     const spawned = await store.transaction(async (tx) => {
+      // 父工具调用已派生过任务时直接复用，保证重复调用不会新增子线程
       const existingEdge = await tx.turnSpawnEdges
         .readByParentToolCall(request.parentToolCallId)
 
       if (existingEdge) {
+        // 已存在派生边时读取原 Turn，保持原执行身份和状态
         const existingTurn = (await tx.turns.read(existingEdge.childTurnId))!
+        // 复用记录的线程与运行身份，后续调度不能改用新生成的身份
         const { id: turnId, status, threadId } = existingTurn
 
         return {
@@ -663,6 +721,7 @@ export class SubagentCoordinator {
         }
       }
 
+      // 子任务继承父线程工作区与插件配置，但持有自己的上下文状态
       const parentThread = (await tx.threads.read(parent.threadId))!
 
       await tx.threads.upsert({
@@ -701,8 +760,11 @@ export class SubagentCoordinator {
         subagentMode: 'explicitOnly',
         createdAt: now,
       })
+      // 子任务的初始用户消息具有独立展示身份
       const messageId = createId('msg')
+      // 初始描述使用独立片段身份，便于事件和历史投影定位
       const partId = createId('part')
+      // 初始消息归属于新子 Turn，展示与 Canonical 上下文在事务内一起落库
       const transcript: ThreadMessage = {
         id: messageId,
         threadId,
@@ -754,9 +816,11 @@ export class SubagentCoordinator {
     })
 
     if (!spawned.created) {
+      // 重复派生时检查原任务是否已经排队，防止再次提交同一 Turn
       const scheduled = this._context.turnQueue.status(spawned.turnId)
 
       if (spawned.status !== 'queued' || scheduled) {
+        // 已经开始或已经排队的原任务直接返回当前持久结果
         const existing = await this._readByTurn(store, spawned.turnId)
 
         return existing!.result
@@ -787,6 +851,7 @@ export class SubagentCoordinator {
     }
     catch (error) {
       if (this._context.turns.owns(spawned.threadId, spawned.turnId)) {
+        // 提交异常后若任务已经被执行器接管，仍以实际持久结果为准
         const existing = await this._readByTurn(store, spawned.turnId)
 
         if (existing)
@@ -798,6 +863,7 @@ export class SubagentCoordinator {
         && !this._context.turnQueue.status(spawned.turnId)
         && !this._context.turns.owns(spawned.threadId, spawned.turnId)
       ) {
+        // 仅本次新建且未被接管的 queued 任务可由派生入口结算失败
         const failed = await this._context.executor.settleTurn({
           store,
           threadId: spawned.threadId,
@@ -828,7 +894,9 @@ export class SubagentCoordinator {
     parentThreadId: string,
     includeResult = true,
   ) {
+    // 一次读取直接子线程及各自最新运行，避免逐线程查询主记录
     const records = await store.spawnEdges.listChildrenWithLatestTurn(parentThreadId)
+    // 需要结果正文时才物化 Canonical 内容，状态查询避免额外读取
     const children = await Promise.all(records.map(async ({ ownerId, thread, turn, parentToolCallId }) => (
       this._resolve(
         ownerId,
@@ -852,6 +920,7 @@ export class SubagentCoordinator {
     childTurnId: string,
     includeResult = true,
   ) {
+    // Turn 级派生边证明该运行的来源，单独存在的 Turn 不能冒充子任务
     const [turnEdge, turn] = await Promise.all([
       store.turnSpawnEdges.readByChildTurn(childTurnId),
       store.turns.read(childTurnId),
@@ -860,6 +929,7 @@ export class SubagentCoordinator {
     if (!turnEdge || !turn)
       return
 
+    // 线程级派生边与线程记录提供父线程归属和对外元信息
     const [edge, thread] = await Promise.all([
       store.spawnEdges.readByChild(turn.threadId),
       store.threads.read(turn.threadId),
@@ -887,13 +957,18 @@ export class SubagentCoordinator {
     parentToolCallId: string,
     text: string,
   ): ResolvedSubagent {
+    // 展示标题优先采用线程当前标题，角色名只在对外结果中作为缺省值
     const title = thread.title
+    // 中断事实来自原子任务 Turn，不借用父线程或其他运行的交互
     const interrupt = readThreadInterrupt(turn.interrupt)
+    // 识别真正待处理的人机交互，供工具侧区分等待与普通中断
     const interaction = readThreadInteraction(interrupt)
+    // 工具接口把待交互中断显示为 waiting，持久 Turn 状态仍保持 interrupted
     const status = turn.status === 'interrupted'
       && interaction?.status === 'pending'
       ? 'waiting'
       : turn.status
+    // 父线程事件携带完整子任务状态，角色与执行时间均来自冻结事实
     const state: ThreadChildState = {
       ownerId,
       threadId: thread.id,
@@ -932,15 +1007,18 @@ export class SubagentCoordinator {
    * 从 Canonical 历史读取子任务最后一条 assistant 结果
    */
   private async _readResultText(store: RuntimeStore, threadId: string) {
+    // 从 Canonical 时间线定位最后一条助手消息及其内容片段
     const [messages, parts] = await Promise.all([
       store.canonical.list(threadId),
       store.canonical.listParts(threadId),
     ])
+    // 只展示最后一条助手结果，用户描述和工具记录不作为任务总结
     const assistant = messages.findLast(message => message.role === 'assistant')
 
     if (!assistant)
       return ''
 
+    // 重新物化选中消息的真实片段内容，避免仅返回存储引用
     const hydrated = await store.canonical.readParts(
       threadId,
       parts.filter(part => part.messageId === assistant.id).map(part => part.id),
@@ -958,13 +1036,16 @@ export class SubagentCoordinator {
     childTurnId: string,
   ) {
     this._cancelledTurns.add(childTurnId)
+    // 先取消队列等待或通知已启动协程，保持调度与持久结算顺序一致
     const cancelledJob = this._context.turnQueue.cancel(childTurnId, 'cancelled')
+    // 有活跃控制器时由原执行路径结算，没有时才直接结算持久记录
     const active = this._context.turns.get(childThreadId)
 
     if (active) {
       this._context.turns.interrupt(childThreadId, 'cancelled', childTurnId)
     }
     else {
+      // 无控制器的 queued 或 waiting 子任务通过统一事务结算取消
       const endedAt = await this._markCancelled(
         store,
         childThreadId,
@@ -1050,11 +1131,13 @@ export class SubagentCoordinator {
       return
 
     try {
+      // 通知前重新读取完整子状态，避免广播取消前缓存的运行状态
       const child = await this._readByTurn(store, childTurnId, false)
 
       if (!child)
         return
 
+      // 父线程接收子状态事件，归属由持久线程派生边确定
       const edge = await store.spawnEdges.readByChild(child.state.threadId)
 
       if (!edge)

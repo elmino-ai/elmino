@@ -84,10 +84,13 @@ export class RuntimeEventHub {
   public publish(event: RuntimeEvent) {
     if (this._closed)
       throw new Error('运行事件 Hub 已关闭')
+    // 在占用序号和容量前完成协议校验，非法事件不会留下回放空洞
     const serialized = serializeRuntimeEvent(event)
     // 序列化已完成领域校验；使用同一 JSON 创建快照，省略可选 undefined 字段。
     const message = JSON.parse(serialized) as RuntimeEvent
+    // 序号在整个工作区流中递增，不受单个订阅的线程过滤影响
     const seq = this._seq + 1
+    // 游标、消息快照与字节预算固定为同一次发布的事实
     const frame: ReplayFrame = {
       cursor: createRuntimeEventCursor({ streamId: this._streamId, sequence: seq }),
       message,
@@ -98,6 +101,7 @@ export class RuntimeEventHub {
     this._frames.set(seq, frame)
     this._byteLength += frame.byteLength
     this._evictOverflow()
+    // 新事实到达后唤醒当前等待者，消费位置仍由各自订阅持有
     for (const wake of this._subscribers)
       wake()
   }
@@ -112,7 +116,9 @@ export class RuntimeEventHub {
   ): AsyncGenerator<RuntimeEventFrame, void, unknown> {
     if (this._closed || signal?.aborted)
       return
+    // 订阅建立时固定线程筛选，后续仍跟随工作区全局游标
     const threadId = filter?.threadId
+    // 已确认位置由客户端游标恢复，窗口失效时改由快照重建
     let seq = this._resolveSequence(lastEventId)
 
     if (seq === undefined) {
@@ -120,8 +126,10 @@ export class RuntimeEventHub {
       yield this._controlFrame('stream.reset', seq)
     }
     else {
+      // 固定连接就绪前必须交付的回放边界，新事件由后续实时循环处理
       const replayUntil = this._seq
       while (seq < replayUntil && !this._closed && !signal?.aborted) {
+        // 下一条历史事实必须仍在窗口中，否则要求客户端重建
         const frame = this._frames.get(seq + 1)
         if (!frame)
           throw new Error('运行事件订阅落后于回放窗口')
@@ -135,6 +143,7 @@ export class RuntimeEventHub {
     }
 
     while (!this._closed && !signal?.aborted) {
+      // 只推进连续事实，落后于淘汰窗口时不能静默跳过缺失事件
       const frame = this._frames.get(seq + 1)
       if (frame) {
         seq++
@@ -157,6 +166,7 @@ export class RuntimeEventHub {
     this._closed = true
     this._frames.clear()
     this._byteLength = 0
+    // 已无新事实也要唤醒等待方，让生成器看到关闭标记并退出
     for (const wake of this._subscribers)
       wake()
   }
@@ -184,7 +194,9 @@ export class RuntimeEventHub {
    * 校验当前进程与保留窗口，允许从窗口首事件之前的紧邻位置恢复
    */
   private _resolveSequence(cursor?: string) {
+    // 游标同时携带进程身份和序号，服务重启后旧游标不能继续回放
     const parsed = parseRuntimeEventCursor(cursor)
+    // 允许从首个保留事件的前一位置恢复，空窗口则以当前序号为界
     const firstSeq = this._frames.keys().next().value ?? this._seq + 1
     if (!parsed || parsed.streamId !== this._streamId
       || parsed.sequence > this._seq || parsed.sequence < firstSeq - 1) {
@@ -208,9 +220,11 @@ export class RuntimeEventHub {
    */
   private _evictOverflow() {
     while (this._byteLength > this._maxBytes) {
+      // Map 插入顺序与发布序号一致，逐次移除当前最老事实
       const oldest = this._frames.entries().next().value
       if (!oldest)
         break
+      // 同时释放序号索引与该帧的实际序列化预算
       const [seq, frame] = oldest
       this._frames.delete(seq)
       this._byteLength -= frame.byteLength

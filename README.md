@@ -116,7 +116,7 @@ cp examples/tutorial/05-sdk/.env.example examples/tutorial/05-sdk/.env
 pnpm example:sdk
 ```
 
-客户端打印思考、工具结果与回复，查询持久化状态后退出。它不需要模型密钥或存储配置，也不会关闭 Server
+客户端通过 `client.thread()` 绑定会话，再用 `await thread.run()` 提交任务，按需打印思考、工具结果与回复，拿到最终状态后退出。它不需要模型密钥或存储配置，也不会关闭 Server
 
 Server 启动后，可打开 [http://127.0.0.1:3000/api/docs](http://127.0.0.1:3000/api/docs) 浏览和调试 API；配置了访问 Key 时，在 Scalar 的 Bearer 认证中填写示例的 `ELMINO_SERVER_KEY`；未配置时可直接调用。OpenAPI 定义位于 `/api/spec.json`，SDK 仍使用 `/rpc`
 
@@ -130,9 +130,10 @@ Server 启动后，可打开 [http://127.0.0.1:3000/api/docs](http://127.0.0.1:3
 | Tutorial | [02-full-agent](examples/tutorial/02-full-agent) | 单次运行的可选配置、实时输出与结果处理 | `pnpm example:full-agent` |
 | Tutorial | [03-elmino](examples/tutorial/03-elmino) | 定义应用实例、同线程两轮、查询结果与关闭资源 | `pnpm example:elmino` |
 | Tutorial | [04-server](examples/tutorial/04-server) | 注册 Agent、装配模型与存储、启动常驻 HTTP 服务 | `pnpm example:server` |
-| Tutorial | [05-sdk](examples/tutorial/05-sdk) | 连接服务、订阅事件、提交任务与读取结果 | `pnpm example:sdk` |
+| Tutorial | [05-sdk](examples/tutorial/05-sdk) | 绑定会话后远程执行、实时输出与读取结果 | `pnpm example:sdk` |
 | Reference | [agent-engine](examples/reference/agent-engine) | 多轮、审批恢复与引擎资源管理 | `pnpm example:agent-engine` |
 | Reference | [agent-hooks](examples/reference/agent-hooks) | 上下文、工具策略与 Turn 清理 | `pnpm example:agent-hooks` |
+| Reference | [sdk-control](examples/reference/sdk-control) | SDK 引导、中断、重新观察、审批与取消 | `pnpm example:sdk-control` |
 | Reference | [turn-control](examples/reference/turn-control) | 运行中引导与中断 | `pnpm example:turn-control` |
 | Reference | [subagents](examples/reference/subagents) | 显式派生与等待子任务 | `pnpm example:subagents` |
 
@@ -233,7 +234,7 @@ pnpm example:agent-engine
 | [`@elmino/protocol`](packages/protocol) | 跨端事件、线程快照校验、序列化与恢复游标 |
 | [`@elmino/api`](packages/api) | Agent、Thread、Turn 与事件流的类型化接口契约 |
 | [`@elmino/server`](packages/server) | 基于 Hono 的 Agent 服务，可直接 start 或嵌入 Fetch 宿主，提供 REST 与 Scalar 文档 |
-| [`@elmino/sdk`](packages/sdk) | Node.js / 浏览器客户端，支持订阅、重连与取消 |
+| [`@elmino/sdk`](packages/sdk) | Node.js / 浏览器客户端，提供会话、执行控制、审批与实时状态 |
 
 请求与协议的调用方式、旧包取舍及下一批边界见 [请求与事件协议](docs/transport.md)
 
@@ -267,6 +268,7 @@ pnpm example:agent-engine
 - [x] 通用请求层与跨端事件协议，支持独立入口及浏览器构建验收
 - [x] 独立 Elmino 应用实例，模型注册与共享执行，可接入多个 Server
 - [x] API 契约、可注入 Server 和纯客户端 SDK，支持事件回放与审批恢复
+- [x] SDK 会话与执行句柄：多轮、引导、停止、审批、待交互取消、重新观察与实时状态
 - [x] OpenAPI 定义与 Scalar 交互文档，REST 与 SDK 共用宿主鉴权
 - [x] 按 Elmino 本地应用、Server 服务端、SDK 客户端顺序组织独立教程，各自配置环境与启动入口；覆盖真实 TCP 断网回放与 Server 重建恢复测试
 - [x] Ubuntu / macOS CI，覆盖构建、类型、测试、迁移与公开包的仓库外交付验收
@@ -275,7 +277,9 @@ pnpm example:agent-engine
 
 - [x] AgentEngine 用法参考：多轮对话、工具审批与同进程引擎重建恢复
 - [x] Hooks、自定义工具、运行中引导/中断和显式子任务参考示例
+- [x] SDK 控制参考：临时本机服务，覆盖停止、重新观察、审批与待交互取消
 - [ ] 补齐跨进程恢复等单一功能示例
+- [ ] 线程重命名、归档、删除与消息分页
 - [x] Agent 使用指南、生命周期与子智能体调用参考
 - [ ] 补齐持久化接入与 Sandbox 扩展指南
 - [ ] 完成真实应用接入与执行生命周期验收，明确宿主需要承担的职责
@@ -316,7 +320,8 @@ pnpm verify:packages
 - [Elmino 应用实例](docs/elmino.md)：模型选择、动态工作区与资源所有权
 - [Server 与 SDK](docs/server-sdk.md)：远程调用、资源注入与重连恢复
 - [Server 教程](docs/server-example.md)：Agent 注册、模型与持久化装配、常驻服务和 API 文档
-- [SDK 教程](docs/sdk-example.md)：独立客户端、事件订阅、远程调用与结果查询
+- [SDK 教程](docs/sdk-example.md)：绑定会话、远程调用与结果输出
+- [SDK 运行控制](docs/sdk-control.md)：继续聊天、引导与停止、审批、重新观察与历史状态
 - [AgentEngine 高级参考](docs/agent-engine.md)：线程多轮对话、审批恢复与引擎生命周期
 - [已有宿主接入清单](docs/integration.md)：接口差异、资源所有权与数据保留
 - [开发约定](AGENTS.md)：能力边界与代码规则

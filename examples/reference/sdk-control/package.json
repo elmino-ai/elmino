@@ -1,0 +1,29 @@
+{
+  "name": "@example/sdk-control",
+  "type": "module",
+  "private": true,
+  "description": "SDK 运行控制参考：引导、中断、重新连接与工具审批",
+  "scripts": {
+    "start": "node --import tsx src/index.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@elmino/agent": "workspace:^",
+    "@elmino/core": "workspace:^",
+    "@elmino/llm": "workspace:^",
+    "@elmino/local": "workspace:^",
+    "@elmino/runtime": "workspace:^",
+    "@elmino/sandbox-local": "workspace:^",
+    "@elmino/sdk": "workspace:^",
+    "@elmino/server": "workspace:^",
+    "@elmino/shared": "workspace:^",
+    "@elmino/store-sqlite": "workspace:^",
+    "@elmino/tool": "workspace:^",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

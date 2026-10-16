@@ -90,6 +90,8 @@ interface SettleTurnInput {
   threadId: string
   /** Turn ID */
   turnId: string
+  /** 取消待交互运行时，必须在同一事务内匹配当前中断 */
+  interruptId?: string
   /** 允许转换的起始状态 */
   from: ThreadTurnStatus[]
   /** Turn 终态或可恢复中断态 */
@@ -183,6 +185,7 @@ export class TurnExecutor {
     options: ResolvedTurnRequest,
     context: TurnPreparationContext,
   ): Promise<PreparedTurn> {
+    // 本次请求的输入、位置和执行策略已由上层入口冻结
     const {
       approvalMode: _approvalMode,
       hiddenMessages: _hiddenMessages,
@@ -196,12 +199,19 @@ export class TurnExecutor {
       threadId,
       turnId,
     } = options
+    // 准备阶段只使用当前作用域注入的运行服务
     const { services } = context
+    // 所有线程、Turn 与消息写入均落在这份事实存储
     const { store } = services
+    // 入口操作与父子身份来自协调器，恢复角色不能重新选择
     const { operation, subagentRole: _subagentRole, subagentRoles: _subagentRoles, parentThreadId } = context
+    // 既有 Turn 是恢复和排队重提交时的冻结事实来源
     const existingTurn = context.turn
+    // 只保存可持久化模型配置，不把适配器或凭据写入运行记录
     const modelConfig = model.config
+    // 收集本次新建的用户消息，提交事务后再发布消息通知
     const messages: TurnInputMessage[] = []
+    // 宿主隐藏输入只参与本次执行上下文，不作为普通用户消息展示
     const hiddenMessages = _hiddenMessages ?? []
 
     if (operation === 'start' && existingTurn)
@@ -223,14 +233,19 @@ export class TurnExecutor {
       throw new Error(`Turn 不是可提交状态: ${turnId}`)
     }
 
+    // 工作区身份随线程元数据保存，用于后续执行归属校验
     const { workspaceId } = location
+    // 根任务在准备阶段取得控制权，子任务等待进入并发槽后再取得
     const control = !parentThreadId
       ? this._turns.start(context.reservation, { agentId: this._agent.id, store })
       : undefined
 
     try {
+      // 线程归属、Turn 创建和用户输入必须在同一事务内确认
       const { agentSnapshot, turn: preparedTurn } = await store.transaction(async (tx) => {
+        // 事务内重读线程，避免使用准备前已经变化的目录或归属
         const currentThread = await tx.threads.read(threadId)
+        // 事务内重读 Turn，防止重复创建或覆盖并发恢复后的状态
         const currentTurn = await tx.turns.read(turnId)
 
         if (currentThread && currentThread.agentId !== this._agent.id)
@@ -250,7 +265,9 @@ export class TurnExecutor {
           throw new Error(`Turn 已存在，不能再次启动: ${turnId}`)
         if (existingTurn && currentTurn?.status !== existingTurn.status)
           throw new Error('Turn 状态已经变化，请刷新后重试')
+        // 首次创建 Turn 的时间在事务内统一生成
         const now = dayjs().toISOString()
+        // 恢复沿用原 Agent 快照，新运行才捕获当前定义
         const agentSnapshot = existingTurn
           ? existingTurn.agentSnapshot as unknown as AgentSnapshot
           : {
@@ -258,11 +275,14 @@ export class TurnExecutor {
               systemPrompt: this._agent.systemPrompt,
             }
 
+        // 线程归属使用本轮冻结的 Agent 身份
         const { id: agentId } = agentSnapshot
+        // 审批权限优先沿用原 Turn，其次请求与线程默认值，恢复不得提权
         const approvalMode = existingTurn?.approvalMode
           ?? _approvalMode
           ?? currentThread?.settings.approvalMode
           ?? DEFAULT_THREAD_SETTINGS.approvalMode
+        // 子智能体模式同样按冻结 Turn、显式请求和线程默认值确定
         const subagentMode = existingTurn?.subagentMode
           ?? _subagentMode
           ?? currentThread?.settings.subagentMode
@@ -294,6 +314,7 @@ export class TurnExecutor {
               },
         })
 
+        // 恢复和重提交复用原 Turn，新任务才建立 queued 运行记录
         const turn = existingTurn
           ?? await tx.turns.create({
             id: turnId,
@@ -321,12 +342,16 @@ export class TurnExecutor {
         return { agentSnapshot, turn }
       })
 
+      // 只发布本次事务新建的用户消息，不重新广播已有历史
       for (const { transcript: message } of messages) {
         if (!message)
           continue
 
+        // 持久消息身份用于让事件与线程消息投影对应
         const messageId = message.id
+        // 首个片段作为消息更新的局部锚点，身份来自已落库记录
         const partId = message.parts[0]!.id
+        // 通知携带同一份持久消息投影，不再重新组装正文
         const payload = { message }
 
         try {
@@ -345,7 +370,9 @@ export class TurnExecutor {
         }
       }
 
+      // 后续 Loop 使用事务确认的模式和角色，不继续读取请求侧默认值
       const { approvalMode, status: _turnStatus, subagentMode, subagentRole, subagentRoles } = preparedTurn
+      // 准备结果只允许 queued、running 或 interrupted，具体转换由执行入口控制
       const turnStatus = _turnStatus as PreparedTurnStatus
 
       return {
@@ -386,11 +413,14 @@ export class TurnExecutor {
     options: PreparedTurn,
     hooks: TurnExecutionHooks,
   ) {
+    // 当前切片的冻结身份与运行服务在整个执行期间保持一致
     const { agentSnapshot, turnId, services, threadId } = options
+    // 根任务沿用准备时控制器，排队子任务此时才正式取得控制权
     const control = options.control ?? this._turns.start(
       { threadId, turnId },
       { agentId: agentSnapshot.id, store: services.store },
     )
+    // 暂存 Loop 终态通知，等持久结算成功后再发布唯一权威终态
     const terminalEvents: RuntimeEvent[] = []
 
     /** 将运行事件同步到进程投影和宿主出口 */
@@ -409,6 +439,7 @@ export class TurnExecutor {
       if (!control.controller.signal.aborted)
         return
 
+      // 取消原因来自统一控制器，外部信号和用户中断共用这条失败路径
       const reason = control.controller.signal.reason
 
       throw reason instanceof Error
@@ -422,14 +453,18 @@ export class TurnExecutor {
       options.signal?.addEventListener('abort', abortTurn, { once: true })
 
     try {
+      // 本轮所有持久写入共用注入的事实存储
       const { store } = services
 
+      // 启动事务校验恢复交互并生成需要追加到上下文的效果
       const started = await this._start(options, store)
 
       hooks.onAccepted?.()
+      // 保留 Loop 返回结果，后续异常结算可能仍需使用其结构化中断
       let result: TurnResult | undefined
 
       if (started.cancelledAt) {
+        // 交互选择直接取消时，通知复用启动事务已固定的取消时间
         const createdAt = started.cancelledAt
 
         await forwardEvent(createRuntimeEvent({
@@ -449,7 +484,9 @@ export class TurnExecutor {
       try {
         ensureActive()
 
+        // 恢复时新产生的用户输入需在进入 Loop 前同步到观察者
         for (const message of started.messages) {
+          // 消息首片段作为本次消息更新的事件锚点
           const firstPart = message.parts[0]
 
           await forwardEvent(createRuntimeEvent({
@@ -462,6 +499,7 @@ export class TurnExecutor {
           }))
         }
 
+        // 包装原模型以统一记录每个 Provider Step 的运行事实
         const model = createTrackedTurnModel({
           model: options.model,
           turnId,
@@ -469,7 +507,9 @@ export class TurnExecutor {
           store,
           onRuntimeEvent: forwardEvent,
         })
+        // 前序模型与线程启动信息来自当前持久时间线，而不是外部缓存
         const { previousModel, start } = await this._prepareTurn(options)
+        // Loop 只接收本次冻结上下文与服务，不承担 Engine 调度或资源所有权
         const loopContext: TurnContext = {
           model,
           approvalMode: options.approvalMode,
@@ -520,7 +560,9 @@ export class TurnExecutor {
         ensureActive()
       }
       catch (error) {
+        // 错误发生时读取统一控制器，区分用户中断与普通执行失败
         const aborted = control.controller.signal.aborted
+        // 保留子任务级联失败，但仍先结算根 Turn 自身的权威终态
         let cascadeError: unknown
 
         if (aborted && !options.parentThreadId) {
@@ -533,17 +575,22 @@ export class TurnExecutor {
           }
         }
 
+        // 显式子任务取消可投影为 cancelled，其他中止默认 interrupted
         const status = aborted
           ? hooks.resolveAbortStatus?.() ?? 'interrupted'
           : 'failed'
+        // 错误说明写入终态事实，供重启后查询与界面展示
         const errorMessage = error instanceof Error ? error.message : String(error)
+        // 若 Loop 已产生结构化交互中断，异常结算仍保留它的恢复身份
         const interruptedOutcome = result?.outcome
+        // 缺少结构化中断时补齐系统中断，以统一持久与通知语义
         const outcome = this._normalizeOutcome(options, {
           status,
           interrupt: interruptedOutcome?.interrupt,
           errorMessage,
         })
 
+        // 只有成功取得持久结算时间，才允许发布对应终态事件
         const endedAt = await this._settle(options, outcome, control)
 
         if (endedAt) {
@@ -566,7 +613,9 @@ export class TurnExecutor {
         throw error
       }
 
+      // 正常返回同样先补齐中断事实，再进入统一结算路径
       const outcome = this._normalizeOutcome(options, result!.outcome)
+      // 事务返回的终态时间是后续事件的权威时间来源
       const endedAt = await this._settle(options, outcome, control)
 
       if (endedAt) {
@@ -592,6 +641,7 @@ export class TurnExecutor {
    * 原子结算 Turn 与所属 Thread，并返回已经持久化的结束时间
    */
   public settleTurn(input: SettleTurnInput) {
+    // 使用固定异常身份区分所有权变更回滚与真实存储故障
     const ownershipChanged = new Error('Turn 结算期间已被执行入口接纳')
     /** 读取和写入等待后重新检查进程所有权，避免孤立恢复覆盖正在装配的任务 */
     const assertOwnership = () => {
@@ -600,16 +650,36 @@ export class TurnExecutor {
     }
 
     return input.store.transaction(async (tx) => {
+      // 事务内重读运行归属，避免结算已经删除或迁移的记录
       const current = await tx.turns.read(input.turnId)
 
       if (current?.threadId !== input.threadId)
         return
 
+      if (input.interruptId) {
+        // 取消审批必须命中仍待处理的交互，不能只匹配 interrupted 状态
+        const interrupt = readThreadInteraction(readThreadInterrupt(current.interrupt))
+        // 最新 Turn 约束防止旧审批取消覆盖线程后来产生的运行
+        const latest = await tx.turns.readLatest(input.threadId)
+
+        if (
+          current.status !== 'interrupted'
+          || latest?.id !== input.turnId
+          || interrupt?.status !== 'pending'
+          || interrupt.turnId !== input.turnId
+          || interrupt.id !== input.interruptId
+        ) {
+          return
+        }
+      }
+      // 线程与 Turn 的 Agent 归属必须在同一个结算事务里成立
       const thread = await tx.threads.read(input.threadId)
 
       if (thread?.agentId !== this._agent.id || current.agentSnapshot.id !== this._agent.id)
         return
+      // 显式结束时间或当前时间作为本次结算的初始候选
       const requestedAt = dayjs(input.endedAt ?? undefined)
+      // 线程元信息可能先推进更新时间，结算需要避免时间倒退
       const currentUpdatedAt = thread ? dayjs(thread.updatedAt) : undefined
       // 元信息事务可能先推进 Thread 时间；统一结算时间必须继续单调递增，避免新事实被 SDK 当作旧快照
       const endedAt = currentUpdatedAt && !requestedAt.isAfter(currentUpdatedAt)
@@ -617,6 +687,7 @@ export class TurnExecutor {
         : requestedAt.toISOString()
 
       assertOwnership()
+      // 条件转换确保只有预期起始状态可以被本次结算消费
       const settled = await tx.turns.transition(input.turnId, input.from, {
         status: input.status,
         endedAt,
@@ -636,6 +707,7 @@ export class TurnExecutor {
         lastInteractionAt: input.lastInteractionAt,
         updatedAt: endedAt,
       })
+      // 等待交互时保留工具和扩展状态，以便原 Turn 后续恢复
       const waitsForInteraction = input.status === 'interrupted'
         && input.interrupt?.kind === 'interaction'
 
@@ -684,11 +756,15 @@ export class TurnExecutor {
     /** 结构化运行事件出口 */
     onRuntimeEvent?: TurnRuntimeEventHandler
   }) {
+    // 引导只面向准确的存储和执行身份，事件出口随调用一起捕获
     const { onRuntimeEvent, store, text, threadId, turnId } = input
 
     return this._turns.steer(threadId, turnId, async () => {
+      // 引导以普通文本输入形式追加，不为它创建独立 Turn
       const parts: TurnInputPart[] = [{ type: 'text', text }]
+      // 用户消息和最后交互时间在同一事务内持久化
       const message = await store.transaction(async (tx) => {
+        // 消息同时写入展示记录和模型上下文，避免引导只在一侧可见
         const message = await this._createUserMessage(
           tx,
           threadId,
@@ -704,10 +780,15 @@ export class TurnExecutor {
 
         return message
       })
+      // 事务返回的展示消息用于进程投影与外部事件通知
       const transcript = message.transcript!
+      // 首片段用于定位这次新增的引导内容
       const firstPart = transcript.parts[0]
+      // 消息身份沿用持久记录，事件不再生成另一份消息
       const messageId = transcript.id
+      // 片段身份在存在正文时提供，保持事件定位与消息结构一致
       const partId = firstPart?.id
+      // 通知中的完整消息已持久化，观察者可以直接替换对应投影
       const event = createRuntimeEvent({
         type: 'message.updated',
         threadId,
@@ -737,13 +818,18 @@ export class TurnExecutor {
   private async _prepareTurn(
     options: PreparedTurn,
   ) {
+    // 从本次执行注入的服务读取线程启动事实
     const { store } = options.services
+    // 线程元信息和完整 Turn 时间线共同决定 Loop 的启动语义
     const [thread, turns] = await Promise.all([
       store.threads.read(options.threadId),
       store.turns.list(options.threadId),
     ])
+    // 当前 Turn 在时间线中的位置用于查找前一轮模型配置
     const index = turns.findIndex(turn => turn.id === options.turnId)
+    // 首轮没有前序模型，后续轮次使用紧邻前一轮的冻结配置
     const previousTurn = index > 0 ? turns[index - 1] : undefined
+    // 将持久线程与 Turn 转换为统一快照供 Loop 和 Hooks 消费
     const threadSnapshot = thread
       ? runtimeRecordsToThreadSnapshot(thread, turns, options.location)
       : undefined
@@ -766,7 +852,9 @@ export class TurnExecutor {
    */
   private _start(options: PreparedTurn, store: RuntimeStore) {
     return store.transaction(async (tx) => {
+      // 启动事务重读原 Turn，恢复请求不能消费已变化的运行状态
       const current = await tx.turns.read(options.turnId)
+      // 线程必须仍存在，才能把运行状态推进为 running
       const thread = await tx.threads.read(options.threadId)
 
       if (
@@ -777,6 +865,7 @@ export class TurnExecutor {
         throw new Error('Turn 状态已经变化，请刷新后重试')
       }
 
+      // 集中收集恢复产生的可见输入、隐藏输入和 Loop 恢复命令
       const started: StartedTurn = {
         messages: [],
         providerMessages: [],
@@ -784,7 +873,9 @@ export class TurnExecutor {
       }
 
       if (current.status === 'interrupted') {
+        // 恢复决策只来自当前请求，不读取其他轮次或最新交互
         const request = options.resume
+        // 持久交互快照提供本次恢复必须匹配的准确身份
         const interrupt = readThreadInteraction(
           readThreadInterrupt(current.interrupt),
         )
@@ -799,6 +890,7 @@ export class TurnExecutor {
           throw new Error('Interaction 已过期或不属于当前 Turn')
         }
 
+        // 内置审批或宿主交互先归一化为明确的恢复效果
         const resolution = await this._resolveInteraction(
           tx,
           options,
@@ -809,7 +901,9 @@ export class TurnExecutor {
         await this._applyState(tx, options.threadId, resolution.state)
 
         if (resolution.action === 'cancel') {
+          // 交互决定终止运行时，在启动事务内生成唯一取消时间
           const cancelledAt = dayjs().toISOString()
+          // 只消费仍 interrupted 的原 Turn，避免重复处理相同交互
           const settled = await tx.turns.transition(options.turnId, ['interrupted'], {
             status: 'cancelled',
             endedAt: cancelledAt,
@@ -843,11 +937,14 @@ export class TurnExecutor {
         }
 
         if (resolution.input) {
+          // 交互产生的可见回复以用户文本追加到原 Turn
           const input: TurnInputPart[] = [{
             type: 'text',
             text: resolution.input,
           }]
+          // 同一回复同时投影为 Provider 输入，保持展示与上下文一致
           const provider = providerMessage(input)
+          // 恢复输入在同一事务中写入可重放的消息记录
           const inputMessage = await this._createUserMessage(
             tx,
             options.threadId,
@@ -872,6 +969,7 @@ export class TurnExecutor {
         throw new Error('当前 Turn 不接受 Interaction 响应')
       }
 
+      // 完成交互消费后才把原 Turn 切回 running 并清除旧中断
       const transitioned = await tx.turns.transition(
         options.turnId,
         [current.status],
@@ -904,6 +1002,7 @@ export class TurnExecutor {
     response: JsonValue,
   ): Promise<ResolvedInteractionEffect> {
     if (!interrupt.ownerId && interrupt.interaction === 'tool_approval') {
+      // 内置工具审批先校验并归一化为 Loop 接受的决策结构
       const normalized = resolveLoopInteraction(interrupt, response)
 
       if (normalized === undefined)
@@ -911,8 +1010,11 @@ export class TurnExecutor {
       return { action: 'resume', response: normalized, hiddenMessages: [] }
     }
 
+    // 宿主自定义交互只读取当前线程的持久扩展状态
     const thread = await store.threads.read(options.threadId)
+    // 提取实际扩展命名空间，避免把线程其他字段交给状态处理器
     const state = this._readState(thread?.state)
+    // 宿主 Hook 必须明确返回恢复或取消效果，否则交互不能被消费
     const resolution = await options.hooks?.resolveInteraction?.({ interrupt, response, state })
 
     if (!resolution)
@@ -921,12 +1023,15 @@ export class TurnExecutor {
     return { ...resolution, hiddenMessages: resolution.hiddenMessages ?? [] }
   }
 
-  /** 在当前事务应用各扩展命名空间的结算动作 */
+  /**
+   * 在当前事务应用各扩展命名空间的结算动作
+   */
   private async _applyState(
     store: RuntimeStoreTx,
     threadId: string,
     resolutions?: Record<string, StateResolution>,
   ) {
+    // 逐个扩展命名空间应用纯状态变更，不影响其他扩展的事实
     for (const [key, resolution] of Object.entries(resolutions ?? {})) {
       if (resolution.type === 'keep')
         continue
@@ -940,7 +1045,9 @@ export class TurnExecutor {
     }
   }
 
-  /** 在 Turn 稳定结算事务内运行宿主的纯状态 reducer */
+  /**
+   * 在 Turn 稳定结算事务内运行宿主的纯状态 reducer
+   */
   private async _settleState(
     store: RuntimeStoreTx,
     threadId: string,
@@ -950,14 +1057,19 @@ export class TurnExecutor {
     if (!hooks?.settleState)
       return
 
+    // 结算 Hook 基于事务内最新线程状态计算，不能使用运行开始时的旧快照
     const thread = await store.threads.read(threadId)
+    // 只把扩展命名空间交给宿主纯状态 reducer
     const state = this._readState(thread?.state)
+    // 宿主返回各命名空间的保留、替换或删除动作，再由事务统一应用
     const resolutions = await hooks.settleState({ status, state })
 
     await this._applyState(store, threadId, resolutions)
   }
 
-  /** 从线程的持久事实读取实际扩展命名空间 */
+  /**
+   * 从线程的持久事实读取实际扩展命名空间
+   */
   private _readState(state?: UnknownRecord): ThreadExtensionState {
     return isPlainRecord(state?.extensionState)
       ? state.extensionState as ThreadExtensionState
@@ -974,8 +1086,11 @@ export class TurnExecutor {
     input: TurnInputPart[],
     message: Message,
   ) {
+    // 用户消息与它的所有展示片段共用创建时间
     const createdAt = dayjs().toISOString()
+    // 展示消息使用独立消息身份，随后与原 Turn 关联
     const messageId = createId('msg')
+    // 用户输入按顺序投影为展示消息，原始内容仍用于 Canonical 上下文
     const transcript: ThreadMessage = {
       id: messageId,
       threadId,
@@ -984,6 +1099,7 @@ export class TurnExecutor {
       kind: 'normal',
       status: 'completed',
       parts: input.map((part, index) => {
+        // 展示片段序号从一开始，保留输入数组的原始顺序
         const seq = index + 1
         return threadInputPart(part, {
           messageId,
@@ -998,6 +1114,7 @@ export class TurnExecutor {
       metadata: {},
     }
     await store.transcript.upsert(transcript)
+    // Canonical 记录提供 Provider 可重放上下文及其顺序锚点
     const canonical = await appendCanonicalMessage(store, {
       threadId,
       turnId,
@@ -1048,13 +1165,16 @@ export class TurnExecutor {
     events: RuntimeEvent[],
     forward: (event: RuntimeEvent) => Promise<void>,
   ) {
+    // 权威 outcome 决定终态事件类型，不能沿用已失效的 Loop 临时状态
     const eventType = ({
       cancelled: 'turn.cancelled',
       completed: 'turn.completed',
       failed: 'turn.failed',
       interrupted: 'turn.interrupted',
     } as const)[outcome.status]
+    // 复用最后一条同类型 Loop 事件中的详细信息
     const event = events.findLast(item => item.type === eventType)
+    // 中断事件的恢复身份必须替换成最终持久化的那一份
     const canonicalEvent = event && outcome.status === 'interrupted'
       ? {
           ...event,
@@ -1084,6 +1204,7 @@ export class TurnExecutor {
     if (options.parentThreadId || !shouldMarkThreadUnread(outcome))
       return forward(terminalEvent)
 
+    // 保留原终态载荷，再为根任务附上同一次结算的未读时间
     const payload = terminalEvent.payload
 
     // 根 Turn 待查看终态直接携带结算事务写入的同一未读时间，避免列表校准失败时丢失实时投影
@@ -1149,6 +1270,7 @@ function threadInputPart(
     createdAt: string
   },
 ): ThreadPart {
+  // 所有输入片段共用归属、顺序与时间，具体内容按类型追加
   const base = {
     id: createId('part'),
     ...input,
@@ -1165,6 +1287,7 @@ function threadInputPart(
   }
 
   if (part.type === 'mention') {
+    // 移除输入判别字段后复用引用信息，输出片段单独声明展示类型
     const { type: _, ...mention } = part
 
     return {

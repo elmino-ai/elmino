@@ -25,6 +25,8 @@ export interface ClientOptions {
 
 /** 只有事实投影或重建快照成功后才确认相应事件游标 */
 export interface RuntimeEventSubscribeHandlers {
+  /** 每次连接建立且回放或重置处理成功后调用，可据此安全提交新任务 */
+  onConnected?: () => void | Promise<void>
   /** 顺序处理一个完整运行事件，失败时从上个已确认游标重试 */
   onEvent: (event: RuntimeEvent) => void | Promise<void>
   /** 回放窗口失效后重建权威状态，完成前不确认重置游标 */

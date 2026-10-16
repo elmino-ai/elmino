@@ -3,6 +3,7 @@ export type { Elmino } from './elmino/elmino'
 export { ElminoError } from './elmino/error'
 export type { ElminoErrorCode } from './elmino/error'
 export type {
+  CancelTurnInput,
   CreateTurnInput,
   ElminoObserver,
   ElminoOptions,

@@ -29,7 +29,10 @@
     "@elmino/api": "workspace:^",
     "@elmino/protocol": "workspace:^",
     "@elmino/request": "workspace:^",
+    "@elmino/shared": "workspace:^",
+    "@elmino/store": "workspace:^",
     "@elmino/thread": "workspace:^",
+    "@elmino/tool": "workspace:^",
     "@opentelemetry/api": "catalog:",
     "@orpc/client": "catalog:"
   },

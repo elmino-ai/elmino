@@ -73,6 +73,16 @@ export interface ResumeTurnInput extends ThreadTarget {
   response: JsonValue
 }
 
+/** 取消仍等待当前交互的原 Turn，不提交审批决策 */
+export interface CancelTurnInput extends ThreadTarget {
+  /** 原运行身份 */
+  turnId: string
+  /** 当前待处理交互的身份 */
+  interruptId: string
+  /** 用户提供的取消原因 */
+  reason?: string
+}
+
 /** 中断准确的活跃 Turn */
 export interface InterruptTurnInput extends ThreadTarget {
   /** 目标执行身份 */

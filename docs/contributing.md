@@ -2,6 +2,18 @@
 
 框架边界与包导航见 [README](../README.md)，源码、数据与发布约定见 [AGENTS.md](../AGENTS.md)。工程命令在仓库根目录执行
 
+## 规范入口
+
+开发规范由根 AGENTS 按任务范围要求读取，各专题维护一份规则，不在包内复制
+
+| 专题 | 内容 |
+| --- | --- |
+| [代码与检查规范](contributing/code.md) | 注释格式、命名、目录、类与函数、异步资源、迁移及测试 |
+| [Agent 架构约定](contributing/agent.md) | 执行实体、持久化、审批恢复、运行事件和关闭所有权 |
+| [多模态与供应商规范](contributing/multimodal.md) | 模型协议、工具参数、附件输入和供应商转换 |
+
+这些规则由原项目公共规范迁入并按当前实现调整。React、Tailwind、Dashboard、Nest、账号、市场和产品部署规则不属于当前框架实现，不随文档迁移引入对应依赖
+
 ## 环境与依赖
 
 使用 [.node-version](../.node-version) 中的 Node.js 24，以及根 [package.json](../package.json) `packageManager` 固定的 pnpm 11 版本。TypeScript 和直接依赖版本由 [workspace catalog](../pnpm-workspace.yaml) 统一维护
@@ -102,7 +114,7 @@ pnpm --filter @elmino/store-sqlite db:generate
 
 [04-server](server-example.md) 只负责服务端：在 `examples/tutorial/04-server/.env` 填写 `DEEPSEEK_API_KEY`，可选配置 `ELMINO_SERVER_KEY`，从根目录执行 `pnpm example:server`。Server、SQLite 与模型在所属入口读取配置，默认监听 `127.0.0.1:3000`，启动不会调用模型；数据默认保存在示例自己的 `.elmino`。按 `Ctrl+C` 由示例宿主统一关闭 Server 与 Elmino，等待 Store 租约释放。私有工作区包名为 `@example/server`
 
-[05-sdk](sdk-example.md) 只负责客户端：先保持 Server 运行，再配置 `examples/tutorial/05-sdk/.env` 中的 `ELMINO_SERVER_URL` 与可选 `ELMINO_SERVER_KEY`，从另一个终端执行 `pnpm example:sdk`。它不读取模型、监听或存储配置，任务完成后自行退出，Server 继续运行。私有工作区包名为 `@example/sdk`。依赖已构建时，两者也可在各自示例目录执行 `pnpm start`，各自加载自己的 `.env`
+[05-sdk](sdk-example.md) 只负责客户端：先保持 Server 运行，再配置 `examples/tutorial/05-sdk/.env` 中的 `ELMINO_SERVER_URL` 与可选 `ELMINO_SERVER_KEY`，从另一个终端执行 `pnpm example:sdk`。它通过 `client.thread()` 绑定会话，再以 `await thread.run()` 完成远程调用并接收实时输出，不读取模型、监听或存储配置；任务完成后自行退出，Server 继续运行。私有工作区包名为 `@example/sdk`。依赖已构建时，两者也可在各自示例目录执行 `pnpm start`，各自加载自己的 `.env`
 
 [AgentEngine](agent-engine.md) 归 `reference`，展示生命周期 API：同线程多轮、显式管理 Engine 和 Store、工具审批与同进程引擎重建后的恢复。运行命令为 `pnpm example:agent-engine`，模型配置来自自己的 `.env`。
 

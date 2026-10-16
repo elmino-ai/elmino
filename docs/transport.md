@@ -136,7 +136,7 @@ const position = parseRuntimeEventCursor(cursor)
 
 格式为 `<stream UUID>:<非负安全整数>`。每次 Server 创建新事件流时重新生成 `streamId`；Server 持有回放窗口并判断游标是否属于本流、是否落在可回放范围。`protocol` 仅校验语法，不拥有队列、连接或持久化资源
 
-Server 负责回放与 `reset`，SDK 在回调处理成功后推进游标，并负责断线重连和取消订阅。这些运行生命周期不归协议包
+Server 负责回放与 `reset`，SDK 在回调处理成功后推进游标，并负责断线重连和取消订阅。`client.run()` 在此基础上封装一次远程任务的提交、输出、快照补齐与终态等待；使用底层 `subscribe()` 时由宿主处理 reset 后的快照。这些运行生命周期不归协议包
 
 ## 上层调用
 

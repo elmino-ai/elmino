@@ -1,6 +1,7 @@
 import { ThreadStateSchema } from '@elmino/protocol'
 import { procedure } from '../contract/procedure'
 import {
+  ApiTurnCancelInputSchema,
   ApiTurnCreateInputSchema,
   ApiTurnInterruptInputSchema,
   ApiTurnResumeInputSchema,
@@ -29,6 +30,16 @@ export const turnContract = {
       tags: ['Turn'],
     })
     .input(ApiTurnResumeInputSchema)
+    .output(ThreadStateSchema),
+  cancel: procedure
+    .route({
+      method: 'POST',
+      path: '/threads/{threadId}/turns/{turnId}/cancel',
+      summary: '取消待交互运行',
+      description: '取消准确匹配当前 interruptId 的整个待处理运行，结算未执行工具并清除交互；不等同于拒绝工具后让模型继续。已经恢复或过期时返回冲突',
+      tags: ['Turn'],
+    })
+    .input(ApiTurnCancelInputSchema)
     .output(ThreadStateSchema),
   interrupt: procedure
     .route({
