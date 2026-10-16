@@ -24,7 +24,7 @@ elmino 把模型调用、工具执行、会话状态和执行调度组合成可�
 
 模型、持久化和执行环境通过接口装配。你可以只用模型适配器，也可以组合完整的 Agent；应用自己决定数据放在哪里、工具允许做什么，以及如何向用户展示执行过程
 
-> **开发预览**：当前包版本为 `0.0.0`，尚未发布到 npm，请先通过仓库内示例体验。Agent 运行时、远程 Server 和纯客户端 SDK 已具备基础，API 仍会调整；插件体系与 UI 留待后续
+> **开发预览**：当前包版本为 `0.0.0`，尚未发布到 npm，请先通过仓库内示例体验。Agent 运行时、远程 Server 和客户端 SDK 已具备基础，包含无框架会话与 Composer、可选 React Hook 和 Query 接入，API 仍会调整；插件体系与界面组件留待后续
 
 ## 为什么使用 elmino
 
@@ -234,7 +234,7 @@ pnpm example:agent-engine
 | [`@elmino/protocol`](packages/protocol) | 跨端事件、线程快照校验、序列化与恢复游标 |
 | [`@elmino/api`](packages/api) | Agent、Thread、Turn 与事件流的类型化接口契约 |
 | [`@elmino/server`](packages/server) | 基于 Hono 的 Agent 服务，可直接 start 或嵌入 Fetch 宿主，提供 REST 与 Scalar 文档 |
-| [`@elmino/sdk`](packages/sdk) | Node.js / 浏览器客户端，提供会话、执行控制、审批与实时状态 |
+| [`@elmino/sdk`](packages/sdk) | Node.js / 浏览器会话、执行控制、审批、草稿队列及可选 React / Query 子入口 |
 
 请求与协议的调用方式、旧包取舍及下一批边界见 [请求与事件协议](docs/transport.md)
 
@@ -269,6 +269,8 @@ pnpm example:agent-engine
 - [x] 独立 Elmino 应用实例，模型注册与共享执行，可接入多个 Server
 - [x] API 契约、可注入 Server 和纯客户端 SDK，支持事件回放与审批恢复
 - [x] SDK 会话与执行句柄：多轮、引导、停止、审批、待交互取消、重新观察与实时状态
+- [x] 单一会话快照、Composer 草稿队列、可选 React 薄绑定与 oRPC Query utilities
+- [x] 持久运行记录与失败原因、按完整 Turn 读取分页历史
 - [x] OpenAPI 定义与 Scalar 交互文档，REST 与 SDK 共用宿主鉴权
 - [x] 按 Elmino 本地应用、Server 服务端、SDK 客户端顺序组织独立教程，各自配置环境与启动入口；覆盖真实 TCP 断网回放与 Server 重建恢复测试
 - [x] Ubuntu / macOS CI，覆盖构建、类型、测试、迁移与公开包的仓库外交付验收
@@ -279,7 +281,7 @@ pnpm example:agent-engine
 - [x] Hooks、自定义工具、运行中引导/中断和显式子任务参考示例
 - [x] SDK 控制参考：临时本机服务，覆盖停止、重新观察、审批与待交互取消
 - [ ] 补齐跨进程恢复等单一功能示例
-- [ ] 线程重命名、归档、删除与消息分页
+- [ ] 线程重命名、归档与删除
 - [x] Agent 使用指南、生命周期与子智能体调用参考
 - [ ] 补齐持久化接入与 Sandbox 扩展指南
 - [ ] 完成真实应用接入与执行生命周期验收，明确宿主需要承担的职责

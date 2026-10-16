@@ -139,7 +139,7 @@ If there is no `.codegraph/` directory, skip CodeGraph entirely — indexing is 
 
 ## 工作区与能力归属
 
-- elmino 是可复用的 Agent 开发框架；能力包位于 `packages/<能力>`，对外使用 `@elmino/*`。当前范围是模型、Agent 执行、持久化、Server 与纯客户端 SDK，产品账号、市场、插件体系和 UI 按后续明确需求另行接入
+- elmino 是可复用的 Agent 开发框架；能力包位于 `packages/<能力>`，对外使用 `@elmino/*`。当前范围是模型、Agent 执行、持久化、Server、跨端 SDK 及可选 React / Query 绑定，产品账号、市场、插件体系和 UI 组件按后续明确需求另行接入
 - 通用纯工具使用 `@elmino/shared`，Node 工具使用 `@elmino/shared/node`，本机环境能力使用 `@elmino/local`；领域类型和状态归实际能力所有者，不整包复制旧产品的 shared 或 SDK
 - 模型协议、执行、存储和网络接入按[Agent 架构约定](docs/contributing/agent.md)保持单一所有者；模型适配器、数据库和 Sandbox 实现通过所属契约接入，核心不反向依赖宿主应用
 - 根目录不依赖内部业务包，依赖由消费它的工作区声明；公开包独立维护直接依赖、版本、`exports`、产物白名单与发布配置，根项目和示例保持私有

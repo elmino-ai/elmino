@@ -12,7 +12,7 @@
 | [Agent 架构约定](contributing/agent.md) | 执行实体、持久化、审批恢复、运行事件和关闭所有权 |
 | [多模态与供应商规范](contributing/multimodal.md) | 模型协议、工具参数、附件输入和供应商转换 |
 
-这些规则由原项目公共规范迁入并按当前实现调整。React、Tailwind、Dashboard、Nest、账号、市场和产品部署规则不属于当前框架实现，不随文档迁移引入对应依赖
+这些规则由原项目公共规范迁入并按当前实现调整。SDK 的 React / Query 子入口仅绑定已有状态与请求；Tailwind、Dashboard、Nest、账号、市场和产品部署规则不属于当前框架实现，不随文档迁移引入对应依赖
 
 ## 环境与依赖
 

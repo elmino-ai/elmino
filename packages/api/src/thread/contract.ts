@@ -1,4 +1,9 @@
-import { ThreadListItemSchema, ThreadStateSchema } from '@elmino/protocol'
+import {
+  ThreadListItemSchema,
+  ThreadStateSchema,
+  ThreadTranscriptPageSchema,
+  ThreadTurnRecordSchema,
+} from '@elmino/protocol'
 import { z } from 'zod'
 import { procedure } from '../contract/procedure'
 import { AgentWorkspaceTargetSchema, ThreadTargetSchema } from '../contract/schema'
@@ -12,6 +17,15 @@ export const ApiThreadListResultSchema = z.object({
   items: z.array(ThreadListItemSchema).describe('线程元信息与运行摘要，不包含完整消息历史'),
   hasMore: z.boolean().describe('当前结果之后是否仍有线程；增加 limit 可读取更大的前缀范围'),
 })
+
+/** 历史分页使用完整 Turn 边界，游标保持不透明并限制外部输入大小 */
+export const ApiThreadTranscriptInputSchema = ThreadTargetSchema.extend({
+  cursor: z.string().min(1).max(2_048).describe('上一页返回的更早历史游标，只属于同一智能体、工作区和线程').optional(),
+  limit: z.number().int().min(1).max(50).describe('每页完整运行数，默认 10，范围 1 到 50').optional(),
+})
+
+/** 历史运行记录按最近创建优先排列 */
+export const ApiThreadTurnListResultSchema = z.array(ThreadTurnRecordSchema)
 
 /** 读取契约复用已有线程 wire Schema */
 export const threadContract = {
@@ -35,7 +49,28 @@ export const threadContract = {
     })
     .input(ThreadTargetSchema)
     .output(ThreadStateSchema),
+  listTurns: procedure
+    .route({
+      method: 'GET',
+      path: '/threads/{threadId}/turns',
+      summary: '列出运行记录',
+      description: '读取指定会话的持久运行记录，保留冻结的智能体、模型、权限、失败原因与中断信息，按最近创建优先排列；不会返回模型凭据或智能体内部指令',
+      tags: ['Thread'],
+    })
+    .input(ThreadTargetSchema)
+    .output(ApiThreadTurnListResultSchema),
+  readTranscript: procedure
+    .route({
+      method: 'GET',
+      path: '/threads/{threadId}/transcript',
+      summary: '读取会话历史',
+      description: '按完整运行边界读取一页会话消息，页内按执行顺序排列；nextCursor 指向更早历史，为 null 时没有更早记录。最新页合并当前运行的流式内容，历史页只读取持久事实',
+      tags: ['Thread'],
+    })
+    .input(ApiThreadTranscriptInputSchema)
+    .output(ThreadTranscriptPageSchema),
 }
 
 export type ApiThreadListInput = z.infer<typeof ApiThreadListInputSchema>
 export type ApiThreadListResult = z.infer<typeof ApiThreadListResultSchema>
+export type ApiThreadTranscriptInput = z.infer<typeof ApiThreadTranscriptInputSchema>

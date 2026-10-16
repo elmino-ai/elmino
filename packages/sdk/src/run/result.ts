@@ -23,5 +23,7 @@ export function readRunResult(target: ThreadTarget & { turnId: string }, thread:
   const status = turn.status as ClientRunResult['status']
   /** 选取本轮最后一条助手消息，不把其他轮次回复作为执行结果 */
   const message = thread.messages.findLast(item => item.turnId === target.turnId && item.role === 'assistant')
-  return { ...target, status, message, interaction, thread }
+  // 诊断来自持久化 Turn，不依赖仍在线的执行器或事件历史
+  const errorMessage = turn.message
+  return { ...target, status, message, errorMessage, interaction, thread }
 }

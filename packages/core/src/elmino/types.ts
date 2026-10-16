@@ -107,6 +107,14 @@ export interface ListThreadsInput extends WorkspaceTarget {
   limit?: number
 }
 
+/** 按完整 Turn 边界读取历史，游标只属于同一 Agent、工作区和线程 */
+export interface ReadTranscriptInput extends ThreadTarget {
+  /** 上一页返回的更早历史游标 */
+  cursor?: string
+  /** 单页完整 Turn 数量，默认 10，最多 50 */
+  limit?: number
+}
+
 /** 本地运行可省略固定工作区和新建的线程、Turn 身份 */
 export interface RunInput extends Omit<CreateTurnInput, 'workspaceId' | 'threadId' | 'turnId' | 'input'> {
   /** 动态工作区时必须提供 */

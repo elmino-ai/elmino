@@ -2,6 +2,7 @@ import type { Agent } from '@elmino/agent'
 import type { RunAgentResult, TurnExecution, TurnInputPart } from '@elmino/engine'
 import type { ModelTurnConfig, TurnModel } from '@elmino/llm'
 import type { RuntimeStore, RuntimeStoreLease, RuntimeThreadRecord } from '@elmino/store'
+import type { ThreadTranscriptPage, ThreadTurnRecord } from '@elmino/thread'
 import type { RuntimeEvent } from '@elmino/thread/events'
 import type {
   CancelTurnInput,
@@ -11,6 +12,7 @@ import type {
   InterruptTurnInput,
   ListThreadsInput,
   ModelRequest,
+  ReadTranscriptInput,
   ResumeTurnInput,
   RunInput,
   SteerTurnInput,
@@ -18,12 +20,15 @@ import type {
   Workspace,
   WorkspaceTarget,
 } from './types'
+import { Buffer } from 'node:buffer'
 import path from 'node:path'
 import { AgentEngine } from '@elmino/engine'
-import { createId, deepEqual, throwSettledErrors } from '@elmino/shared'
+import { createId, deepEqual, isPlainRecord, throwSettledErrors } from '@elmino/shared'
 import { isPathWithin } from '@elmino/shared/node'
 import {
   hydrateThreadMessages,
+  projectThreadTurnRecords,
+  projectThreadTurnState,
   readThreadSnapshot,
   readThreadUsage,
   runtimeRecordsToThreadListItem,
@@ -152,6 +157,76 @@ export class Elmino {
    */
   public getThread(input: ThreadTarget) {
     return this._track(async () => this._state(await this._scope(input), input.threadId))
+  }
+
+  /**
+   * 查询持久化运行记录，重启后仍保留冻结身份、失败原因与待处理交互
+   */
+  public listTurns(input: ThreadTarget): Promise<ThreadTurnRecord[]> {
+    return this._track(async () => {
+      // 先确认归属，任何历史查询都不能读取其他 Agent 或工作区的数据
+      const scope = await this._scope(input)
+      await this._thread(scope, input.threadId)
+      const { store } = scope.workspace
+      // 历史记录来自 Store，活动消息只校准当前进程尚在输出的正文
+      const [turns, storedMessages] = await Promise.all([
+        store.turns.list(input.threadId),
+        hydrateThreadMessages({ store, threadId: input.threadId }),
+      ])
+      const messages = scope.engine.mergeThreadMessages(input.threadId, storedMessages)
+      return projectThreadTurnRecords({ turns, messages })
+    })
+  }
+
+  /**
+   * 按完整运行边界读取一页转录，历史页不混入当前进程的流式消息
+   */
+  public readTranscript(input: ReadTranscriptInput): Promise<ThreadTranscriptPage> {
+    return this._track(async () => {
+      // 1. 确认线程归属后才解释游标和读取持久化内容
+      const scope = await this._scope(input)
+      await this._thread(scope, input.threadId)
+      const { store } = scope.workspace
+      const limit = input.limit ?? 10
+      if (!Number.isInteger(limit) || limit < 1 || limit > 50)
+        throw new ElminoError('BAD_REQUEST', '历史页大小必须在 1 到 50 之间')
+      // 游标绑定完整归属，不能用另一线程或工作区的分页位置读取当前历史
+      let cursor: { createdAt: string, id: string } | undefined
+      if (input.cursor) {
+        try {
+          const decoded: unknown = JSON.parse(Buffer.from(input.cursor, 'base64url').toString('utf8'))
+          if (!isPlainRecord(decoded) || decoded.agentId !== input.agentId
+            || decoded.workspaceId !== input.workspaceId || decoded.threadId !== input.threadId
+            || typeof decoded.id !== 'string' || !decoded.id.startsWith('turn_')
+            || typeof decoded.createdAt !== 'string' || !Number.isFinite(Date.parse(decoded.createdAt))) {
+            throw new Error('历史游标不属于当前线程')
+          }
+          cursor = { createdAt: decoded.createdAt, id: decoded.id }
+        }
+        catch (cause) {
+          throw new ElminoError('BAD_REQUEST', '对话历史游标无效', { cause })
+        }
+      }
+      // 2. Store 负责稳定的创建时间和 ID 排序，消息按页内 Turn 范围读取
+      const page = await store.turns.page({ threadId: input.threadId, cursor, limit })
+      const turnIds = page.turns.map(turn => turn.id)
+      const storedMessages = await hydrateThreadMessages({ store, threadId: input.threadId, turnIds })
+      const projectedMessages = cursor ? storedMessages : scope.engine.mergeThreadMessages(input.threadId, storedMessages)
+      const messagesByTurn = Map.groupBy(projectedMessages, message => message.turnId)
+      // 只保留本页 Turn 的完整消息，当前运行的其他消息不能泄漏到历史页
+      const messages = turnIds.flatMap(turnId => messagesByTurn.get(turnId) ?? [])
+      const turns = page.turns.map(projectThreadTurnState)
+      // 3. 返回不透明的更早历史位置，不让客户端依赖存储层游标字段
+      const nextCursor = page.nextCursor
+        ? Buffer.from(JSON.stringify({
+            agentId: input.agentId,
+            workspaceId: input.workspaceId,
+            threadId: input.threadId,
+            ...page.nextCursor,
+          })).toString('base64url')
+        : null
+      return { turns, messages, nextCursor }
+    })
   }
 
   /**
@@ -500,13 +575,7 @@ export class Elmino {
     // 3. 由线程领域生成状态，运行中正文用 Engine 的更新内容校准
     return scope.agent.thread.toState(snapshot, {
       messages: scope.engine.mergeThreadMessages(threadId, messages),
-      turns: turns.map(turn => ({
-        id: turn.id,
-        status: turn.status,
-        agentId: scope.agent.id,
-        startedAt: turn.startedAt,
-        endedAt: turn.endedAt,
-      })),
+      turns: turns.map(projectThreadTurnState),
       children,
       taskUsage: usage.taskUsage,
     })

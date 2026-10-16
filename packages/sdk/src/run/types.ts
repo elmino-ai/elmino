@@ -1,4 +1,4 @@
-import type { ApiTurnCreateInput, ApiTurnResumeInput } from '@elmino/api'
+import type { ApiClient, ApiTurnCreateInput, ApiTurnResumeInput } from '@elmino/api'
 import type { ThreadInteractionInterrupt, ThreadState } from '@elmino/thread'
 import type { RuntimeEvent } from '@elmino/thread/events'
 import type { ToolApprovalInterruptPayload } from '@elmino/tool'
@@ -52,10 +52,34 @@ export interface ClientRunResult {
   turnId: string
   /** 当前执行片段的终态；运行失败和审批中断也正常返回 */
   status: Extract<ThreadState['turns'][number]['status'], 'completed' | 'failed' | 'cancelled' | 'interrupted'>
+  /** 失败运行的持久化诊断，刷新和重启后仍可读取 */
+  errorMessage?: string
   /** 本 Turn 最后一条助手消息，未生成消息时缺省 */
   message?: ThreadState['messages'][number]
   /** 本轮仍待处理的交互，可直接交给会话审批或恢复；不会取其他 Turn 的交互 */
   interaction?: ClientInteraction
   /** 权威线程快照，包含历史、工具结果与待处理交互 */
   thread: ThreadState
+}
+
+/** 一次执行片段的固定身份与控制权，不暴露内部提交工厂 */
+export interface ClientRun {
+  /** 实际执行的 Agent */
+  readonly agentId: string
+  /** 服务端工作区 */
+  readonly workspaceId: string
+  /** 固定会话身份 */
+  readonly threadId: string
+  /** 创建、恢复或观察的准确 Turn */
+  readonly turnId: string
+  /** 服务端已接纳提交或已找到被观察运行 */
+  readonly accepted: Promise<void>
+  /** 当前执行片段的终态与权威快照 */
+  readonly completed: Promise<ClientRunResult>
+  /** 停止远端准确 Turn，尚在提交时先等待接纳 */
+  interrupt: (reason?: string) => Promise<ThreadState>
+  /** 在执行边界追加要求，不另建 Turn */
+  steer: (text: string) => ReturnType<ApiClient['turn']['steer']>
+  /** 只结束当前客户端观察，远端执行继续 */
+  detach: (reason?: unknown) => void
 }

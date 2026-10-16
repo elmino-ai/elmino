@@ -7,14 +7,20 @@ import type { ClientRetryOptions, RuntimeEventSubscribeHandlers } from '../clien
 const MAX_PENDING_DELIVERIES = 128
 
 /** 单个观察者按顺序处理的连接控制或领域事实 */
-type Delivery = { type: 'reset' } | { type: 'connected' } | { type: 'event', event: RuntimeEvent }
+type Delivery = { type: 'reset', connection?: object } | { type: 'connected' } | { type: 'event', event: RuntimeEvent }
+
+/** 通道内部区分传输重置与单观察者校准，原始订阅保持公开无参数契约 */
+export interface ChannelSubscribeHandlers extends RuntimeEventSubscribeHandlers {
+  /** 同一次传输重置共用身份；本地初始化、过载和重试不传连接身份 */
+  onReset?: (connection?: object) => void | Promise<void>
+}
 
 /** 独立的有界处理队列，允许观察回调等待同一工作区内的其他任务 */
 interface Observer {
   /** 只过滤当前观察者，不缩小共享服务端连接的范围 */
   threadId?: string
   /** 调用方提供的事实与连接处理器 */
-  handlers: RuntimeEventSubscribeHandlers
+  handlers: ChannelSubscribeHandlers
   /** 已释放的观察者不能接收排队或迟到的回调 */
   active: boolean
   /** 失败后需要先重建快照，再消费后续实时事实 */
@@ -42,7 +48,7 @@ interface EventChannel {
 /** 共享连接复用原始订阅契约；底层 Client.subscribe 仍保留独立连接语义 */
 export interface EventChannels {
   /** 观察指定工作区，可选地只接收单个线程的事件 */
-  subscribe: Client['subscribe']
+  subscribe: (input: RuntimeEventSubscribeInput, handlers: ChannelSubscribeHandlers) => () => void
 }
 
 /**
@@ -79,9 +85,11 @@ export function createEventChannels(subscribe: Client['subscribe'], retry: Clien
   }
 
   /** 丢弃无法继续可靠投影的队列，安排快照重建与必要的就绪通知 */
-  const calibrate = (observer: Observer, connected: boolean) => {
+  const calibrate = (observer: Observer, connected: boolean, connection?: object) => {
     clearRetry(observer)
-    observer.queue = [{ type: 'reset' }]
+    // 过载也不能覆盖尚未消费的传输重置，否则旧正文锚点会越过新连接
+    const pending = observer.queue.find(item => item.type === 'reset' && item.connection)
+    observer.queue = [{ type: 'reset', connection: connection ?? (pending?.type === 'reset' ? pending.connection : undefined) }]
     if (connected)
       observer.queue.push({ type: 'connected' })
     observer.dirty = false
@@ -112,7 +120,7 @@ export function createEventChannels(subscribe: Client['subscribe'], retry: Clien
         const delivery = observer.queue.shift()!
         try {
           if (delivery.type === 'reset') {
-            await observer.handlers.onReset?.()
+            await observer.handlers.onReset?.(delivery.connection)
             observer.retryMs = initialDelayMs
           }
           else if (delivery.type === 'connected') {
@@ -155,7 +163,7 @@ export function createEventChannels(subscribe: Client['subscribe'], retry: Clien
     }
     if (delivery.type === 'reset' || observer.dirty || observer.queue.length >= MAX_PENDING_DELIVERIES) {
       // 快照会包含丢弃的排队事实；校准后才允许消费后续增量
-      calibrate(observer, delivery.type === 'reset' ? false : channel.connected)
+      calibrate(observer, delivery.type === 'reset' ? false : channel.connected, delivery.type === 'reset' ? delivery.connection : undefined)
     }
     else {
       observer.queue.push(delivery)
@@ -165,7 +173,7 @@ export function createEventChannels(subscribe: Client['subscribe'], retry: Clien
   }
 
   /** 复用工作区通道并登记观察者，返回只释放当前观察者的入口 */
-  const attach = (input: RuntimeEventSubscribeInput, handlers: RuntimeEventSubscribeHandlers) => {
+  const attach = (input: RuntimeEventSubscribeInput, handlers: ChannelSubscribeHandlers) => {
     // Agent 与工作区共同组成连接身份，线程过滤留在本地观察者
     const key = JSON.stringify([input.agentId, input.workspaceId])
     // 当前调用独占的投影队列、重试状态和释放标记
@@ -194,9 +202,11 @@ export function createEventChannels(subscribe: Client['subscribe'], retry: Clien
            */
           onReset() {
             current.connected = false
+            // 所有观察者共享传输边界；慢观察者不能重复清除其他观察者的新锚点
+            const connection = {}
             // 遍历当前通道仍持有的观察者，只操作其自有队列或重试资源
             for (const item of current.observers)
-              enqueue(item, current, { type: 'reset' })
+              enqueue(item, current, { type: 'reset', connection })
           },
           /**
            * 记录底层连接已就绪，观察者仍须先完成各自排队的校准

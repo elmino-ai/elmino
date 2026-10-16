@@ -8,6 +8,14 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.js"
+    },
+    "./query": {
+      "types": "./dist/query/index.d.ts",
+      "import": "./dist/query/index.js"
     }
   },
   "main": "./dist/index.js",
@@ -25,6 +33,22 @@
     "prepack": "pnpm build",
     "test": "vitest run"
   },
+  "peerDependencies": {
+    "@orpc/tanstack-query": "catalog:",
+    "@tanstack/query-core": "catalog:",
+    "react": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "@orpc/tanstack-query": {
+      "optional": true
+    },
+    "@tanstack/query-core": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
+  },
   "dependencies": {
     "@elmino/api": "workspace:^",
     "@elmino/protocol": "workspace:^",
@@ -37,6 +61,12 @@
     "@orpc/client": "catalog:"
   },
   "devDependencies": {
+    "@orpc/tanstack-query": "catalog:",
+    "@tanstack/query-core": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-test-renderer": "catalog:",
+    "react": "catalog:",
+    "react-test-renderer": "catalog:",
     "tsdown": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

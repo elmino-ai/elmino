@@ -44,5 +44,8 @@ export {
   ThreadMessageSchema,
   ThreadPartWireSchema,
   ThreadStateSchema,
+  ThreadTranscriptPageSchema,
+  ThreadTurnRecordSchema,
+  ThreadTurnStateSchema,
   ThreadUsagePayloadSchema,
 } from './thread/schema'

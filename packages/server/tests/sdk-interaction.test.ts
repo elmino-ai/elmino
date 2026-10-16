@@ -4,7 +4,7 @@ import { defineTools } from '@elmino/tool'
 import { expect, onTestFinished, test, vi } from 'vitest'
 import { z } from 'zod'
 import { createModel, response } from '../../engine/tests/support/model'
-import { createServerHarness } from './support/server'
+import { createGatedModel, createServerHarness } from './support/server'
 
 /** 审批经过真实模型暂停、SDK 交互快照、Server 恢复与工具执行，始终沿用原 Turn */
 test.each(['approve', 'resume'] as const)('%s 恢复同一 Turn，只展示恢复后的输出，旧审批再次使用返回冲突', async (method) => {
@@ -46,9 +46,13 @@ test.each(['approve', 'resume'] as const)('%s 恢复同一 Turn，只展示恢�
     onText: (value: string) => { text.push(value) },
     onReasoning: (value: string) => { reasoning.push(value) },
   }
-  const result = method === 'approve'
-    ? await thread.approve(interaction, options)
-    : await thread.resume(interaction, { decisions: [{ type: 'approve', callId: 'native_work' }] }, options)
+  const resumed = method === 'approve'
+    ? thread.approve(interaction, options)
+    : thread.resume(interaction, { decisions: [{ type: 'approve', callId: 'native_work' }] }, options)
+  expect(resumed.turnId).toBe(pending.turnId)
+  expect(resumed.threadId).toBe(pending.threadId)
+  await resumed.accepted
+  const result = await resumed.completed
   expect(result).toMatchObject({ turnId: pending.turnId, threadId: pending.threadId, status: 'completed' })
   expect(result.interaction).toBeUndefined()
   expect(result.thread.turns).toHaveLength(1)
@@ -57,7 +61,43 @@ test.each(['approve', 'resume'] as const)('%s 恢复同一 Turn，只展示恢�
   expect(execute).toHaveBeenCalledExactlyOnceWith({ value: 'approved' }, expect.anything())
   expect(restored.requests).toHaveLength(1)
   expect(harness.modelRequests.at(-1)?.frozenConfig).toEqual(initial.model.config)
-  await expect(thread.approve(interaction, { signal: AbortSignal.timeout(5_000) })).rejects.toMatchObject({ code: 'CONFLICT' })
+  await expect(thread.approve(interaction, { signal: AbortSignal.timeout(5_000) }).completed).rejects.toMatchObject({ code: 'CONFLICT' })
+  expect(execute).toHaveBeenCalledTimes(1)
+  expect(await harness.stores.primary.store.turns.list(thread.threadId)).toHaveLength(1)
+}, 10_000)
+
+test('审批恢复立即返回句柄，仍可引导、detach 并通过原句柄中断同一 Turn', async () => {
+  // 首次模型停在工具审批，恢复后的模型保持阻塞，保证控制操作发生在执行中
+  const execute = vi.fn(() => '审批工具只执行一次')
+  const harness = await createServerHarness({ tools: defineTools({
+    work: { description: '等待确认', schema: z.object({}), approval: 'auto', execute },
+  }) })
+  harness.models.push(createModel([
+    response([{ type: 'tool-call', id: 'native_resumed_control', name: 'work', args: {} }], 'tool-calls'),
+  ]).model)
+  const thread = harness.client().thread({ agentId: 'alpha', workspaceId: 'primary' })
+  const pending = await thread.run('审批后继续长任务', { approvalMode: 'request', signal: AbortSignal.timeout(5_000) })
+  const model = createGatedModel('中断后不能输出')
+  harness.models.push(model.model)
+  const resumed = thread.approve(pending.interaction!, { signal: AbortSignal.timeout(5_000) })
+  expect(resumed.turnId).toBe(pending.turnId)
+  expect(resumed.threadId).toBe(thread.threadId)
+  await resumed.accepted
+  await Promise.race([model.entered, resumed.completed])
+
+  // 引导命中恢复的原 Turn；本地 detach 只结束等待，不撤销控制身份或远端执行
+  expect(await resumed.steer('先处理追加要求')).toMatchObject({ turnId: pending.turnId })
+  const reason = new Error('只结束恢复后的本地观察')
+  const detached = expect(resumed.completed).rejects.toBe(reason)
+  resumed.detach(reason)
+  await detached
+  expect(model.signal?.aborted).toBe(false)
+  const attached = thread.attach(pending.turnId, { signal: AbortSignal.timeout(5_000) })
+  await attached.accepted
+  await resumed.interrupt('停止已恢复的原运行')
+  const result = await attached.completed
+  expect(result).toMatchObject({ turnId: pending.turnId, status: 'interrupted' })
+  expect(model.signal?.aborted).toBe(true)
   expect(execute).toHaveBeenCalledTimes(1)
   expect(await harness.stores.primary.store.turns.list(thread.threadId)).toHaveLength(1)
 }, 10_000)
@@ -75,7 +115,7 @@ test('reject 只拒绝待审批工具，模型仍在原 Turn 继续解释', asyn
   const pending = await thread.run('执行工作', { approvalMode: 'auto', signal: AbortSignal.timeout(5_000) })
   const restored = createModel([response([{ type: 'text', text: '已尊重拒绝决定，说明其他做法' }])])
   harness.models.push(restored.model)
-  const result = await thread.reject(pending.interaction!, '用户不同意执行', { signal: AbortSignal.timeout(5_000) })
+  const result = await thread.reject(pending.interaction!, '用户不同意执行', { signal: AbortSignal.timeout(5_000) }).completed
   expect(result).toMatchObject({ turnId: pending.turnId, status: 'completed' })
   expect(execute).not.toHaveBeenCalled()
   expect(restored.requests).toHaveLength(1)
@@ -109,7 +149,7 @@ test('respond 必须完整覆盖当前批次，混合批准、编辑、拒绝和
   const pending = await thread.run('批量执行', { approvalMode: 'auto', signal: AbortSignal.timeout(5_000) })
   const interaction = pending.interaction!
   expect(interaction.approval?.actionRequests).toHaveLength(4)
-  await expect(thread.respond(interaction, [{ type: 'approve', callId: 'native_approve' }])).rejects.toBeInstanceOf(TypeError)
+  expect(() => thread.respond(interaction, [{ type: 'approve', callId: 'native_approve' }])).toThrow(TypeError)
   expect(execute).not.toHaveBeenCalled()
   expect(harness.modelRequests).toHaveLength(1)
   const restored = createModel([response([{ type: 'text', text: '已按逐项决策处理' }])])
@@ -119,7 +159,7 @@ test('respond 必须完整覆盖当前批次，混合批准、编辑、拒绝和
     { type: 'edit', callId: 'native_edit', editedAction: { name: 'work', args: { value: 'changed-by-user' } } },
     { type: 'reject', callId: 'native_reject', message: '取消此工具' },
     { type: 'respond', callId: 'native_respond', message: '人工提供的结果' },
-  ], { signal: AbortSignal.timeout(5_000) })
+  ], { signal: AbortSignal.timeout(5_000) }).completed
   expect(result).toMatchObject({ status: 'completed', turnId: pending.turnId })
   expect(execute).toHaveBeenCalledTimes(2)
   expect(execute).toHaveBeenCalledWith({ value: 'original-approved' }, expect.anything())
@@ -175,7 +215,7 @@ test('Server 重启后新 Client 通过 get 和 watch 恢复待审批任务，ca
   expect(execute).not.toHaveBeenCalled()
   expect(harness.modelRequests).toHaveLength(1)
   expect(errors).toEqual([])
-  await expect(recovered.approve(attached.interaction!, { signal: AbortSignal.timeout(5_000) })).rejects.toMatchObject({ code: 'CONFLICT' })
+  await expect(recovered.approve(attached.interaction!, { signal: AbortSignal.timeout(5_000) }).completed).rejects.toMatchObject({ code: 'CONFLICT' })
   await expect(recovered.cancel(attached.interaction!)).rejects.toMatchObject({ code: 'CONFLICT' })
 }, 10_000)
 
@@ -200,7 +240,7 @@ test('watch 的异步监听器可以直接等待同一工作区的 approve，不
       return
     handled = true
     try {
-      const result = await thread.approve(pending.interaction!, { signal: AbortSignal.timeout(4_000) })
+      const result = await thread.approve(pending.interaction!, { signal: AbortSignal.timeout(4_000) }).completed
       expect(result.status).toBe('completed')
       approved.resolve()
     }
@@ -252,7 +292,7 @@ test('同一 Turn 两次审批后恢复，重放第一次中断不能提前结�
     signal: AbortSignal.timeout(5_000),
     onText: (text) => { middleText.push(text) },
     onToolResult: (part) => { middleTools.push(part.providerCallId!) },
-  })
+  }).completed
   expect(second.status).toBe('interrupted')
   expect(second.interaction!.interruptId).not.toBe(first.interaction!.interruptId)
   expect(second.turnId).toBe(first.turnId)
@@ -287,7 +327,7 @@ test('同一 Turn 两次审批后恢复，重放第一次中断不能提前结�
     signal: AbortSignal.timeout(5_000),
     onText: (value) => { text.push(value) },
     onToolResult: (part) => { tools.push(part.providerCallId!) },
-  })
+  }).completed
   let settled = false
   completed.then(
     () => { settled = true },

@@ -6,9 +6,11 @@ import type {
   ClientRunResult,
   ClientThread,
   ClientThreadRunOptions,
+  ClientThreadSnapshot,
+  ComposerSnapshot,
   ThreadWatchOptions,
 } from '@elmino/sdk'
-import { Client } from '@elmino/sdk'
+import { Client, Composer } from '@elmino/sdk'
 
 const event = {
   id: 'event_11111111-1111-4111-8111-111111111111',
@@ -46,6 +48,10 @@ const client = Client.create({
       })
       return Promise.resolve(new Response(body, { headers: { 'content-type': 'text/event-stream' } }))
     }
+    if (request.url.endsWith('/thread/listTurns'))
+      return Promise.resolve(Response.json({ json: [] }))
+    if (request.url.endsWith('/thread/readTranscript'))
+      return Promise.resolve(Response.json({ json: { turns: [], messages: [], nextCursor: null } }))
     return Promise.resolve(Response.json({ json: { status: 'ok' } }))
   },
 })
@@ -59,6 +65,8 @@ if ([
   client.rpc.agent.list,
   client.rpc.thread.get,
   client.rpc.thread.list,
+  client.rpc.thread.listTurns,
+  client.rpc.thread.readTranscript,
   client.rpc.turn.create,
   client.rpc.turn.resume,
   client.rpc.turn.cancel,
@@ -132,6 +140,10 @@ if (typeof interactionId !== 'function' || [
   thread.start,
   thread.attach,
   thread.get,
+  thread.listTurns,
+  thread.readTranscript,
+  thread.getSnapshot,
+  thread.subscribe,
   thread.watch,
   thread.resume,
   thread.approve,
@@ -143,4 +155,32 @@ if (typeof interactionId !== 'function' || [
   task.detach,
 ].some(method => typeof method !== 'function')) {
   throw new Error('SDK 缺少会话、审批或执行控制入口')
+}
+
+// 读取与外部 Store 契约通过发布入口消费；所有传输由上面的标准 Fetch 替身接管
+const records = await thread.listTurns()
+const page = await thread.readTranscript({ limit: 1 })
+if (records.length !== 0 || page.turns.length !== 0 || page.nextCursor !== null)
+  throw new Error('SDK 历史入口没有沿用真实 API 结果')
+const snapshot: ClientThreadSnapshot = thread.getSnapshot()
+if (thread.getSnapshot() !== snapshot)
+  throw new Error('SDK 外部 Store 在未变化时返回了新的快照引用')
+const stopThread: () => void = thread.subscribe(() => undefined)
+stopThread()
+
+// Composer 属于无界面入口，创建和编辑草稿不能隐式安装或依赖 React
+const beforeComposer = requests.length
+const composer = Composer.create({ thread, input: '公开草稿' })
+try {
+  const draft: ComposerSnapshot = composer.getSnapshot()
+  if (draft.input[0]?.type !== 'text' || draft.input[0].text !== '公开草稿')
+    throw new Error('Composer 公开输入或快照类型不完整')
+  if (composer.getSnapshot() !== draft)
+    throw new Error('Composer 外部 Store 没有保留稳定快照')
+  composer.setInput('编辑后仍不提交')
+  if (requests.length !== beforeComposer)
+    throw new Error('Composer 创建或编辑草稿意外发起请求')
+}
+finally {
+  composer.dispose()
 }

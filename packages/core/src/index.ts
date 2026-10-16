@@ -13,6 +13,7 @@ export type {
   ModelFactory,
   ModelRegistration,
   ModelRequest,
+  ReadTranscriptInput,
   ResumeTurnInput,
   RunInput,
   SteerTurnInput,

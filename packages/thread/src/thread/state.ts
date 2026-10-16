@@ -1,6 +1,6 @@
 import type { ThreadLocation } from '@elmino/runtime'
 import type { JsonValue, UnknownRecord } from '@elmino/shared'
-import type { ThreadMessage, ThreadSettings, ThreadTurnStatus } from '@elmino/store'
+import type { ApprovalMode, SubagentMode, ThreadMessage, ThreadSettings, ThreadTurnStatus } from '@elmino/store'
 import type { ThreadInterrupt } from '../runtime/interrupt'
 import type { ThreadRuntimeState } from '../runtime/state'
 
@@ -13,6 +13,16 @@ export interface ThreadTurnState {
   status: ThreadTurnStatus
   /** Turn 冻结的 Agent ID */
   agentId: string
+  /** Turn 冻结的模型配置身份 */
+  modelId?: string
+  /** Turn 冻结的工具审批模式 */
+  approvalMode?: ApprovalMode
+  /** Turn 冻结的子智能体模式 */
+  subagentMode?: SubagentMode
+  /** 最后错误或中断原因，来自持久化执行事实 */
+  message?: string
+  /** 此 Turn 持久化的中断事实，不替换为线程后来一轮的交互 */
+  interrupt?: ThreadInterrupt
   /** Turn 开始时间，排队中时不存在 */
   startedAt?: string
   /** Turn 结束时间 */

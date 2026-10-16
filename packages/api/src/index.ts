@@ -9,8 +9,14 @@ export { HealthResultSchema, metaContract } from './meta/contract'
 export { API_DOCS_PATH, API_PATH, API_SPEC_PATH, RPC_PATH } from './paths/paths'
 export { apiContract } from './router/router'
 export type { ApiClient } from './router/router'
-export { ApiThreadListInputSchema, ApiThreadListResultSchema, threadContract } from './thread/contract'
-export type { ApiThreadListInput, ApiThreadListResult } from './thread/contract'
+export {
+  ApiThreadListInputSchema,
+  ApiThreadListResultSchema,
+  ApiThreadTranscriptInputSchema,
+  ApiThreadTurnListResultSchema,
+  threadContract,
+} from './thread/contract'
+export type { ApiThreadListInput, ApiThreadListResult, ApiThreadTranscriptInput } from './thread/contract'
 export { turnContract } from './turn/contract'
 export {
   ApiTurnCancelInputSchema,

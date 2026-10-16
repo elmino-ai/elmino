@@ -1,14 +1,14 @@
 import type { ApiClient, ApiThreadListInput, RuntimeEventSubscribeInput } from '@elmino/api'
 import type { RequestClient, RequestTransport } from '@elmino/request'
 import type { ClientRunOptions, ClientRunResult } from '../run/types'
-import type { ClientThreadOptions } from '../thread/types'
+import type { ClientThread, ClientThreadOptions } from '../thread/types'
 import type { ClientOptions, RuntimeEventSubscribeHandlers } from './types'
 import { RPC_PATH } from '@elmino/api/paths'
 import { createRequest } from '@elmino/request'
 import { createOrpcClient } from '@elmino/request/orpc'
 import { createEventChannels } from '../events/channel'
 import { subscribeRuntimeEvents } from '../events/subscribe'
-import { ClientThread } from '../thread/thread'
+import { ThreadClient } from '../thread/thread'
 
 /** 类型化 API、宿主自定义 HTTP 传输和可恢复的运行事件订阅 */
 export class Client {
@@ -80,7 +80,7 @@ export class Client {
    * 固定 Agent、工作区和会话，后续调用不必重复传入身份
    */
   public thread(options: ClientThreadOptions): ClientThread {
-    return ClientThread.create({ rpc: this.rpc, subscribe: this._channels.subscribe }, options)
+    return ThreadClient.create({ rpc: this.rpc, subscribe: this._channels.subscribe }, options)
   }
 
   /**

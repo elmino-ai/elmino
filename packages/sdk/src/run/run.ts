@@ -2,13 +2,28 @@ import type { ApiTurnCreateInput, ThreadTarget } from '@elmino/api'
 import type { JsonValue } from '@elmino/shared'
 import type { ThreadState } from '@elmino/thread'
 import type { Client } from '../client/client'
-import type { ClientInteraction, ClientObserveOptions, ClientRunResult, ClientThreadRunOptions } from './types'
+import type { EventChannels } from '../events/channel'
+import type { ThreadProjection } from '../thread/projection'
+import type {
+  ClientInteraction,
+  ClientObserveOptions,
+  ClientRun,
+  ClientRunResult,
+  ClientThreadRunOptions,
+} from './types'
 import { ORPCError } from '@orpc/client'
 import { createRunOutput } from './output'
 import { readRunResult } from './result'
 
 /** 客户端原始传输或同工作区共享事件通道，执行逻辑不持有连接池 */
-export type RunClient = Pick<Client, 'rpc' | 'subscribe'>
+export type RunClient = Pick<Client, 'rpc'> & {
+  /** 借用共享事件连接，连接重置与本地校准拥有不同的生命周期 */
+  subscribe: EventChannels['subscribe']
+  /** 执行观察向所属会话发布状态，消费回调不持有另一份全局当前 Turn */
+  onState?: (state: ThreadState) => void
+  /** 所属会话唯一投影，运行和界面订阅不反向重置彼此的增量锚点 */
+  projection: ThreadProjection
+}
 
 /** 创建、恢复和只观察共用同一生命周期，只在提交阶段选择对应操作 */
 export type RunOperation
@@ -17,7 +32,7 @@ export type RunOperation
     | { type: 'attach' }
 
 /** 同一次远程执行的固定身份与控制权；本地观察结束不撤销远端任务 */
-export class ClientRun {
+export class RemoteRun implements ClientRun {
   /** 任务归属的 Agent */
   public readonly agentId: string
   /** 任务归属的工作区 */
@@ -39,7 +54,6 @@ export class ClientRun {
    * 固定运行身份并立即建立观察生命周期，公共入口统一通过工厂创建
    */
   private constructor(
-    /** 共享事件与 RPC 能力，执行句柄不拥有底层整个客户端 */
     private readonly _client: RunClient,
     target: ThreadTarget & { turnId: string },
     operation: RunOperation,
@@ -59,7 +73,7 @@ export class ClientRun {
    * 创建观察句柄，生成身份由所属会话完成；共享同一段接纳、重连与结算逻辑
    */
   public static create(client: RunClient, target: ThreadTarget & { turnId: string }, operation: RunOperation, options: ClientObserveOptions): ClientRun {
-    return new ClientRun(client, target, operation, options)
+    return new RemoteRun(client, target, operation, options)
   }
 
   /**
@@ -67,7 +81,14 @@ export class ClientRun {
    */
   public async interrupt(reason?: string): Promise<ThreadState> {
     await this.accepted
-    return this._client.rpc.turn.interrupt({ ...this._target(), reason })
+    // 控制权不随 detach 消失，返回的权威结果仍更新所属会话
+    const epoch = this._client.projection.getEpoch()
+    const state = await this._client.rpc.turn.interrupt({ ...this._target(), reason })
+    if (epoch === this._client.projection.getEpoch()) {
+      this._client.projection.merge(state)
+      this._client.onState?.(this._client.projection.getSnapshot()!)
+    }
+    return state
   }
 
   /**
@@ -118,6 +139,8 @@ export class ClientRun {
     const wait = <T>(task: Promise<T>) => Promise.race([task, failure.promise])
     // 本次执行片段独占的输出去重与恢复基线，不与其他任务混用
     const output = createRunOutput(options, controller.signal)
+    // 所属会话只持有一份事实投影；多个观察各自保留输出位置
+    const projection = this._client.projection
     // 标记已开始提交或附着，提交前的工作区历史不得影响当前任务
     let submitted = operation.type === 'attach'
     // 区分接纳前竞态与已接纳执行，恢复终态只在正确阶段确认
@@ -131,12 +154,36 @@ export class ClientRun {
 
     /** 串行安排状态与输出投影，失败时以原错误取消当前调用 */
     const project = (action: () => void | Promise<void>) => {
-      processing = processing.then(action)
+      // 回调可能等待宿主很久，执行时再次核对生命周期，不能投递删除前排队的旧结果
+      const epoch = projection.getEpoch()
+      processing = processing.then(() => {
+        controller.signal.throwIfAborted()
+        if (epoch !== projection.getEpoch())
+          throw new ORPCError('NOT_FOUND', { message: '会话已删除，排队投影已失效' })
+        return action()
+      })
       processing.catch(error => controller.abort(error))
       return processing
     }
+    /** 普通读取保留流式锚点，删除前发起的迟到读取不得复活会话 */
+    const read = async () => {
+      const epoch = projection.getEpoch()
+      const state = await this._client.rpc.thread.get(target, { signal: controller.signal })
+      controller.signal.throwIfAborted()
+      if (epoch !== projection.getEpoch())
+        throw new ORPCError('NOT_FOUND', { message: '会话已删除，先前读取已失效' })
+      projection.merge(state)
+      this._client.onState?.(projection.getSnapshot()!)
+      return state
+    }
     /** 只根据指定 Turn 的权威终态结束观察，恢复前的原审批保持等待 */
     const observe = (state: ThreadState) => {
+      // 权威状态已离开原中断时，漏掉 turn.started 也能继续恢复后的流式输出
+      if (operation.type === 'resume' && state.runtime.turnId === turnId
+        && state.runtime.status === 'running'
+        && state.runtime.interrupt?.id !== operation.interaction.interruptId) {
+        started = true
+      }
       // 将当前权威线程快照投影成本轮结果，其他运行不影响结束判定
       const result = readRunResult(this._target(), state)
       if (!result)
@@ -156,14 +203,15 @@ export class ClientRun {
             controller.abort(error)
         },
         /** 连接历史不可用时重建本轮输出与终态，未提交的新线程允许暂不存在 */
-        onReset: async () => {
-          output.reset()
+        onReset: async (connection) => {
+          // 仅真实传输重置结束旧基线；新 attach 与过载校准不能清除其他观察者的锚点
+          projection.resetConnection(connection)
           if (!submitted)
             return
           // 保存重连查询或创建、恢复接纳返回的权威线程状态
           let state: ThreadState
           try {
-            state = await this._client.rpc.thread.get(target, { signal: controller.signal })
+            state = await read()
           }
           catch (error) {
             if (operation.type === 'create' && !accepted && error instanceof ORPCError && error.code === 'NOT_FOUND')
@@ -176,7 +224,7 @@ export class ClientRun {
           })
         },
         /** 串行投影本线程本轮事实，恢复终态还需权威快照排除历史事件 */
-        onEvent: event => project(async () => {
+        onEvent: async (event) => {
           if (!submitted || event.threadId !== target.threadId || event.turnId !== turnId)
             return
           if (operation.type === 'resume' && event.type === 'turn.interrupted' && event.interruptId === operation.interaction.interruptId)
@@ -185,32 +233,46 @@ export class ClientRun {
             return
           if (event.type === 'turn.started')
             started = true
-          // 判断当前事实是否为运行终态，恢复场景仍需读取权威状态确认
+          // 原恢复片段尚未开始时，不交付旧内容；终态仍要读权威状态核对
           const terminal = ['turn.completed', 'turn.failed', 'turn.cancelled', 'turn.interrupted'].includes(event.type)
-          if (started || terminal)
-            await output.event(event)
-          if (terminal) {
-            if (operation.type === 'resume') {
-              // 同一 Turn 可能多次中断；历史终态不能直接结束当前恢复片段
-              if (accepted) {
-                // 终态事实触发的最新线程快照，用来排除历史中断事件
-                const current = await this._client.rpc.thread.get(target, { signal: controller.signal })
-                await output.snapshot(current, turnId)
-                observe(current)
+          if (!started && !terminal)
+            return
+          // 流式正文共用会话投影；Step 等事实不逐项查询，终态和消息缺口才校准
+          const projected = projection.apply(event)
+          let state = projected.state
+          if (projected.refresh && (event.type.startsWith('message.') || !state || terminal)) {
+            // 请求失败交给共享通道重连重置，不把临时网络错误当成输出回调失败
+            state = await read()
+            projection.merge(state)
+          }
+          await project(async () => {
+            if (state) {
+              this._client.onState?.(projection.getSnapshot() ?? state)
+              await output.snapshot(state, turnId)
+            }
+            // 每个观察者独立消费事件；其他观察者的慢回调不阻塞本轮执行
+            await options.onEvent?.(event)
+            if (terminal) {
+              if (operation.type === 'resume') {
+                if (accepted && state)
+                  observe(state)
+              }
+              else {
+                ended.resolve()
               }
             }
-            else {
-              ended.resolve()
-            }
-          }
-        }),
+          })
+        },
       })
       await wait(ready.promise)
       // 保存重连查询或创建、恢复接纳返回的权威线程状态
       let state: ThreadState
+      // 接纳响应也可能晚于删除事实，不允许旧 HTTP 响应复活已清空的会话
+      const epoch = projection.getEpoch()
       if (operation.type === 'resume') {
         // 恢复前的原运行输出快照，作为已展示基线以免重新打印旧内容
-        const baseline = await wait(this._client.rpc.thread.get(target, { signal: controller.signal }))
+        const baseline = await wait(read())
+        projection.merge(baseline)
         await wait(project(() => output.seed(baseline, turnId)))
         submitted = true
         state = await wait(this._client.rpc.turn.resume({
@@ -227,16 +289,22 @@ export class ClientRun {
         state = await wait(this._client.rpc.turn.create({ ...target, turnId, input: operation.input, modelId, approvalMode, subagentMode }, { signal: controller.signal }))
       }
       else {
-        state = await wait(this._client.rpc.thread.get(target, { signal: controller.signal }))
+        state = await wait(read())
         if (!state.turns.some(turn => turn.id === turnId))
           throw new ORPCError('NOT_FOUND', { message: '运行不存在' })
         await wait(project(() => output.snapshot(state, turnId)))
       }
+      if (epoch !== projection.getEpoch())
+        throw new ORPCError('NOT_FOUND', { message: '会话已删除，接纳响应已失效' })
+      projection.merge(state)
+      this._client.onState?.(state)
       accepted = true
       this._acceptance.resolve()
       if (operation.type === 'resume') {
         // 新终态可能先于接纳响应到达；这里读一次当前状态，补齐这个竞态窗口
-        state = await wait(this._client.rpc.thread.get(target, { signal: controller.signal }))
+        state = await wait(read())
+        projection.merge(state)
+        this._client.onState?.(projection.getSnapshot()!)
         await wait(project(() => output.snapshot(state, turnId)))
       }
       observe(state)
@@ -244,7 +312,8 @@ export class ClientRun {
       stop()
       await wait(processing)
       // 终态后读取的完整权威快照，用来补齐缺失输出并形成最终结果
-      const thread = await wait(this._client.rpc.thread.get(target, { signal: controller.signal }))
+      const thread = await wait(read())
+      this._client.onState?.(thread)
       await wait(project(() => output.snapshot(thread, turnId)))
       // 将当前权威线程快照投影成本轮结果，其他运行不影响结束判定
       const result = readRunResult(this._target(), thread)

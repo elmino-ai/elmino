@@ -79,6 +79,14 @@ export class AgentServer {
           await this._authorize(context, ['thread', 'get'], input)
           return this._call(() => this._options.elmino.getThread(input))
         }),
+        listTurns: api.thread.listTurns.handler(async ({ context, input }) => {
+          await this._authorize(context, ['thread', 'listTurns'], input)
+          return this._call(() => this._options.elmino.listTurns(input))
+        }),
+        readTranscript: api.thread.readTranscript.handler(async ({ context, input }) => {
+          await this._authorize(context, ['thread', 'readTranscript'], input)
+          return this._call(() => this._options.elmino.readTranscript(input))
+        }),
       },
       turn: {
         create: api.turn.create.handler(async ({ context, input }) => {

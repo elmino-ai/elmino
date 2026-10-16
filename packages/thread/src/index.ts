@@ -50,6 +50,8 @@ export type {
 } from './runtime/interrupt'
 export { readThreadInteraction, readThreadInterrupt } from './runtime/interrupt'
 export type { ThreadRuntimeState } from './runtime/state'
+export { projectThreadTurnRecords, projectThreadTurnState } from './thread/history'
+export type { ThreadTranscriptPage, ThreadTurnRecord } from './thread/history'
 export { hydrateThreadMessages } from './thread/hydrate'
 export { runtimeRecordsToThreadListItem } from './thread/list'
 export { defineThread } from './thread/projection'

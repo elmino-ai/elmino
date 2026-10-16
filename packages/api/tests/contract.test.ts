@@ -3,6 +3,7 @@ import {
   apiContract,
   ApiThreadListInputSchema,
   ApiThreadListResultSchema,
+  ApiThreadTranscriptInputSchema,
   ApiTurnCancelInputSchema,
   ApiTurnCreateInputSchema,
   ApiTurnInterruptInputSchema,
@@ -217,6 +218,8 @@ test('HTTP 与 RPC 共用稳定契约，所有路由都有方法、摘要、说�
     ['GET', '/agents'],
     ['GET', '/threads'],
     ['GET', '/threads/{threadId}'],
+    ['GET', '/threads/{threadId}/turns'],
+    ['GET', '/threads/{threadId}/transcript'],
     ['POST', '/threads/{threadId}/turns'],
     ['POST', '/threads/{threadId}/turns/{turnId}/resume'],
     ['POST', '/threads/{threadId}/turns/{turnId}/cancel'],
@@ -229,6 +232,14 @@ test('HTTP 与 RPC 共用稳定契约，所有路由都有方法、摘要、说�
     expect(route.description?.trim().length).toBeGreaterThan(0)
     expect(route.tags?.length).toBeGreaterThan(0)
   }
+})
+
+test('历史输入沿用完整作用域和完整 Turn 分页边界，拒绝无效页大小与空游标', () => {
+  // 不透明游标由 Core 解释，网络入口只约束其类型与有界长度
+  expect(ApiThreadTranscriptInputSchema.parse({ ...target, limit: 10, cursor: 'opaque' }))
+    .toEqual({ ...target, limit: 10, cursor: 'opaque' })
+  for (const patch of [{ limit: 0 }, { limit: 51 }, { limit: 1.5 }, { cursor: '' }, { cursor: 'x'.repeat(2_049) }])
+    expect(ApiThreadTranscriptInputSchema.safeParse({ ...target, ...patch }).success).toBe(false)
 })
 
 test('通用非空 Schema 保留宿主配置键与引导原文，拒绝全空白身份', () => {

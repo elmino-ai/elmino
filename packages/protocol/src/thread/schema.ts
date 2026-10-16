@@ -6,6 +6,9 @@ import type {
   ThreadListItem,
   ThreadRuntimeState,
   ThreadState,
+  ThreadTranscriptPage,
+  ThreadTurnRecord,
+  ThreadTurnState,
   ThreadUsagePayload,
 } from '@elmino/thread'
 import { isJsonValue } from '@elmino/shared'
@@ -145,6 +148,55 @@ export const ThreadMessageSchema: z.ZodType<ThreadMessage> = z.object({
   }
 })
 
+/** 线程摘要与历史记录共用同一份执行身份、诊断和交互字段 */
+const threadTurnState = z.object({
+  id: TurnIdSchema,
+  status: turnStatus,
+  agentId: identifier,
+  modelId: identifier.optional(),
+  approvalMode: z.enum(['request', 'auto', 'fullAccess']).optional(),
+  subagentMode: z.enum(['explicitOnly', 'proactive']).optional(),
+  message: z.string().optional(),
+  interrupt: ThreadInterruptSchema.optional(),
+  startedAt: datetime.optional(),
+  endedAt: datetime.optional(),
+})
+
+/** 中断必须属于该条历史运行，不能用线程其他 Turn 的审批替代 */
+export const ThreadTurnStateSchema: z.ZodType<ThreadTurnState> = threadTurnState.superRefine((turn, context) => {
+  if (turn.interrupt && turn.interrupt.turnId !== turn.id)
+    context.addIssue({ code: 'custom', path: ['interrupt', 'turnId'], message: '中断不属于当前运行' })
+})
+
+/** 公开历史记录省略模型原始配置与 Agent Prompt，保留可诊断的持久事实 */
+export const ThreadTurnRecordSchema: z.ZodType<ThreadTurnRecord> = threadTurnState.extend({
+  threadId: ThreadIdSchema,
+  modelId: identifier,
+  approvalMode: z.enum(['request', 'auto', 'fullAccess']),
+  subagentMode: z.enum(['explicitOnly', 'proactive']),
+  createdAt: datetime,
+  lastEventAt: datetime,
+  toolCallCount: z.number().int().nonnegative(),
+  toolResultCount: z.number().int().nonnegative(),
+}).superRefine((turn, context) => {
+  if (turn.interrupt && turn.interrupt.turnId !== turn.id)
+    context.addIssue({ code: 'custom', path: ['interrupt', 'turnId'], message: '中断不属于当前运行' })
+})
+
+/** 单页只包含完整 Turn 及其消息，游标由服务端解释 */
+export const ThreadTranscriptPageSchema: z.ZodType<ThreadTranscriptPage> = z.object({
+  turns: z.array(ThreadTurnStateSchema),
+  messages: z.array(ThreadMessageSchema),
+  nextCursor: z.string().min(1).nullable(),
+}).superRefine((page, context) => {
+  // 页内消息不能引用未返回的 Turn，防止半条运行跨页或错误混入当前任务
+  const turnIds = new Set(page.turns.map(turn => turn.id))
+  for (const [index, message] of page.messages.entries()) {
+    if (!turnIds.has(message.turnId))
+      context.addIssue({ code: 'custom', path: ['messages', index, 'turnId'], message: '消息不属于当前历史页的运行' })
+  }
+})
+
 /** 子线程描述保留其自有 Turn；事件外壳的 Turn 属于父线程，不能混用 */
 export const ThreadChildStateSchema: z.ZodType<ThreadChildState> = z.object({
   ownerId: identifier,
@@ -203,13 +255,7 @@ const threadState = z.object({
   lastInteractionAt: datetime,
   updatedAt: datetime,
   messages: z.array(ThreadMessageSchema),
-  turns: z.array(z.object({
-    id: TurnIdSchema,
-    status: turnStatus,
-    agentId: identifier,
-    startedAt: datetime.optional(),
-    endedAt: datetime.optional(),
-  })),
+  turns: z.array(ThreadTurnStateSchema),
   children: z.array(ThreadChildStateSchema),
   extensions: z.record(identifier, jsonRecord),
   settings,

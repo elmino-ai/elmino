@@ -144,4 +144,4 @@ export function createObservation() {
 - Tutorial 从简单到复杂，Reference 按能力独立查阅，Integration 留给第三方实际接入；不为未来内容预建空目录
 - 框架错误保留可诊断的领域事实，展示文案由实际宿主负责；公共 Request 和 SDK 不依赖 Toast、React Store 或产品 UI
 - 面向用户的标题、操作和提示末尾不写标点，优先解释目标、实际影响及下一步操作；高级诊断确需说明技术边界时再使用内部术语
-- 当前不迁入 React、Tailwind、Dashboard、Nest、账号或市场专用规范；出现对应实现时再按实际框架建立所属规范
+- React Hook 只绑定 SDK 已有的外部 Store，使用稳定订阅和快照引用；Tailwind、Dashboard、Nest、账号、市场与 UI 组件规范按实际接入范围另行引入

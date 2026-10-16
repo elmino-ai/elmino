@@ -28,6 +28,7 @@
     "@elmino/store-sqlite": "workspace:^",
     "@elmino/thread": "workspace:^",
     "@elmino/tool": "workspace:^",
+    "@tanstack/query-core": "catalog:",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "zod": "catalog:"

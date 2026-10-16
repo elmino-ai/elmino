@@ -35,10 +35,14 @@ catalog:
   '@orpc/json-schema': 1.15.0
   '@orpc/openapi': 1.15.0
   '@orpc/server': 1.15.0
+  '@orpc/tanstack-query': 1.15.0
   '@orpc/zod': 1.15.0
   '@t3-oss/env-core': 0.13.11
+  '@tanstack/query-core': 5.102.8
   '@types/cross-spawn': 6.0.6
   '@types/node': 24.13.3
+  '@types/react': 19.2.18
+  '@types/react-test-renderer': 19.1.0
   '@violetflux/eslint-config-harness': 0.1.12
   '@vscode/ripgrep': 1.18.0
   cross-spawn: 7.0.6
@@ -52,6 +56,8 @@ catalog:
   lint-staged: 17.2.0
   openai: 7.4.0
   p-queue: 9.3.3
+  react: 19.2.8
+  react-test-renderer: 19.2.8
   shell-quote: 1.10.0
   trash: 10.1.1
   tsdown: 0.23.1

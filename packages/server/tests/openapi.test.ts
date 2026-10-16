@@ -65,6 +65,8 @@ test('公开 Scalar 与完整 OpenAPI 文档不进入鉴权，不包含宿主凭
     ['/agents', 'get'],
     ['/threads', 'get'],
     ['/threads/{threadId}', 'get'],
+    ['/threads/{threadId}/turns', 'get'],
+    ['/threads/{threadId}/transcript', 'get'],
     ['/threads/{threadId}/turns', 'post'],
     ['/threads/{threadId}/turns/{turnId}/resume', 'post'],
     ['/threads/{threadId}/turns/{turnId}/cancel', 'post'],
@@ -72,7 +74,7 @@ test('公开 Scalar 与完整 OpenAPI 文档不进入鉴权，不包含宿主凭
     ['/threads/{threadId}/turns/{turnId}/steer', 'post'],
     ['/events', 'get'],
   ]
-  expect(Object.keys(paths)).toHaveLength(operations.length)
+  expect(Object.keys(paths)).toHaveLength(new Set(operations.map(([path]) => path)).size)
   for (const [path, method] of operations) {
     const operation = resolveSchema(document, resolveSchema(document, paths[path!])[method!])
     expect(operation.security ?? spec.security).toEqual([])

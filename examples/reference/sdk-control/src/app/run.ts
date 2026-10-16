@@ -52,8 +52,10 @@ export async function runExample() {
     if (!pending.interaction)
       throw new Error('教学工具应进入审批状态')
     console.log('待审批工具：', pending.interaction.approval?.actionRequests)
-    // 直接批准本次交互允许的动作，SDK 负责生成准确的恢复请求
-    const approved = await review.approve(pending.interaction, options)
+    // 批准同样立即返回执行句柄，可继续中断、引导或结束本地观察；completed 才是本轮结果
+    const resumed = review.approve(pending.interaction, options)
+    // 恢复沿用原 Turn，不创建新的运行记录
+    const approved = await resumed.completed
     console.log('批准后继续：', approved.status)
 
     // 用户选择停止整个待审批任务时使用 cancel；reject 则会让模型继续处理拒绝结果

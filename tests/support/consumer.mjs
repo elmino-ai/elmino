@@ -8,6 +8,8 @@ import ts from 'typescript'
 import { verifyBrowserConsumer } from './browser.mjs'
 
 const run = promisify(execFile)
+/** 只有显式消费适配器时才安装的外部能力，基础 SDK 必须保持隔离 */
+const sdkAdapterPeers = ['react', '@orpc/tanstack-query', '@tanstack/query-core']
 const isolatedDependencies = [
   'openai',
   '@anthropic-ai/sdk',
@@ -23,10 +25,11 @@ const isolatedDependencies = [
   '@hono/node-server',
   '@t3-oss/env-core',
   '@opentelemetry/api',
+  ...sdkAdapterPeers,
 ]
 
 /** 沿真实相对导入收集消费程序和所属夹具，复制时为 NodeNext 补齐产物后缀 */
-async function readConsumer(root, name) {
+async function readConsumer(root, name, variant = 'consumer') {
   const files = new Map()
   const imports = new Set()
   async function collect(file) {
@@ -59,14 +62,18 @@ async function readConsumer(root, name) {
       content = content.slice(0, start) + output + content.slice(end)
     files.set(file, content)
   }
-  const entry = `tests/${name}/consumer.ts`
+  const entry = `tests/${name}/${variant}.ts`
   await collect(entry)
   return { entry, files, imports }
 }
 
 /** 正式安装与集成安装分别检查依赖闭包，不能隐含引入供应商、数据库或本机实现 */
-async function assertInstalledClosure(dir, name, closure, manifests, packedManifests) {
-  const allowed = new Set([...closure].flatMap(item => Object.keys(packedManifests.get(item).dependencies ?? {})))
+async function assertInstalledClosure(dir, name, closure, manifests, packedManifests, explicitPeers = []) {
+  // 可选 peer 只有在第二阶段由消费者明确安装后才进入允许闭包
+  const allowed = new Set([
+    ...[...closure].flatMap(item => Object.keys(packedManifests.get(item).dependencies ?? {})),
+    ...explicitPeers,
+  ])
   // oRPC 1.15 的 contract/server 自身依赖 client，属于协议库传递依赖，不表示引入框架 SDK
   if (allowed.has('@orpc/contract') || allowed.has('@orpc/server'))
     allowed.add('@orpc/client')
@@ -79,6 +86,42 @@ async function assertInstalledClosure(dir, name, closure, manifests, packedManif
     const present = installed.some(entry => entry.startsWith(`@elmino+${item}@`))
     assert.equal(present, closure.has(item), `${name}: @elmino/${item}`)
   }
+}
+
+/**
+ * 使用同一份真实源码验证严格 NodeNext、运行结果与浏览器产物
+ */
+async function verifyProgram(root, dir, consumer, browser) {
+  // 先复制消费入口及实际夹具，禁止通过工作区源码路径绕过发布出口
+  for (const [file, source] of consumer.files) {
+    const target = path.join(dir, file)
+    await mkdir(path.dirname(target), { recursive: true })
+    await writeFile(target, source)
+  }
+  await run(process.execPath, [
+    path.join(root, 'node_modules/typescript/bin/tsc'),
+    '--target',
+    'ES2023',
+    '--lib',
+    'ES2023,ES2024.Promise,DOM,DOM.Iterable',
+    '--module',
+    'NodeNext',
+    '--moduleResolution',
+    'NodeNext',
+    '--strict',
+    '--skipLibCheck',
+    'false',
+    '--types',
+    'node',
+    '--rootDir',
+    '.',
+    '--outDir',
+    'dist',
+    consumer.entry,
+  ], { cwd: dir })
+  await run(process.execPath, [path.join('dist', consumer.entry.replace(/\.ts$/u, '.js'))], { cwd: dir, timeout: 30_000 })
+  if (browser)
+    await verifyBrowserConsumer(root, dir, consumer.entry)
 }
 
 /** 在仓库外安装同批归档，严格编译并运行当前领域的真实消费程序 */
@@ -136,33 +179,29 @@ export async function verifyConsumer({ root, name, manifests, archives, packedMa
   }, null, 2))
   await run('pnpm', ['install', '--ignore-scripts', '--no-frozen-lockfile'], { cwd: dir, maxBuffer: 5 * 1024 * 1024 })
   await assertInstalledClosure(dir, name, closure, manifests, packedManifests)
-  for (const [file, source] of consumer.files) {
-    const target = path.join(dir, file)
-    await mkdir(path.dirname(target), { recursive: true })
-    await writeFile(target, source)
+  await verifyProgram(root, dir, consumer, ['schema', 'request', 'protocol', 'api', 'sdk'].includes(name))
+  if (name === 'sdk') {
+    // 第一阶段已经证明基础 SDK 不会自动装入可选 peer，适配器单独显式安装
+    const sdk = packedManifests.get(name)
+    for (const peer of sdkAdapterPeers) {
+      const version = sdk.peerDependencies?.[peer]
+      assert.ok(typeof version === 'string' && !/^(?:workspace:|catalog:|file:|link:)/u.test(version), `SDK 可选 peer 版本未正常发布: ${peer}`)
+      assert.equal(sdk.peerDependenciesMeta?.[peer]?.optional, true, `SDK peer 不应成为基础必装依赖: ${peer}`)
+      dependencies[peer] = version
+    }
+    // 类型版本来自 SDK 按根 catalog 安装后的实际依赖，不再维护另一份版本常量
+    const reactTypes = JSON.parse(await readFile(path.join(root, 'packages/sdk/node_modules/@types/react/package.json'), 'utf8'))
+    devDependencies['@types/react'] = reactTypes.version
+    await writeFile(path.join(dir, 'package.json'), JSON.stringify({
+      private: true,
+      type: 'module',
+      packageManager,
+      dependencies,
+      devDependencies,
+    }, null, 2))
+    await run('pnpm', ['install', '--ignore-scripts', '--no-frozen-lockfile'], { cwd: dir, maxBuffer: 5 * 1024 * 1024 })
+    await assertInstalledClosure(dir, `${name}/adapters`, closure, manifests, packedManifests, sdkAdapterPeers)
+    const adapters = await readConsumer(root, name, 'adapters')
+    await verifyProgram(root, dir, adapters, true)
   }
-  await run(process.execPath, [
-    path.join(root, 'node_modules/typescript/bin/tsc'),
-    '--target',
-    'ES2023',
-    '--lib',
-    'ES2023,ES2024.Promise,DOM,DOM.Iterable',
-    '--module',
-    'NodeNext',
-    '--moduleResolution',
-    'NodeNext',
-    '--strict',
-    '--skipLibCheck',
-    'false',
-    '--types',
-    'node',
-    '--rootDir',
-    '.',
-    '--outDir',
-    'dist',
-    consumer.entry,
-  ], { cwd: dir })
-  await run(process.execPath, [path.join('dist', consumer.entry.replace(/\.ts$/u, '.js'))], { cwd: dir, timeout: 30_000 })
-  if (['schema', 'request', 'protocol', 'api', 'sdk'].includes(name))
-    await verifyBrowserConsumer(root, dir, consumer.entry)
 }
