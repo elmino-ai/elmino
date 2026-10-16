@@ -159,6 +159,6 @@ export async function verifyConsumer({ root, name, manifests, archives, packedMa
     consumer.entry,
   ], { cwd: dir })
   await run(process.execPath, [path.join('dist', consumer.entry.replace(/\.ts$/u, '.js'))], { cwd: dir, timeout: 30_000 })
-  if (['request', 'protocol', 'api', 'sdk'].includes(name))
+  if (['schema', 'request', 'protocol', 'api', 'sdk'].includes(name))
     await verifyBrowserConsumer(root, dir, consumer.entry)
 }

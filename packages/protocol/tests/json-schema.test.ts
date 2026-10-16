@@ -19,7 +19,12 @@ test('中断文档保留具体字段、必填约束和交互恢复分支，运�
   expect(schema).toMatchObject({
     type: 'object',
     properties: {
-      id: { type: 'string', pattern: expect.stringContaining('interrupt_') },
+      id: {
+        type: 'string',
+        pattern: expect.stringContaining('interrupt_'),
+        description: expect.any(String),
+        examples: expect.arrayContaining(['interrupt_123e4567-e89b-42d3-a456-426614174000']),
+      },
       payload: { type: jsonTypes },
       createdAt: { type: 'string', format: 'date-time' },
     },
@@ -49,11 +54,18 @@ test('片段文档从领域联合生成完整九类，工具参数和扩展值�
   const parts = schema.oneOf?.filter(part => typeof part !== 'boolean') ?? []
   expect(parts.map(part => part.properties?.type)).toContainEqual({ type: 'string', const: 'tool' })
   for (const part of parts) {
-    expect(part.properties?.id).toMatchObject({ pattern: THREAD_PART_ID_PATTERN.source })
+    expect(part.properties?.id).toMatchObject({
+      pattern: THREAD_PART_ID_PATTERN.source,
+      description: expect.any(String),
+      examples: expect.arrayContaining(['plugin:custom-note']),
+    })
     expect(part.properties?.createdAt).toMatchObject({ type: 'string', format: 'date-time' })
   }
   const tool = parts.find(part => typeof part.properties?.type === 'object' && part.properties.type.const === 'tool')
   expect(tool?.properties?.args).toMatchObject({ type: jsonTypes })
+  // 供应商原生调用标识继续由供应商定义，不附加内核 tool_<UUID> 格式
+  expect(tool?.properties?.providerCallId).toMatchObject({ type: 'string' })
+  expect(tool?.properties?.providerCallId).not.toHaveProperty('pattern')
   expect(tool?.required).not.toContain('args')
   const text = JSON.stringify(schema)
   expect(text).not.toContain('$ref')

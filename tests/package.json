@@ -19,6 +19,7 @@
     "@elmino/runtime": "workspace:^",
     "@elmino/sandbox": "workspace:^",
     "@elmino/sandbox-local": "workspace:^",
+    "@elmino/schema": "workspace:^",
     "@elmino/sdk": "workspace:^",
     "@elmino/server": "workspace:^",
     "@elmino/shared": "workspace:^",

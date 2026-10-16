@@ -13,12 +13,17 @@ import { readThreadInterrupt, ThreadPartSchema } from '@elmino/thread/events'
 import { z } from 'zod'
 import { jsonValueMetadata, JsonValueSchema } from '../json/schema'
 import {
-  INTERRUPT_ID_PATTERN,
+  InterruptIdSchema,
   MESSAGE_ID_PATTERN,
+  MessageIdSchema,
   THREAD_ID_PATTERN,
   THREAD_PART_ID_PATTERN,
+  ThreadIdSchema,
+  ThreadPartIdSchema,
   TOOL_CALL_ID_PATTERN,
+  ToolCallIdSchema,
   TURN_ID_PATTERN,
+  TurnIdSchema,
 } from '../runtime/id'
 
 /** JSON 化后的扩展数据，不接受函数、循环引用或非有限数字 */
@@ -73,12 +78,12 @@ export const ThreadInterruptSchema: z.ZodType<ThreadInterrupt> = z.custom<Thread
     type: 'object',
     description: '线程中断事实；交互中断必须提供 interaction、payload，并仅允许 interaction 恢复',
     properties: {
-      id: { type: 'string', pattern: INTERRUPT_ID_PATTERN.source },
+      id: createIdJsonSchema(InterruptIdSchema),
       kind: { type: 'string', enum: ['interaction', 'system', 'user'] },
       interaction: { type: 'string' },
       ownerId: { type: 'string', minLength: 1 },
       status: { type: 'string', enum: ['pending', 'resolved', 'cancelled'] },
-      turnId: { type: 'string', pattern: TURN_ID_PATTERN.source },
+      turnId: createIdJsonSchema(TurnIdSchema),
       reason: { type: 'string' },
       payload: jsonValueMetadata,
       createdAt: { type: 'string', format: 'date-time' },
@@ -122,9 +127,9 @@ export const ThreadPartWireSchema: z.ZodType<ThreadPart> = ThreadPartSchema.supe
 
 /** 完整消息与其片段必须属于同一 Thread、Turn 和 Message */
 export const ThreadMessageSchema: z.ZodType<ThreadMessage> = z.object({
-  id: z.string().regex(MESSAGE_ID_PATTERN),
-  threadId: z.string().regex(THREAD_ID_PATTERN),
-  turnId: z.string().regex(TURN_ID_PATTERN),
+  id: MessageIdSchema,
+  threadId: ThreadIdSchema,
+  turnId: TurnIdSchema,
   role: z.enum(['assistant', 'system', 'user']),
   kind: z.enum(['error', 'normal', 'synthetic']),
   status: z.enum(['completed', 'created', 'failed', 'interrupted', 'streaming']),
@@ -143,9 +148,9 @@ export const ThreadMessageSchema: z.ZodType<ThreadMessage> = z.object({
 /** 子线程描述保留其自有 Turn；事件外壳的 Turn 属于父线程，不能混用 */
 export const ThreadChildStateSchema: z.ZodType<ThreadChildState> = z.object({
   ownerId: identifier,
-  threadId: z.string().regex(THREAD_ID_PATTERN),
-  turnId: z.string().regex(TURN_ID_PATTERN),
-  parentToolCallId: z.string().regex(TOOL_CALL_ID_PATTERN),
+  threadId: ThreadIdSchema,
+  turnId: TurnIdSchema,
+  parentToolCallId: ToolCallIdSchema,
   title: z.string().optional(),
   status: turnStatus,
   interrupt: ThreadInterruptSchema.optional(),
@@ -170,7 +175,7 @@ const settings: z.ZodType<ThreadSettings> = z.object({
 
 const runtime: z.ZodType<ThreadRuntimeState> = z.object({
   status: threadStatus,
-  turnId: z.string().regex(TURN_ID_PATTERN).optional(),
+  turnId: TurnIdSchema.optional(),
   modelId: identifier.optional(),
   agentId: identifier,
   approvalMode: z.enum(['request', 'auto', 'fullAccess']),
@@ -188,7 +193,7 @@ const threadState = z.object({
   workspaceId: identifier,
   workspaceRoot: z.string(),
   cwd: z.string(),
-  threadId: z.string().regex(THREAD_ID_PATTERN),
+  threadId: ThreadIdSchema,
   title: z.string().optional(),
   agentId: identifier,
   pinned: z.boolean(),
@@ -199,7 +204,7 @@ const threadState = z.object({
   updatedAt: datetime,
   messages: z.array(ThreadMessageSchema),
   turns: z.array(z.object({
-    id: z.string().regex(TURN_ID_PATTERN),
+    id: TurnIdSchema,
     status: turnStatus,
     agentId: identifier,
     startedAt: datetime.optional(),
@@ -256,18 +261,25 @@ function createThreadPartJsonSchema() {
   for (const part of schema.oneOf ?? schema.anyOf ?? []) {
     if (typeof part === 'boolean' || !part.properties)
       continue
-    const patterns = {
-      id: THREAD_PART_ID_PATTERN,
-      threadId: THREAD_ID_PATTERN,
-      turnId: TURN_ID_PATTERN,
-      messageId: MESSAGE_ID_PATTERN,
-      toolCallId: TOOL_CALL_ID_PATTERN,
+    const identifiers = {
+      id: ThreadPartIdSchema,
+      threadId: ThreadIdSchema,
+      turnId: TurnIdSchema,
+      messageId: MessageIdSchema,
+      toolCallId: ToolCallIdSchema,
     }
-    for (const [key, pattern] of Object.entries(patterns)) {
+    for (const [key, identifier] of Object.entries(identifiers)) {
       const field = part.properties[key]
       if (field && typeof field !== 'boolean')
-        field.pattern = pattern.source
+        Object.assign(field, createIdJsonSchema(identifier))
     }
   }
+  return schema
+}
+
+/** 自定义 wire Schema 复用具名 ID 的文档规则，不嵌套独立文档的 $schema 声明 */
+function createIdJsonSchema(identifier: z.ZodString) {
+  const schema = z.toJSONSchema(identifier)
+  delete schema.$schema
   return schema
 }

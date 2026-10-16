@@ -1,4 +1,5 @@
 import {
+  AgentWorkspaceTargetSchema,
   apiContract,
   ApiThreadListInputSchema,
   ApiThreadListResultSchema,
@@ -208,7 +209,7 @@ test('API 输出校验接受领域原始工具消息的可选 undefined，不把
   }).success).toBe(false)
 })
 
-test('HTTP 与 RPC 共用稳定契约，九条路由都有方法、摘要和分类', () => {
+test('HTTP 与 RPC 共用稳定契约，九条路由都有方法、摘要、说明和分类', () => {
   const routes = Object.values(apiContract).flatMap(group => Object.values(group).map(value => value['~orpc'].route))
   expect(routes.map(route => [route.method, route.path])).toEqual([
     ['GET', '/health'],
@@ -223,6 +224,17 @@ test('HTTP 与 RPC 共用稳定契约，九条路由都有方法、摘要和分�
   ])
   for (const route of routes) {
     expect(route.summary?.trim().length).toBeGreaterThan(0)
+    expect(route.description?.trim().length).toBeGreaterThan(0)
     expect(route.tags?.length).toBeGreaterThan(0)
   }
+})
+
+test('通用非空 Schema 保留宿主配置键与引导原文，拒绝全空白身份', () => {
+  const input = { agentId: '  writer  ', workspaceId: '  default  ' }
+  expect(AgentWorkspaceTargetSchema.parse(input)).toEqual(input)
+  expect(ApiTurnCreateInputSchema.parse({ ...creating, modelId: '  deepseek  ' }).modelId).toBe('  deepseek  ')
+  for (const field of ['agentId', 'workspaceId'])
+    expect(AgentWorkspaceTargetSchema.safeParse({ ...input, [field]: ' \t\n ' }).success).toBe(false)
+  expect(ApiTurnCreateInputSchema.safeParse({ ...creating, modelId: ' \t ' }).success).toBe(false)
+  expect(ApiTurnSteerInputSchema.parse({ ...target, turnId, text: '  保留原文  ' }).text).toBe('  保留原文  ')
 })

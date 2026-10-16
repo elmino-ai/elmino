@@ -16,8 +16,13 @@
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist", "src"],
-  "engines": { "node": ">=24.18.1" },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=24.18.1"
+  },
   "scripts": {
     "build": "tsdown --config ../../tsdown.config.mjs",
     "typecheck": "tsc -p tsconfig.json",
@@ -26,6 +31,7 @@
   },
   "dependencies": {
     "@elmino/protocol": "workspace:^",
+    "@elmino/schema": "workspace:^",
     "@elmino/thread": "workspace:^",
     "@opentelemetry/api": "catalog:",
     "@orpc/contract": "catalog:",
@@ -38,5 +44,7 @@
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
-  "publishConfig": { "access": "public" }
+  "publishConfig": {
+    "access": "public"
+  }
 }

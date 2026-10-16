@@ -3,27 +3,27 @@ import { RUNTIME_EVENT_TYPES } from '@elmino/thread/events'
 import { z } from 'zod'
 import { JsonValueSchema } from '../json/schema'
 import {
-  EVENT_ID_PATTERN,
-  INTERRUPT_ID_PATTERN,
-  MESSAGE_ID_PATTERN,
-  THREAD_ID_PATTERN,
-  THREAD_PART_ID_PATTERN,
-  TOOL_CALL_ID_PATTERN,
-  TURN_ID_PATTERN,
+  EventIdSchema,
+  InterruptIdSchema,
+  MessageIdSchema,
+  ThreadIdSchema,
+  ThreadPartIdSchema,
+  ToolCallIdSchema,
+  TurnIdSchema,
 } from './id'
 import { hasValidRuntimeEventPayload } from './payload'
 
 /** -------------------- Schema -------------------- */
 /** 统一的跨端事件边界，不在内核内部重复执行输入校验 */
 export const RuntimeEventSchema: z.ZodType<RuntimeEvent> = z.object({
-  id: z.string().regex(EVENT_ID_PATTERN),
+  id: EventIdSchema,
   type: z.enum(RUNTIME_EVENT_TYPES),
-  threadId: z.string().regex(THREAD_ID_PATTERN),
-  turnId: z.string().regex(TURN_ID_PATTERN).optional(),
-  messageId: z.string().regex(MESSAGE_ID_PATTERN).optional(),
-  partId: z.string().regex(THREAD_PART_ID_PATTERN).optional(),
-  toolCallId: z.string().regex(TOOL_CALL_ID_PATTERN).optional(),
-  interruptId: z.string().regex(INTERRUPT_ID_PATTERN).optional(),
+  threadId: ThreadIdSchema,
+  turnId: TurnIdSchema.optional(),
+  messageId: MessageIdSchema.optional(),
+  partId: ThreadPartIdSchema.optional(),
+  toolCallId: ToolCallIdSchema.optional(),
+  interruptId: InterruptIdSchema.optional(),
   createdAt: z.iso.datetime({ offset: true }),
   payload: JsonValueSchema,
 }).refine(event => (
