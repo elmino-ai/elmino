@@ -42,6 +42,7 @@ function dependencyClosure(name, result = new Set()) {
 // 集成场景需要的具体实现只作为消费者开发依赖
 const fixturePackages = new Map([
   ['engine', ['store-sqlite']],
+  ['core', ['store-sqlite']],
   ['local', ['sandbox-local']],
   ['server', ['sdk']],
 ])

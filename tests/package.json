@@ -8,6 +8,7 @@
   "devDependencies": {
     "@elmino/agent": "workspace:^",
     "@elmino/api": "workspace:^",
+    "@elmino/core": "workspace:^",
     "@elmino/engine": "workspace:^",
     "@elmino/llm": "workspace:^",
     "@elmino/llm-anthropic": "workspace:^",

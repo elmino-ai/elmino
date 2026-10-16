@@ -1,0 +1,48 @@
+{
+  "name": "@elmino/core",
+  "type": "module",
+  "version": "0.0.0",
+  "description": "Elmino 应用实例、模型注册、工作区与共享 Agent 生命周期",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=24.18.1"
+  },
+  "scripts": {
+    "build": "tsdown --config ../../tsdown.config.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "prepack": "pnpm build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@elmino/agent": "workspace:^",
+    "@elmino/engine": "workspace:^",
+    "@elmino/llm": "workspace:^",
+    "@elmino/runtime": "workspace:^",
+    "@elmino/shared": "workspace:^",
+    "@elmino/store": "workspace:^",
+    "@elmino/thread": "workspace:^"
+  },
+  "devDependencies": {
+    "@elmino/store-sqlite": "workspace:^",
+    "@elmino/tool": "workspace:^",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

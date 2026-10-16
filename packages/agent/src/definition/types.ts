@@ -55,6 +55,8 @@ export interface AgentSnapshot {
 
 /** 具有工具、执行器和运行环境的 Agent 定义 */
 export interface Agent extends AgentSnapshot {
+  /** 在 Elmino 模型注册表中选择默认模型，本轮执行可覆盖 */
+  model?: string
   /** 展示名称 */
   name: string
   /** 能力说明 */
