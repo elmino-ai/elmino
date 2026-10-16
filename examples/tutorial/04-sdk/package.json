@@ -1,0 +1,28 @@
+{
+  "name": "@example/sdk",
+  "type": "module",
+  "private": true,
+  "description": "通过 SDK 连接现有 Server、订阅事件与调用 Agent",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env --import tsx src/index.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@elmino/protocol": "workspace:^",
+    "@elmino/schema": "workspace:^",
+    "@elmino/sdk": "workspace:^",
+    "@elmino/shared": "workspace:^",
+    "@elmino/store": "workspace:^",
+    "@elmino/thread": "workspace:^",
+    "@t3-oss/env-core": "catalog:"
+  },
+  "devDependencies": {
+    "@elmino/llm": "workspace:^",
+    "@example/server": "workspace:*",
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

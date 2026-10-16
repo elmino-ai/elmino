@@ -1,5 +1,6 @@
 import type { ThreadState } from '@elmino/thread'
 import type { ServerAuthorization } from '../src/index'
+import { defineElmino } from '@elmino/core'
 import { parseRuntimeEventCursor } from '@elmino/protocol'
 import { isPlainRecord } from '@elmino/shared'
 import { expect, onTestFinished, test, vi } from 'vitest'
@@ -73,7 +74,8 @@ test('公开 Scalar 与完整 OpenAPI 文档不进入鉴权，不包含宿主凭
   expect(Object.keys(paths)).toHaveLength(9)
   for (const [path, method] of operations) {
     const operation = resolveSchema(document, resolveSchema(document, paths[path!])[method!])
-    expect(operation.security ?? spec.security).toContainEqual({ bearerAuth: [] })
+    expect(operation.security ?? spec.security).toEqual([])
+    expect(operation.description).toEqual(expect.any(String))
   }
   const components = resolveSchema(document, spec.components)
   const schemes = resolveSchema(document, components.securitySchemes)
@@ -115,16 +117,41 @@ test('公开 Scalar 与完整 OpenAPI 文档不进入鉴权，不包含宿主凭
     payload: expect.any(Object),
   }))
   const resume = resolveSchema(document, resolveSchema(document, paths['/threads/{threadId}/turns/{turnId}/resume']).post)
+  expect(resume.description).toContain('模型与权限快照')
   const requestBody = resolveSchema(document, resume.requestBody)
   const bodyContent = resolveSchema(document, requestBody.content)
   const body = resolveSchema(document, resolveSchema(document, bodyContent['application/json']).schema)
   const json = resolveSchema(document, resolveSchema(document, body.properties).response)
+  expect(json.description).toContain('交互工具约定')
+  expect(json.examples).toEqual([{ decisions: [{ type: 'approve', callId: 'native_tool_call_id' }] }])
   const jsonVariants = json.oneOf ?? json.anyOf
   const jsonTypes = Array.isArray(jsonVariants)
     ? jsonVariants.map(variant => resolveSchema(document, variant).type)
     : json.type
   expect(jsonTypes)
     .toEqual(expect.arrayContaining(['string', 'number', 'boolean', 'null', 'array', 'object']))
+  const create = resolveSchema(document, resolveSchema(document, paths['/threads/{threadId}/turns']).post)
+  expect(create.description).toContain('不代表执行完成')
+  const createContent = resolveSchema(document, resolveSchema(document, create.requestBody).content)
+  const createSchema = resolveSchema(document, resolveSchema(document, createContent['application/json']).schema)
+  const createProperties = resolveSchema(document, createSchema.properties)
+  const agentId = resolveSchema(document, createProperties.agentId)
+  expect(agentId.description).toContain('注册的 Agent 键')
+  expect(agentId.examples).toEqual(['writer'])
+  const modelId = resolveSchema(document, createProperties.modelId)
+  expect(modelId.description).toContain('稳定键')
+  expect(modelId.examples).toEqual(['deepseek'])
+  const turnId = resolveSchema(document, createProperties.turnId)
+  expect(turnId.description).toContain('唯一标识')
+  expect(turnId.examples).toEqual(['turn_123e4567-e89b-42d3-a456-426614174000'])
+  const approvalMode = resolveSchema(document, createProperties.approvalMode)
+  expect(approvalMode.enum).toEqual(['request', 'auto', 'fullAccess'])
+  const input = resolveSchema(document, createProperties.input)
+  expect(input.examples).toEqual([[{ type: 'text', text: '你好，请介绍你能做什么' }]])
+  const events = resolveSchema(document, resolveSchema(document, paths['/events']).get)
+  expect(events.description).toContain('Last-Event-ID')
+  expect(events.description).toContain('stream.reset')
+  expect(events.description).toContain('不会取消 Agent 任务')
   expect(authorize).not.toHaveBeenCalled()
 
   await harness.server.close()
@@ -137,10 +164,13 @@ test('公开 Scalar 与完整 OpenAPI 文档不进入鉴权，不包含宿主凭
 })
 
 test('文档标题与版本可配置，关闭文档入口仍保留受鉴权的 REST', async () => {
-  const baseOptions = {
+  const elmino = defineElmino({
     agents: {},
     workspace: () => { throw new Error('文档和健康检查不应解析工作区') },
-    model: () => { throw new Error('文档和健康检查不应解析模型') },
+    models: () => { throw new Error('文档和健康检查不应解析模型') },
+  })
+  const baseOptions = {
+    elmino,
     authorize: ({ request }: ServerAuthorization) => request.headers.get('authorization') === 'Bearer fake-docs-key',
   }
   const customized = defineServer({ ...baseOptions, apiReference: { title: 'Example API', version: '2.3.4' } })
@@ -148,6 +178,7 @@ test('文档标题与版本可配置，关闭文档入口仍保留受鉴权的 R
   onTestFinished(async () => {
     await customized.close()
     await disabled.close()
+    await elmino.close()
   })
   const spec = await customized.fetch(apiRequest('/spec.json'))
   expect(await spec.json()).toMatchObject({ info: { title: 'Example API', version: '2.3.4' } })
@@ -243,4 +274,34 @@ test('REST SSE 支持作用域查询、游标回放与取消，取消观察不�
   expect(harness.modelRequests).toHaveLength(1)
   expect(harness.events.filter(event => event.type === 'turn.completed')).toHaveLength(1)
   expect(harness.errors).toEqual([])
+})
+
+test.each(['none', 'bearer', 'custom'] as const)('OpenAPI 认证与实际配置一致：%s', async (authentication) => {
+  const elmino = defineElmino({
+    agents: {},
+    workspace: () => { throw new Error('生成文档不应打开工作区') },
+    models: () => { throw new Error('生成文档不应解析模型') },
+  })
+  const authorize = authentication === 'custom' ? vi.fn(() => true) : undefined
+  const apiKey = authentication === 'bearer' ? 'fake-schema-bearer-key' : null
+  const server = defineServer({
+    elmino,
+    apiKey,
+    authorize,
+  })
+  onTestFinished(async () => {
+    await server.close()
+    await elmino.close()
+  })
+  const document: unknown = await (await server.fetch(apiRequest('/spec.json'))).json()
+  const spec = resolveSchema(document, document)
+  expect(spec.security).toEqual(authentication === 'bearer' ? [{ bearerAuth: [] }] : [])
+  const components = resolveSchema(document, spec.components)
+  expect(resolveSchema(document, components.securitySchemes).bearerAuth)
+    .toMatchObject({ type: 'http', scheme: 'bearer' })
+  const info = resolveSchema(document, spec.info)
+  if (authentication === 'custom') {
+    expect(info.description).toContain('宿主')
+    expect(authorize).not.toHaveBeenCalled()
+  }
 })

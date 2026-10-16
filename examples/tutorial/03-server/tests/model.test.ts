@@ -28,6 +28,7 @@ test('恢复保留完整冻结模型配置，新任务使用当前环境默认�
     baseURL: 'https://changed.example.test/anthropic',
   })
   expect(fresh.adapter.model).toBe('changed-model')
-  expect(fresh.config.id).not.toBe(frozenConfig.id)
+  // ID 是 Elmino 注册表中的稳定键，具体模型与连接配置按每次 Turn 冻结
+  expect(fresh.config.id).toBe('deepseek')
   expect(fresh.config.providerId).not.toBe(frozenConfig.providerId)
 })

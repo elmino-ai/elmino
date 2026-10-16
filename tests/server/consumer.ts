@@ -1,6 +1,7 @@
-/* eslint antfu/no-top-level-await: off -- 仓库外 Node.js 消费者验证真实 HTTP 端口 */
+import { defineElmino } from '@elmino/core'
 import { Client } from '@elmino/sdk'
 import { defineServer } from '@elmino/server'
+/* eslint antfu/no-top-level-await: off -- 仓库外 Node.js 消费者验证真实 HTTP 端口 */
 
 /** 仓库外验收只读取交付需要的 OpenAPI 字段 */
 interface ApiSpecification {
@@ -24,14 +25,23 @@ interface ApiSpecification {
 }
 
 const server = defineServer({
-  agents: {},
+  elmino: defineElmino({
+    agents: {},
+    workspace: () => { throw new Error('健康检查不应打开工作区') },
+    models: () => { throw new Error('健康检查不应装配模型') },
+  }),
   apiReference: { title: 'Packaged Agent API', version: '1.2.3' },
   apiKey: 'fake-consumer-key',
-  workspace: () => { throw new Error('健康检查不应打开工作区') },
-  model: () => { throw new Error('健康检查不应装配模型') },
+  corsOrigins: [],
+  http(app) {
+    app.get('/host/info', context => context.json({ name: 'elmino-consumer' }))
+  },
 })
-const url = await server.start({ port: 0, shutdownSignals: false })
+const url = await server.start({ port: 0, hostname: '127.0.0.1', shutdownSignals: false })
 try {
+  const custom = await fetch(`${url}/host/info`)
+  if (custom.status !== 200 || (await custom.json() as { name?: string }).name !== 'elmino-consumer')
+    throw new Error('打包后的 Server 未执行 Hono 路由扩展')
   const reference = await fetch(`${url}/api/docs`)
   const html = await reference.text()
   if (reference.status !== 200 || !reference.headers.get('content-type')?.includes('text/html')
@@ -76,6 +86,7 @@ try {
   if (!denied)
     throw new Error('真实网络请求绕过了宿主鉴权')
   await server.close()
+  await server.elmino.close()
   const response = await server.fetch(new Request(`${url}/api/health`))
   if (response.status !== 503)
     throw new Error('关闭后的 Fetch 服务仍接受请求')
@@ -91,4 +102,5 @@ try {
 }
 finally {
   await server.close()
+  await server.elmino.close()
 }

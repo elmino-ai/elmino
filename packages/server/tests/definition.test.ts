@@ -1,8 +1,10 @@
+import type { LocalWorkspace } from '@elmino/core'
 import type { RuntimeCreateContext } from '@elmino/runtime'
-import type { LocalServerWorkspace, ServerAuthorization } from '../src/index'
+import type { ServerAuthorization } from '../src/index'
 import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { defineAgent } from '@elmino/agent'
+import { defineElmino } from '@elmino/core'
 import { Client } from '@elmino/sdk'
 import { createId } from '@elmino/shared'
 import { expect, onTestFinished, test, vi } from 'vitest'
@@ -15,12 +17,20 @@ test.each(['.', 'nested'])('固定工作区从持久目录 %s 执行，配置修
   await mkdir(path.join(root, 'nested'))
   const createRuntime = vi.fn(({ location }: RuntimeCreateContext) => createTestRuntime(location))
   const agent = defineAgent({ id: 'writer', systemPrompt: '完成任务', runtime: { create: createRuntime } })
-  const workspace: LocalServerWorkspace = { id: 'fixed', rootDir: path.relative(process.cwd(), root), store }
+  const workspace: LocalWorkspace = { id: 'fixed', rootDir: path.relative(process.cwd(), root), store }
   const model = createModel([response([{ type: 'text', text: '固定工作区完成' }])])
   const modelFactory = vi.fn(() => model.model)
-  const server = defineServer({ agents: { writer: agent }, workspace, model: modelFactory, apiKey: 'test-fixed-key' })
+  const server = defineServer({
+    elmino: defineElmino({
+      agents: { writer: agent },
+      workspace,
+      models: modelFactory,
+    }),
+    apiKey: 'test-fixed-key',
+  })
   onTestFinished(async () => {
     await server.close()
+    await server.elmino.close()
     await disposeEngineStore(root, store)
   })
   const client = Client.create({
@@ -63,9 +73,16 @@ test.each(['..', '/outside'])('固定工作区拒绝越界持久目录 %s，不�
     throw new Error('不应装配模型')
   })
   const agent = defineAgent({ id: 'writer', systemPrompt: '完成任务', runtime: { create: createRuntime } })
-  const server = defineServer({ agents: { writer: agent }, workspace: { id: 'fixed', rootDir: root, store }, model })
+  const server = defineServer({
+    elmino: defineElmino({
+      agents: { writer: agent },
+      workspace: { id: 'fixed', rootDir: root, store },
+      models: model,
+    }),
+  })
   onTestFinished(async () => {
     await server.close()
+    await server.elmino.close()
     await disposeEngineStore(root, store)
   })
   const threadId = createId('thread')
@@ -79,11 +96,13 @@ test.each(['..', '/outside'])('固定工作区拒绝越界持久目录 %s，不�
 test('apiKey 同时约束 REST 与 RPC，authorize 不能绕过凭据且仍逐项检查 batch', async () => {
   const authorize = vi.fn(({ path }: ServerAuthorization) => path[0] === 'meta')
   const server = defineServer({
-    agents: {},
+    elmino: defineElmino({
+      agents: {},
+      workspace: () => { throw new Error('健康检查不应加载工作区') },
+      models: () => { throw new Error('健康检查不应加载模型') },
+    }),
     apiKey: 'test-definition-key',
     authorize,
-    workspace: () => { throw new Error('健康检查不应加载工作区') },
-    model: () => { throw new Error('健康检查不应加载模型') },
   })
   onTestFinished(() => server.close())
   const client = (apiKey?: string) => Client.create({
@@ -108,9 +127,11 @@ test('apiKey 同时约束 REST 与 RPC，authorize 不能绕过凭据且仍逐�
 
 test.each(['', '  '])('defineServer 拒绝空白 apiKey %j', (apiKey) => {
   expect(() => defineServer({
-    agents: {},
+    elmino: defineElmino({
+      agents: {},
+      workspace: () => { throw new Error('不应加载工作区') },
+      models: () => { throw new Error('不应加载模型') },
+    }),
     apiKey,
-    workspace: () => { throw new Error('不应加载工作区') },
-    model: () => { throw new Error('不应加载模型') },
   })).toThrow('apiKey 不能为空')
 })

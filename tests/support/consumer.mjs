@@ -18,6 +18,10 @@ const isolatedDependencies = [
   '@lydell/node-pty',
   '@vscode/ripgrep',
   '@orpc/client',
+  '@orpc/server',
+  'hono',
+  '@hono/node-server',
+  '@t3-oss/env-core',
   '@opentelemetry/api',
 ]
 

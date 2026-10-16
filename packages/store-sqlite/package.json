@@ -29,8 +29,10 @@
     "db:generate": "node --import=tsx scripts/migrations.ts generate"
   },
   "dependencies": {
+    "@elmino/schema": "workspace:^",
     "@elmino/shared": "workspace:*",
     "@elmino/store": "workspace:*",
+    "@t3-oss/env-core": "catalog:",
     "dayjs": "catalog:",
     "drizzle-orm": "catalog:"
   },

@@ -1,21 +1,21 @@
 /**
- * SDK 客户端阅读路线：连接 → 订阅 → 提交任务 → 等待终态 → 查询快照 → 退出
+ * Tutorial 04 · SDK 客户端阅读路线：连接 → 订阅 → 提交任务 → 等待终态 → 查询快照 → 退出
  *
- * 先在另一个终端启动 pnpm example:server-sdk，再执行 pnpm example:server-sdk:client
+ * 先在另一个终端启动 pnpm example:server，再执行 pnpm example:sdk
  * 客户端通过 HTTP 调用 Server，只有 Server 需要连接模型；客户端不创建 AgentEngine
  * 订阅事件用来展示进度，thread.get 用来确认最后保存的事实
  */
+import type { Client } from '@elmino/sdk'
 import type { ThreadPart } from '@elmino/store'
 import type { RuntimeEvent } from '@elmino/thread/events'
 import { readRuntimeEventMessagePayload } from '@elmino/protocol'
-import { Client } from '@elmino/sdk'
 import { createId, isOneOf } from '@elmino/shared'
 import { readRuntimeEventPartPayload, TERMINAL_TURN_EVENT_TYPES } from '@elmino/thread/events'
+import { createExampleClient } from '../client/client'
 
 /** 通过真实 HTTP 和 SSE 调用远程 Agent，完成后查询持久化结果 */
-export async function runRemoteTask(baseUrl: string, key: string) {
-  // 第 1 步：baseUrl 指向 Server；这里的 key 是 SERVER_KEY，不是模型供应商密钥
-  const client = Client.create({ baseUrl, apiKey: key })
+export async function runRemoteTask(client: Client = createExampleClient()) {
+  // 第 1 步：客户端已由当前入口装配好，远程调用流程无需知道配置从哪里读取
   // Agent 与工作区键要和服务端定义一致；每次演示生成新的线程与 Turn 身份
   const target = { agentId: 'clock', workspaceId: 'example', threadId: createId('thread') }
   const turnId = createId('turn')

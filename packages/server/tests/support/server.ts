@@ -1,17 +1,20 @@
 import type { ApiTurnCreateInput, ThreadTarget } from '@elmino/api'
+import type { ElminoOptions, ModelRequest } from '@elmino/core'
 import type { ModelTurnConfig, TurnModel } from '@elmino/llm'
 import type { ClientOptions } from '@elmino/sdk'
 import type { RuntimeEvent } from '@elmino/thread/events'
 import type { DefinedTools } from '@elmino/tool'
-import type { ServerModelRequest, ServerOptions } from '../../src/index'
+import type { ServerOptions } from '../../src/index'
 import path from 'node:path'
 import { defineAgent } from '@elmino/agent'
+import { defineElmino } from '@elmino/core'
 import { Client } from '@elmino/sdk'
 import { createId } from '@elmino/shared'
 import { onTestFinished } from 'vitest'
 import { createEngineStore, createTestRuntime, disposeEngineStore } from '../../../engine/tests/support/engine'
-import { createModel, response } from '../../../engine/tests/support/model'
 import { defineServer } from '../../src/index'
+
+export { createGatedModel } from '../../../engine/tests/support/gated-model'
 
 /** Server 集成测试只覆盖实际需要注入的宿主能力 */
 interface HarnessOptions {
@@ -20,9 +23,11 @@ interface HarnessOptions {
   /** 每个真实 RPC 请求进入宿主的授权逻辑 */
   authorize?: ServerOptions['authorize']
   /** 附件和输入预处理在 Engine 接纳范围内执行 */
-  prepareInput?: ServerOptions['prepareInput']
+  prepareInput?: ElminoOptions['prepareInput']
   /** 在捕获事实之后运行可失败的宿主观察器 */
-  onEvent?: ServerOptions['onEvent']
+  onEvent?: ElminoOptions['onEvent']
+  /** 真实 SSE 与普通 HTTP 响应共用的跨域配置 */
+  corsOrigins?: ServerOptions['corsOrigins']
 }
 
 /** 通过公共 SDK 与真实 Server Fetch 连通，Store 生命周期仍由测试宿主持有 */
@@ -31,7 +36,7 @@ export async function createServerHarness(options: HarnessOptions = {}) {
   const secondary = await createEngineStore()
   const stores = { primary, secondary }
   const models: TurnModel<ModelTurnConfig>[] = []
-  const modelRequests: ServerModelRequest[] = []
+  const modelRequests: ModelRequest[] = []
   const events: RuntimeEvent[] = []
   const captureErrors: unknown[] = []
   const errors: unknown[] = []
@@ -42,9 +47,8 @@ export async function createServerHarness(options: HarnessOptions = {}) {
     tools: options.tools,
     runtime: { create: ({ location }) => createTestRuntime(location) },
   })]))
-  const serverOptions: ServerOptions = {
+  const elminoOptions: ElminoOptions = {
     agents,
-    authorize: options.authorize,
     prepareInput: options.prepareInput,
     workspace: ({ workspaceId }) => {
       const resource = workspaceId === 'secondary' ? secondary : primary
@@ -59,7 +63,7 @@ export async function createServerHarness(options: HarnessOptions = {}) {
         }),
       }
     },
-    model: (input) => {
+    models: (input) => {
       modelRequests.push({
         ...input,
         frozenConfig: input.frozenConfig ? structuredClone(input.frozenConfig) : undefined,
@@ -80,10 +84,13 @@ export async function createServerHarness(options: HarnessOptions = {}) {
     },
     onError: (error) => { errors.push(error) },
   }
-  let server = defineServer(serverOptions)
+  let elmino = defineElmino(elminoOptions)
+  const serverOptions = { apiKey: null, authorize: options.authorize, corsOrigins: options.corsOrigins ?? [] }
+  let server = defineServer({ ...serverOptions, elmino })
   onTestFinished(async () => {
     try {
       await server.close()
+      await elmino.close()
     }
     finally {
       await Promise.all(Object.values(stores).map(resource => disposeEngineStore(resource.root, resource.store)))
@@ -98,6 +105,7 @@ export async function createServerHarness(options: HarnessOptions = {}) {
     errors,
     requests,
     get server() { return server },
+    get elmino() { return elmino },
     client(headers?: ClientOptions['headers']) {
       return Client.create({
         baseUrl: 'https://elmino.test',
@@ -112,7 +120,9 @@ export async function createServerHarness(options: HarnessOptions = {}) {
     },
     async restart() {
       await server.close()
-      server = defineServer(serverOptions)
+      await elmino.close()
+      elmino = defineElmino(elminoOptions)
+      server = defineServer({ ...serverOptions, elmino })
     },
     request(overrides: Partial<ApiTurnCreateInput> = {}): ApiTurnCreateInput {
       return {
@@ -128,50 +138,18 @@ export async function createServerHarness(options: HarnessOptions = {}) {
   }
 }
 
-/** 模型采样可精确停在执行中，并在 Server 中断时按真实 signal 退出 */
-export function createGatedModel(text = '任务完成') {
-  const entered = Promise.withResolvers<void>()
-  const release = Promise.withResolvers<void>()
-  let signal: AbortSignal | undefined
-  const model = createModel([async (request) => {
-    signal = request.signal
-    entered.resolve()
-    await new Promise<void>((resolve, reject) => {
-      /** 只由模型本次采样持有取消监听 */
-      const abort = () => {
-        signal?.removeEventListener('abort', abort)
-        reject(signal?.reason)
-      }
-      signal?.addEventListener('abort', abort, { once: true })
-      release.promise.then(() => {
-        signal?.removeEventListener('abort', abort)
-        resolve()
-      })
-      if (signal?.aborted)
-        abort()
-    })
-    return response([{ type: 'text', text }])
-  }])
-  onTestFinished(() => release.resolve())
-  return {
-    ...model,
-    entered: entered.promise,
-    release: () => release.resolve(),
-    get signal() { return signal },
-  }
-}
-
 /** 控制与读取只发送其契约允许的领域归属，不携带创建输入 */
 export function threadTarget(request: ApiTurnCreateInput): ThreadTarget {
   return { agentId: request.agentId, workspaceId: request.workspaceId, threadId: request.threadId }
 }
 
 /** 健康与鉴权请求不应打开任何工作区或模型资源 */
-export function createEmptyServer(authorize?: ServerOptions['authorize']) {
-  return defineServer({
+export function createEmptyServer(options: Omit<ServerOptions, 'elmino'> = {}) {
+  const elmino = defineElmino({
     agents: {},
-    authorize,
     workspace: () => { throw new Error('健康请求不应打开工作区') },
-    model: () => { throw new Error('健康请求不应装配模型') },
+    models: () => { throw new Error('健康请求不应装配模型') },
   })
+  onTestFinished(() => elmino.close())
+  return defineServer({ apiKey: null, corsOrigins: [], ...options, elmino })
 }

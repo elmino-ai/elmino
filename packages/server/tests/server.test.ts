@@ -1,5 +1,6 @@
 import type { ServerAuthorization } from '../src/index'
 import { defineAgent } from '@elmino/agent'
+import { defineElmino } from '@elmino/core'
 import { Client } from '@elmino/sdk'
 import { createId } from '@elmino/shared'
 import { readThreadInteraction, readThreadInterrupt } from '@elmino/thread'
@@ -206,9 +207,11 @@ test.each(['constructor', 'toString', '__proto__'])('未注册的原型键 %s �
     throw new Error('不应解析工作区')
   })
   const server = defineServer({
-    agents: {},
-    workspace,
-    model: () => { throw new Error('不应解析模型') },
+    elmino: defineElmino({
+      agents: {},
+      workspace,
+      models: () => { throw new Error('不应解析模型') },
+    }),
   })
   onTestFinished(() => server.close())
   const client = Client.create({
@@ -231,9 +234,11 @@ test('注册键与 Agent 定义身份不一致时在创建 Server 时拒绝', ()
   })
 
   expect(() => defineServer({
-    agents: { alias: agent },
-    workspace,
-    model: () => { throw new Error('不应解析模型') },
+    elmino: defineElmino({
+      agents: { alias: agent },
+      workspace,
+      models: () => { throw new Error('不应解析模型') },
+    }),
   })).toThrow(TypeError)
   expect(workspace).not.toHaveBeenCalled()
 })
@@ -291,7 +296,7 @@ test('异步输入预处理持有接纳预留，重复 Turn 不会重复执行�
     .toContainEqual({ type: 'text', text: 'prepared input' })
 })
 
-test('关闭 Server 等待已进入的异步输入预处理收束，关闭后不再进入模型采样', async () => {
+test('关闭 Elmino 等待已进入的异步输入预处理收束，关闭后不再进入模型采样', async () => {
   const entered = Promise.withResolvers<void>()
   const release = Promise.withResolvers<void>()
   const harness = await createServerHarness({
@@ -309,7 +314,7 @@ test('关闭 Server 等待已进入的异步输入预处理收束，关闭后不
   pending.catch(() => undefined)
   await entered.promise
   let closed = false
-  const closing = harness.server.close().then(() => {
+  const closing = harness.elmino.close().then(() => {
     closed = true
   })
   closing.catch(() => undefined)

@@ -5,7 +5,7 @@ import { listen } from '../src/node/index'
 import { createEmptyServer, createServerHarness } from './support/server'
 
 test('真实随机端口提供 SDK 健康检查并拒绝缺少凭据的请求', async () => {
-  const server = createEmptyServer(({ request }) => request.headers.get('authorization') === 'Bearer fake-network-key')
+  const server = createEmptyServer({ authorize: ({ request }) => request.headers.get('authorization') === 'Bearer fake-network-key' })
   const listener = await listen({ server })
   onTestFinished(async () => {
     await server.close()
@@ -22,7 +22,7 @@ test('一个真实 HTTP batch 中的每个 procedure 独立鉴权', async () => 
   const authorize = vi.fn(({ path, request }: ServerAuthorization) => (
     request.headers.get('authorization') === 'Bearer fake-network-key' && path[0] === 'meta'
   ))
-  const server = createEmptyServer(authorize)
+  const server = createEmptyServer({ authorize })
   const listener = await listen({ server })
   onTestFinished(async () => {
     await server.close()
@@ -50,10 +50,10 @@ test('一个真实 HTTP batch 中的每个 procedure 独立鉴权', async () => 
 test('授权等待期间关闭服务，已进入的网络请求返回服务关闭而非成功', async () => {
   const started = Promise.withResolvers<void>()
   const gate = Promise.withResolvers<void>()
-  const server = createEmptyServer(() => {
+  const server = createEmptyServer({ authorize: () => {
     started.resolve()
     return gate.promise.then(() => true)
-  })
+  } })
   const listener = await listen({ server })
   onTestFinished(async () => {
     gate.resolve()

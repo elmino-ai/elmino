@@ -5,7 +5,55 @@ import path from 'node:path'
 import { setImmediate } from 'node:timers/promises'
 import { sqliteStore, SqliteStore } from '@elmino/store-sqlite'
 import { LocalBlobStore, sha256 } from '@elmino/store/local'
-import { expect, onTestFinished, test } from 'vitest'
+import { afterEach, expect, onTestFinished, test, vi } from 'vitest'
+
+afterEach(() => {
+  vi.unstubAllEnvs()
+})
+
+test('省略目录时按定义瞬间的 ELMINO_DATA_DIR 固定各配置，不提前打开数据库', async () => {
+  const context = await createContext()
+  const firstDir = path.join(context.root, 'first')
+  const secondDir = path.join(context.root, 'second')
+  vi.stubEnv('ELMINO_DATA_DIR', `  ${firstDir}  `)
+  const first = sqliteStore()
+  vi.stubEnv('ELMINO_DATA_DIR', secondDir)
+  const second = sqliteStore()
+  await expect(access(firstDir)).rejects.toMatchObject({ code: 'ENOENT' })
+  await Promise.all([context.borrow(first), context.borrow(second)])
+  await Promise.all([firstDir, secondDir].map(dir => access(path.join(dir, 'database', 'store.db'))))
+})
+
+test('显式目录优先于环境目录，两者均不影响进程原始变量', async () => {
+  const context = await createContext()
+  const dataDir = path.join(context.root, 'explicit')
+  const ignored = path.join(context.root, 'ignored')
+  vi.stubEnv('ELMINO_DATA_DIR', ignored)
+  const provider = sqliteStore({ dataDir })
+  await context.borrow(provider)
+  await access(path.join(dataDir, 'database', 'store.db'))
+  await expect(access(ignored)).rejects.toMatchObject({ code: 'ENOENT' })
+  expect(process.env.ELMINO_DATA_DIR).toBe(ignored)
+})
+
+test.each([undefined, '', '  '])('ELMINO_DATA_DIR 为 %j 时默认使用定义时 cwd 下的 .elmino，不改写环境', async (value) => {
+  const context = await createContext()
+  vi.stubEnv('ELMINO_DATA_DIR', value)
+  const unrelated = path.join(context.root, 'another-application')
+  vi.stubEnv('DATA_DIR', unrelated)
+  const cwd = vi.spyOn(process, 'cwd').mockReturnValue(context.root)
+  let provider: RuntimeStoreProvider
+  try {
+    provider = sqliteStore()
+  }
+  finally {
+    cwd.mockRestore()
+  }
+  await context.borrow(provider)
+  await access(path.join(context.root, '.elmino', 'database', 'store.db'))
+  await expect(access(unrelated)).rejects.toMatchObject({ code: 'ENOENT' })
+  expect(process.env.ELMINO_DATA_DIR).toBe(value)
+})
 
 test('配置不创建目录，首次借用后持久化线程和大产物，释放后可重开复用', async () => {
   const context = await createContext()

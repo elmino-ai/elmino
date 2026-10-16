@@ -1,17 +1,24 @@
 import type { RuntimeStoreProvider } from '@elmino/store'
 import path from 'node:path'
+import { TrimmedStringSchema } from '@elmino/schema'
 import { LocalBlobStore } from '@elmino/store/local'
+import { createEnv } from '@t3-oss/env-core'
 import { SqliteStore } from './store'
 
 /** SQLite 与本地内容存储的简写配置 */
 export interface SqliteStoreConfig {
-  /** 运行数据根目录，下含 database 与 blobs，定义配置时解析为绝对路径 */
-  dataDir: string
+  /** 优先显式目录，其次 ELMINO_DATA_DIR，默认 cwd 下的 .elmino；定义时固定为绝对路径 */
+  dataDir?: string
 }
 
 /** 只定义配置，首次借用时初始化；同一配置的最后一个调用退出后关闭 SQLite */
-export function sqliteStore(config: SqliteStoreConfig): RuntimeStoreProvider {
-  const dataDir = path.resolve(config.dataDir)
+export function sqliteStore(config: SqliteStoreConfig = {}): RuntimeStoreProvider {
+  const env = createEnv({
+    server: { ELMINO_DATA_DIR: TrimmedStringSchema.default('.elmino') },
+    runtimeEnv: { ELMINO_DATA_DIR: config.dataDir ?? process.env.ELMINO_DATA_DIR?.trim() },
+    emptyStringAsUndefined: true,
+  })
+  const dataDir = path.resolve(env.ELMINO_DATA_DIR)
   const blobStore = LocalBlobStore.create({ rootDir: path.join(dataDir, 'blobs') })
   let opening: Promise<SqliteStore> | undefined
   let closing: Promise<void> | undefined

@@ -100,7 +100,7 @@ test('默认退出信号只注册一次，手动关闭后撤销所有监听', as
     expect(process.listenerCount(signal)).toBe(before[index])
 })
 
-test('统一关闭会取消活跃模型、落下中断事实并关闭 HTTP，外部 Store 仍可读取', async () => {
+test('关闭 HTTP 保留共享执行，关闭 Elmino 才取消模型并落下中断事实', async () => {
   const harness = await createServerHarness()
   const model = createGatedModel()
   harness.models.push(model.model)
@@ -110,6 +110,9 @@ test('统一关闭会取消活跃模型、落下中断事实并关闭 HTTP，外
   await client.rpc.turn.create(request)
   await model.entered
   await harness.server.close()
+  expect(model.signal?.aborted).toBe(false)
+  expect((await harness.stores.primary.store.turns.read(request.turnId))?.status).toBe('running')
+  await harness.elmino.close()
   expect(model.signal?.aborted).toBe(true)
   expect((await harness.stores.primary.store.turns.read(request.turnId))?.status).toBe('interrupted')
   await expect(fetch(`${url}/api/health`)).rejects.toThrow()

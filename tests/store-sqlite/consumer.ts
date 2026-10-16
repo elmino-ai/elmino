@@ -1,6 +1,7 @@
 /* eslint antfu/no-top-level-await: off -- 仓库外 Node.js 消费者顺序验收公开入口 */
 import type { RuntimeStore } from '@elmino/store'
 import assert from 'node:assert/strict'
+import { access } from 'node:fs/promises'
 import path from 'node:path'
 import { sqliteStore, SqliteStore } from '@elmino/store-sqlite'
 import { LocalBlobStore } from '@elmino/store/local'
@@ -72,3 +73,20 @@ try {
   assert.deepEqual(Array.from(await local.read(artifact.blobKey)), Array.from(content))
 }
 finally { await reopened.release() }
+
+// 消费者可以只传环境变量，也可以完全不传目录；验收目录归独立临时项目所有
+const originalDataDir = process.env.ELMINO_DATA_DIR
+try {
+  delete process.env.ELMINO_DATA_DIR
+  const defaults = await sqliteStore()()
+  try {
+    await access(path.resolve('.elmino/database/store.db'))
+  }
+  finally { await defaults.release() }
+}
+finally {
+  if (originalDataDir === undefined)
+    delete process.env.ELMINO_DATA_DIR
+  else
+    process.env.ELMINO_DATA_DIR = originalDataDir
+}
